@@ -93,6 +93,26 @@ if (fs.existsSync(DB_FILE)) {
         // Default categories if missing
         if (!db.categories) db.categories = defaultData.categories;
         if (!db.archives) db.archives = [];
+
+        // --- AUTO-CLEANUP: Remove archives older than 30 days ---
+        const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+        const now = Date.now();
+        const initialCount = db.archives ? db.archives.length : 0;
+
+        if (db.archives) {
+            db.archives = db.archives.filter(arch => {
+                const archTime = new Date(arch.date).getTime();
+                return (now - archTime) < THIRTY_DAYS_MS;
+            });
+        }
+
+        if (db.archives && db.archives.length < initialCount) {
+            console.log(`Cleanup: Removed ${initialCount - db.archives.length} old archives.`);
+            // Save DB immediately after cleanup if changes were made
+            fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
+        }
+        // -------------------------------------------------------
+
         console.log("Database loaded.");
     } catch (e) {
         console.log("Error loading DB, using default.", e);
@@ -219,6 +239,11 @@ io.on('connection', (socket) => {
             orders: []
         };
 
+        // Cleanup: Remove these orders from Active Orders list
+        db.activeOrders = db.activeOrders.filter(o => o.tableId !== tableId);
+
+        saveDb();
+
         saveDb();
 
         // Broadcast
@@ -277,6 +302,28 @@ io.on('connection', (socket) => {
         console.log("SERVER: Emitted data_update.");
     });
 
+    // 9. Clear Kitchen History (Hide from Kitchen view)
+    socket.on('clear_kitchen_history', (orderIds) => {
+        console.log("SERVER: clear_kitchen_history command received for", orderIds.length, "items.");
+        if (!Array.isArray(orderIds)) return;
+
+        let changed = false;
+        db.activeOrders.forEach(order => {
+            if (orderIds.includes(order.id)) {
+                order.kitchenHidden = true;
+                changed = true;
+            }
+        });
+
+        // Also update in tables if needed (though kitchen uses activeOrders)
+        // Optimization: checking activeOrders is enough for the view.
+
+        if (changed) {
+            saveDb();
+            io.emit('data_update', db);
+        }
+    });
+
     // 8. Clear History (Force) - Optional, keep for now or remove
     socket.on('clear_history', () => {
         db.history = [];
@@ -284,8 +331,37 @@ io.on('connection', (socket) => {
         io.emit('data_update', db);
     });
 
+    // 10. Cancel Order (Delete from Active)
+    socket.on('cancel_order', (orderId) => {
+        console.log("SERVER: Cancelling order:", orderId);
+
+        // 1. Remove from activeOrders
+        const orderIndex = db.activeOrders.findIndex(o => o.id === orderId);
+        if (orderIndex === -1) return; // Order not found
+
+        const order = db.activeOrders[orderIndex];
+        db.activeOrders.splice(orderIndex, 1);
+
+        // 2. Remove from Table
+        const tableIndex = db.tables.findIndex(t => t.id === order.tableId);
+        if (tableIndex !== -1) {
+            db.tables[tableIndex].orders = db.tables[tableIndex].orders.filter(o => o.id !== orderId);
+
+            // Recalculate Table Total
+            db.tables[tableIndex].total = db.tables[tableIndex].orders.reduce((sum, o) => sum + o.total, 0);
+
+            // If no orders left, free the table
+            if (db.tables[tableIndex].orders.length === 0) {
+                db.tables[tableIndex].status = 'free';
+            }
+        }
+
+        saveDb();
+        io.emit('data_update', db);
+    });
+
     socket.on('disconnect', () => {
-        console.log('User disconnected:', socket.id);
+        console.log('Client disconnected', socket.id);
     });
 });
 

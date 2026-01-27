@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useData } from '../context/DataContext';
-import { FaCashRegister, FaUtensils, FaHistory, FaCheck, FaTimes, FaSignOutAlt } from 'react-icons/fa';
+import { FaCashRegister, FaUtensils, FaHistory, FaCheck, FaTimes, FaSignOutAlt, FaPrint, FaTrash, FaPlus, FaEdit, FaImage, FaCamera } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
 const AdminApp = () => {
@@ -78,6 +78,195 @@ const AdminApp = () => {
     }
 
     // --- SUB-COMPONENTS ---
+
+    // 0. KITCHEN VIEW (New)
+    const KitchenView = () => {
+        const { activeOrders, markOrderPrinted, clearKitchenHistory, cancelOrder } = useData();
+        const [ticketToPrint, setTicketToPrint] = useState(null);
+        const [activeTab, setActiveTab] = useState('active'); // 'active' or 'history'
+
+        // Filter orders
+        const displayedOrders = activeOrders.filter(order => {
+            if (activeTab === 'active') return !order.printed;
+            if (activeTab === 'history') return order.printed && !order.kitchenHidden;
+            return true;
+        });
+
+        const handleClearHistory = () => {
+            if (activeTab !== 'history') return;
+            // Get all visible history items
+            const historyIds = displayedOrders.map(o => o.id);
+            if (historyIds.length === 0) return;
+
+            if (window.confirm("Tarixni butunlay tozalaysizmi? (Boshqa qurilmalarda ham o'chadi)")) {
+                clearKitchenHistory(historyIds);
+            }
+        };
+
+        const handlePrint = (order) => {
+            markOrderPrinted(order.id);
+            setTicketToPrint(order);
+            // Allow React to render the ticket first, then print
+            setTimeout(() => {
+                window.print();
+            }, 100);
+        };
+
+        const handleDelete = (order) => {
+            if (window.confirm(`Haqiqatan ham Stol ${order.tableId} buyurtmasini O'CHIRMOQCHIMISIZ?`)) {
+                cancelOrder(order.id);
+            }
+        };
+
+        return (
+            <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                    <h2>Oshxona (Buyurtmalar)</h2>
+                    <div style={{ display: 'flex', gap: '1rem', background: '#252525', padding: '0.3rem', borderRadius: '8px' }}>
+                        <button
+                            onClick={() => setActiveTab('active')}
+                            style={{
+                                padding: '0.5rem 1.5rem', borderRadius: '6px', fontWeight: 'bold',
+                                background: activeTab === 'active' ? 'var(--accent-color)' : 'transparent',
+                                color: activeTab === 'active' ? '#000' : '#fff'
+                            }}
+                        >
+                            Yangi ({activeOrders.filter(o => !o.printed).length})
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('history')}
+                            style={{
+                                padding: '0.5rem 1.5rem', borderRadius: '6px', fontWeight: 'bold',
+                                background: activeTab === 'history' ? 'var(--accent-color)' : 'transparent',
+                                color: activeTab === 'history' ? '#000' : '#fff'
+                            }}
+                        >
+                            Tarix ({activeOrders.filter(o => o.printed && !o.kitchenHidden).length})
+                        </button>
+                        {activeTab === 'history' && (
+                            <button
+                                onClick={handleClearHistory}
+                                style={{
+                                    padding: '0.5rem 1rem', borderRadius: '6px', fontWeight: 'bold',
+                                    background: '#7f1d1d', color: '#fff', border: 'none', cursor: 'pointer'
+                                }}
+                            >
+                                Tozalash
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+                    {displayedOrders.length === 0 && (
+                        <p style={{ color: '#666', gridColumn: '1/-1', textAlign: 'center', marginTop: '2rem' }}>
+                            {activeTab === 'active' ? 'Yangi buyurtmalar yo\'q' : 'Tarix bo\'sh'}
+                        </p>
+                    )}
+
+                    {displayedOrders.map(order => (
+                        <div key={order.id} style={{
+                            background: order.printed ? '#064e3b' : 'var(--bg-card)',
+                            border: order.printed ? '1px solid var(--success)' : '1px solid var(--border-color)',
+                            padding: '1.5rem',
+                            borderRadius: 'var(--radius)',
+                            display: 'flex', flexDirection: 'column', gap: '1rem',
+                            position: 'relative',
+                            opacity: order.printed ? 0.8 : 1
+                        }}>
+                            {order.printed && activeTab === 'history' && (
+                                <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'var(--success)', color: '#fff', padding: '2px 8px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                                    ✅ CHIQARILGAN
+                                </div>
+                            )}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #333', paddingBottom: '0.5rem' }}>
+                                <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>STOL {order.tableId}</span>
+                                {activeTab === 'active' && (
+                                    <button
+                                        onClick={() => handleDelete(order)}
+                                        style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}
+                                        title="Buyurtmani o'chirish"
+                                    >
+                                        <FaTrash size={18} />
+                                    </button>
+                                )}
+                                <span style={{ color: '#aaa', display: activeTab !== 'active' ? 'block' : 'none' }}>{new Date(order.timestamp).toLocaleTimeString()}</span>
+                            </div>
+
+                            <div style={{ flex: 1 }}>
+                                {order.items.map((item, idx) => (
+                                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '1.1rem' }}>
+                                        <span>{item.quantity}x {item.name}</span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <button
+                                onClick={() => handlePrint(order)}
+                                style={{
+                                    background: order.printed ? '#333' : '#fff',
+                                    color: order.printed ? '#fff' : '#000',
+                                    padding: '0.8rem', borderRadius: '8px',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                                    fontWeight: 'bold', fontSize: '1rem',
+                                    border: order.printed ? '1px solid #555' : 'none'
+                                }}
+                            >
+                                <FaPrint /> {order.printed ? 'QAYTA CHIQARISH' : 'CHEK CHIQARISH'}
+                            </button>
+                        </div>
+                    ))}
+                </div>
+
+                {/* KITCHEN TICKET PRINT AREA */}
+                {ticketToPrint && (
+                    <div id="kitchen-ticket">
+                        <div className="ticket">
+                            <h3>KAFE EPOS</h3>
+                            <p>Oshxona Cheki</p>
+                            <hr />
+                            <div className="ticket-header">
+                                <h2>STOL {ticketToPrint.tableId}</h2>
+                                <p>{new Date(ticketToPrint.timestamp).toLocaleString()}</p>
+                            </div>
+                            <hr />
+                            <div className="ticket-body">
+                                {ticketToPrint.items.map((item, i) => (
+                                    <div key={i} className="ticket-item">
+                                        <span className="qty">{item.quantity} x</span>
+                                        <span className="name">{item.name}</span>
+                                    </div>
+                                ))}
+                            </div>
+                            <hr />
+                            <p className="ticket-footer">--- ---------------- ---</p>
+                        </div>
+                    </div>
+                )}
+
+                <style>{`
+                    #kitchen-ticket { display: none; }
+                    @media print {
+                        #kitchen-ticket, #kitchen-ticket * { visibility: visible; }
+                        #kitchen-ticket {
+                            position: absolute; left: 0; top: 0; width: 100%;
+                            display: block; background: white; color: black;
+                            font-family: 'Courier New', monospace;
+                            padding: 10px;
+                            text-align: center;
+                        }
+                        .ticket { width: 300px; margin: 0 auto; }
+                        .ticket h3 { margin: 5px 0; font-size: 1.5rem; }
+                        .ticket hr { border-top: 2px dashed #000; margin: 10px 0; }
+                        .ticket-header { text-align: left; margin-bottom: 10px; }
+                        .ticket-body { text-align: left; font-size: 1.2rem; font-weight: bold; }
+                        .ticket-item { margin-bottom: 5px; display: flex; gap: 10px; }
+                        .qty { min-width: 30px; }
+                    }
+                `}</style>
+            </div>
+        );
+    };
 
     // 1. CASHIER VIEW
     const CashierView = () => {
@@ -412,81 +601,165 @@ const AdminApp = () => {
             }
         };
 
+        const [isModalOpen, setIsModalOpen] = useState(false);
+
+        const openAddModal = () => {
+            setIsEditing(false);
+            setEditId(null);
+            setFormData({ name: '', price: '', category: defaultCat, image: '' });
+            setIsModalOpen(true);
+        };
+
+        const openEditModal = (item) => {
+            setIsEditing(true);
+            setEditId(item.id);
+            setFormData({ name: item.name, price: item.price, category: item.category, image: item.image || '' });
+            setIsModalOpen(true);
+        };
+
         return (
             <div>
-                <h2>Menyu Boshqaruvi</h2>
-
-                {/* Form */}
-                <div style={{ background: '#252525', padding: '1.5rem', borderRadius: 'var(--radius)', marginBottom: '2rem', border: '1px solid #333' }}>
-                    <h3 style={{ marginBottom: '1rem', color: isEditing ? 'var(--accent-color)' : '#fff' }}>{isEditing ? 'Tahrirlash' : 'Yangi Taom Qo\'shish'}</h3>
-                    <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', alignItems: 'end' }}>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.8rem', color: '#888', marginBottom: '0.3rem' }}>Nomi</label>
-                            <input
-                                required
-                                value={formData.name}
-                                onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid #444', background: '#333', color: '#fff' }}
-                            />
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.8rem', color: '#888', marginBottom: '0.3rem' }}>Narxi</label>
-                            <input
-                                required
-                                type="number"
-                                value={formData.price}
-                                onChange={e => setFormData({ ...formData, price: e.target.value })}
-                                style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid #444', background: '#333', color: '#fff' }}
-                            />
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.8rem', color: '#888', marginBottom: '0.3rem' }}>Kategoriya</label>
-                            <select
-                                value={formData.category}
-                                onChange={e => setFormData({ ...formData, category: e.target.value })}
-                                style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid #444', background: '#333', color: '#fff' }}
-                            >
-                                <option value="" disabled>Tanlang</option>
-                                {categories.map(cat => (
-                                    <option key={cat.id} value={cat.name}>{cat.name}</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.8rem', color: '#888', marginBottom: '0.3rem' }}>Rasm Yuklash</label>
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onChange={handleFileChange}
-                                style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '1px solid #444', background: '#333', color: '#fff', fontSize: '0.8rem' }}
-                            />
-                            {uploading && <span style={{ fontSize: '0.7rem', color: 'orange' }}>Yuklanmoqda...</span>}
-                        </div>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            <button type="submit" disabled={uploading} style={{ flex: 1, background: 'var(--success)', color: '#fff', padding: '0.8rem', borderRadius: '8px', fontWeight: 'bold', opacity: uploading ? 0.5 : 1 }}>
-                                {isEditing ? 'Saqlash' : 'Qo\'shish'}
-                            </button>
-                            {isEditing && (
-                                <button type="button" onClick={handleCancel} style={{ background: '#444', color: '#fff', padding: '0.8rem', borderRadius: '8px', fontWeight: 'bold' }}>
-                                    Bekor
-                                </button>
-                            )}
-                        </div>
-                    </form>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <div>
+                        <h2>Menyu Boshqaruvi</h2>
+                        <span style={{ fontSize: '0.9rem', color: '#888' }}>Bugun mavjud taomlarni o'chirib/yoqishingiz mumkin</span>
+                    </div>
+                    <button
+                        onClick={openAddModal}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: '0.5rem',
+                            background: 'var(--success)', color: '#fff', padding: '0.8rem 1.5rem',
+                            borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer',
+                            boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
+                        }}
+                    >
+                        <FaPlus /> Yangi Taom
+                    </button>
                 </div>
+
+                {/* MODAL */}
+                {isModalOpen && (
+                    <div style={{
+                        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                        background: 'rgba(0,0,0,0.7)', zIndex: 1000,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        backdropFilter: 'blur(5px)'
+                    }}>
+                        <div style={{
+                            background: '#202020', width: '500px', maxWidth: '90%',
+                            borderRadius: '16px', padding: '2rem',
+                            boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                            border: '1px solid #333',
+                            animation: 'fadeIn 0.2s ease-out'
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                <h3 style={{ fontSize: '1.5rem', color: '#fff' }}>
+                                    {isEditing ? 'Taomni Tahrirlash' : 'Yangi Taom Qo\'shish'}
+                                </h3>
+                                <button onClick={() => setIsModalOpen(false)} style={{ background: 'transparent', color: '#aaa', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}>
+                                    <FaTimes />
+                                </button>
+                            </div>
+
+                            <form onSubmit={(e) => { handleSubmit(e); setIsModalOpen(false); }}>
+                                <div style={{ display: 'grid', gap: '1rem' }}>
+
+                                    {/* Image Preview & Upload */}
+                                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+                                        <div style={{ position: 'relative', width: '120px', height: '120px', borderRadius: '50%', overflow: 'hidden', background: '#333', border: '2px dashed #555' }}>
+                                            {formData.image ? (
+                                                <img
+                                                    src={formData.image.startsWith('http') || formData.image.startsWith('/') ? formData.image : `http://localhost:3000${formData.image}`}
+                                                    alt="Preview"
+                                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                />
+                                            ) : (
+                                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666', flexDirection: 'column' }}>
+                                                    <FaImage size={30} />
+                                                    <span style={{ fontSize: '0.7rem', marginTop: '5px' }}>Rasm yo'q</span>
+                                                </div>
+                                            )}
+                                            <label style={{
+                                                position: 'absolute', bottom: 0, left: 0, right: 0,
+                                                background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: '0.8rem',
+                                                textAlign: 'center', padding: '4px', cursor: 'pointer',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px'
+                                            }}>
+                                                <FaCamera /> Yuklash
+                                                <input type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
+                                            </label>
+                                        </div>
+                                    </div>
+                                    {uploading && <div style={{ textAlign: 'center', color: 'orange', fontSize: '0.8rem' }}>Rasm yuklanmoqda...</div>}
+
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.85rem', color: '#aaa', marginBottom: '0.4rem' }}>Taom nomi</label>
+                                        <input
+                                            required
+                                            value={formData.name}
+                                            onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                            placeholder="Masalan: Palov, Choy"
+                                            style={{ width: '100%', padding: '0.9rem', borderRadius: '8px', border: '1px solid #444', background: '#2a2a2a', color: '#fff', fontSize: '1rem' }}
+                                        />
+                                    </div>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '0.85rem', color: '#aaa', marginBottom: '0.4rem' }}>Narxi (so'm)</label>
+                                            <input
+                                                required
+                                                type="number"
+                                                value={formData.price}
+                                                onChange={e => setFormData({ ...formData, price: e.target.value })}
+                                                placeholder="0"
+                                                style={{ width: '100%', padding: '0.9rem', borderRadius: '8px', border: '1px solid #444', background: '#2a2a2a', color: '#fff', fontSize: '1rem' }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '0.85rem', color: '#aaa', marginBottom: '0.4rem' }}>Kategoriya</label>
+                                            <select
+                                                value={formData.category}
+                                                onChange={e => setFormData({ ...formData, category: e.target.value })}
+                                                style={{ width: '100%', padding: '0.9rem', borderRadius: '8px', border: '1px solid #444', background: '#2a2a2a', color: '#fff', fontSize: '1rem' }}
+                                            >
+                                                {categories.map(cat => (
+                                                    <option key={cat.id} value={cat.name}>{cat.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        disabled={uploading}
+                                        style={{
+                                            marginTop: '1rem', width: '100%', padding: '1rem',
+                                            background: 'var(--accent-color)', color: '#000',
+                                            fontWeight: 'bold', borderRadius: '8px', border: 'none',
+                                            cursor: uploading ? 'not-allowed' : 'pointer', opacity: uploading ? 0.7 : 1,
+                                            fontSize: '1.1rem'
+                                        }}
+                                    >
+                                        {isEditing ? 'SAQLASH' : 'QO\'SHISH'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
 
                 {/* Grid */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1rem' }}>
                     {menu.map(item => (
-                        <div key={item.id} style={{ background: '#252525', padding: '1rem', borderRadius: '8px', border: '1px solid #333', position: 'relative' }}>
+                        <div key={item.id} style={{ background: item.available === false ? '#331111' : '#252525', padding: '1rem', borderRadius: '8px', border: item.available === false ? '1px solid #7f1d1d' : '1px solid #333', position: 'relative', opacity: item.available === false ? 0.7 : 1 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                                 <div>
-                                    <h4 style={{ fontSize: '1.1rem' }}>{item.name}</h4>
+                                    <h4 style={{ fontSize: '1.1rem', textDecoration: item.available === false ? 'line-through' : 'none' }}>{item.name}</h4>
                                     <span style={{ fontSize: '0.7rem', background: '#333', padding: '2px 6px', borderRadius: '4px', color: '#aaa' }}>{item.category}</span>
                                 </div>
                                 {/* Use full URL for uploaded images, handle relative for pre-defined */}
                                 {item.image && (
-                                    <div style={{ width: '50px', height: '50px', borderRadius: '4px', overflow: 'hidden' }}>
+                                    <div style={{ width: '50px', height: '50px', borderRadius: '4px', overflow: 'hidden', filter: item.available === false ? 'grayscale(100%)' : 'none' }}>
                                         <img
                                             src={item.image.startsWith('http') || item.image.startsWith('/') ? item.image : `http://localhost:3000${item.image}`} // Simple heuristic
                                             alt={item.name}
@@ -499,18 +772,31 @@ const AdminApp = () => {
 
                             <p style={{ color: 'var(--accent-color)', fontWeight: 'bold', margin: '0.5rem 0' }}>{Number(item.price).toLocaleString()} so'm</p>
 
-                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                            {/* AVAILABILITY TOGGLE */}
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', cursor: 'pointer', userSelect: 'none' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={item.available !== false}
+                                    onChange={() => updateMenuItem({ ...item, available: item.available === false })}
+                                    style={{ width: '18px', height: '18px', accentColor: 'var(--success)' }}
+                                />
+                                <span style={{ fontSize: '0.9rem', color: item.available === false ? '#ef4444' : 'var(--success)', fontWeight: 'bold' }}>
+                                    {item.available === false ? 'Tugagan (Stop)' : 'Mavjud'}
+                                </span>
+                            </label>
+
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
                                 <button
-                                    onClick={() => handleEdit(item)}
-                                    style={{ flex: 1, background: '#3b82f6', color: '#fff', padding: '0.5rem', borderRadius: '6px', fontSize: '0.9rem' }}
+                                    onClick={() => openEditModal(item)}
+                                    style={{ flex: 1, background: '#3b82f6', color: '#fff', padding: '0.5rem', borderRadius: '6px', fontSize: '0.9rem', cursor: 'pointer', border: 'none' }}
                                 >
-                                    Tahrirlash
+                                    <FaEdit /> Tahrirlash
                                 </button>
                                 <button
                                     onClick={() => deleteMenuItem(item.id)}
-                                    style={{ flex: 1, background: '#ef4444', color: '#fff', padding: '0.5rem', borderRadius: '6px', fontSize: '0.9rem' }}
+                                    style={{ flex: 1, background: '#ef4444', color: '#fff', padding: '0.5rem', borderRadius: '6px', fontSize: '0.9rem', cursor: 'pointer', border: 'none' }}
                                 >
-                                    O'chirish
+                                    <FaTrash /> O'chirish
                                 </button>
                             </div>
                         </div>
@@ -901,9 +1187,17 @@ const AdminApp = () => {
     // 6. ARCHIVES VIEW
     const ArchivesView = () => {
         const [expandedId, setExpandedId] = useState(null);
+        const [receiptOrder, setReceiptOrder] = useState(null);
 
         const toggleExpand = (id) => {
             setExpandedId(expandedId === id ? null : id);
+        };
+
+        const handleReprint = (order) => {
+            setReceiptOrder(order);
+            setTimeout(() => {
+                window.print();
+            }, 100);
         };
 
         return (
@@ -959,6 +1253,7 @@ const AdminApp = () => {
                                                         <th style={{ padding: '0.5rem' }}>Buyurtma</th>
                                                         <th style={{ padding: '0.5rem' }}>Summa</th>
                                                         <th style={{ padding: '0.5rem' }}>To'lov</th>
+                                                        <th style={{ padding: '0.5rem' }}>Amal</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -973,6 +1268,18 @@ const AdminApp = () => {
                                                             </td>
                                                             <td style={{ padding: '0.5rem' }}>{order.total.toLocaleString()}</td>
                                                             <td style={{ padding: '0.5rem', color: '#aaa', fontSize: '0.8rem' }}>{order.paymentMethod}</td>
+                                                            <td style={{ padding: '0.5rem' }}>
+                                                                <button
+                                                                    onClick={() => handleReprint(order)}
+                                                                    style={{
+                                                                        background: 'transparent', border: 'none',
+                                                                        color: 'var(--accent-color)', cursor: 'pointer'
+                                                                    }}
+                                                                    title="Chekni qayta chiqarish"
+                                                                >
+                                                                    <FaPrint />
+                                                                </button>
+                                                            </td>
                                                         </tr>
                                                     ))}
                                                 </tbody>
@@ -984,7 +1291,62 @@ const AdminApp = () => {
                         </div>
                     )}
                 </div>
-            </div>
+
+
+                {/* HIDDEN RECEIPT FOR REPRINT */}
+                {
+                    receiptOrder && (
+                        <div id="archive-receipt">
+                            <div className="receipt-content">
+                                <h3>KAFE EPOS</h3>
+                                <p>Chek nusxasi (Arxiv)</p>
+                                <hr />
+                                <div className="receipt-header">
+                                    <h2>Stol {receiptOrder.tableId}</h2>
+                                    <p>{new Date(receiptOrder.timestamp).toLocaleString()}</p>
+                                </div>
+                                <hr />
+                                <div className="receipt-items">
+                                    {receiptOrder.items.map((item, i) => (
+                                        <div key={i} className="receipt-item">
+                                            <span>{item.quantity} x {item.name}</span>
+                                            <span>{(item.price * item.quantity).toLocaleString()}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                                <hr />
+                                <div className="receipt-total">
+                                    <span>JAMI:</span>
+                                    <span>{receiptOrder.total.toLocaleString()} so'm</span>
+                                </div>
+                                <hr />
+                                <div style={{ textAlign: 'left', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                                    To'lov: {receiptOrder.paymentMethod}
+                                </div>
+                                <p style={{ textAlign: 'center', marginTop: '10px' }}>Qayta chop etildi</p>
+                            </div>
+                        </div>
+                    )
+                }
+
+                <style>{`
+                    #archive-receipt { display: none; }
+                    @media print {
+                        body * { visibility: hidden; }
+                        #archive-receipt, #archive-receipt * { visibility: visible; }
+                        #archive-receipt {
+                            position: absolute; left: 0; top: 0; width: 100%;
+                            display: block; background: white; color: black;
+                            font-family: 'Courier New', monospace;
+                            padding: 10px;
+                        }
+                        .receipt-content { width: 300px; margin: 0 auto; text-align: center; }
+                        .receipt-item { display: flex; justifyContent: space-between; margin-bottom: 5px; }
+                        .receipt-total { display: flex; justifyContent: space-between; font-weight: bold; font-size: 1.2rem; }
+                        hr { border-top: 1px dashed #000; }
+                    }
+                `}</style>
+            </div >
         );
     };
 
@@ -1050,6 +1412,18 @@ const AdminApp = () => {
                             <FaHistory /> Arxiv (Z-Reports)
                         </button>
                     )}
+                    {/* KITCHEN BUTTON (Cashier Only) */}
+                    {userRole === 'cashier' && (
+                        <button
+                            onClick={() => setActiveTab('kitchen')}
+                            style={{
+                                padding: '1rem', textAlign: 'left', borderRadius: '8px', display: 'flex', gap: '10px', alignItems: 'center',
+                                background: activeTab === 'kitchen' ? '#333' : 'transparent', color: '#fff'
+                            }}
+                        >
+                            <FaPrint /> Oshxona
+                        </button>
+                    )}
                     <button
                         onClick={() => setActiveTab('history')}
                         style={{
@@ -1072,6 +1446,7 @@ const AdminApp = () => {
             {/* Main Content */}
             <div style={{ flex: 1, padding: '2rem', overflowY: 'auto' }}>
                 {activeTab === 'cashier' && <CashierView />}
+                {activeTab === 'kitchen' && <KitchenView />}
                 {activeTab === 'menu' && <MenuView />}
                 {activeTab === 'categories' && <CategoriesView />}
                 {activeTab === 'stats' && <StatsView />}

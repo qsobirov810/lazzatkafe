@@ -99,7 +99,8 @@ const WaiterApp = () => {
     const categories = useMemo(() => ["Taomlar", "Kaboblar", "Ichimliklar", "Boshqa"], []);
 
     // Filtered Menu
-    const filteredMenu = menu.filter(m => m.category === activeCategory);
+    // Filtered Menu (Category + Availability)
+    const filteredMenu = menu.filter(m => m.category === activeCategory && m.available !== false);
 
     const addToCart = (item) => {
         setCart(prev => {

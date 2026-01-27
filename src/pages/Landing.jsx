@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaUserTie, FaUtensils, FaCashRegister } from 'react-icons/fa';
+import { FaUserTie, FaCashRegister } from 'react-icons/fa';
 
 const Landing = () => {
     return (
@@ -14,12 +14,6 @@ const Landing = () => {
                     <FaUserTie size={40} color="var(--accent-color)" />
                     <h3>Ofitsiant</h3>
                     <p style={{ fontSize: '0.9rem', color: '#666' }}>Buyurtma olish</p>
-                </Link>
-
-                <Link to="/kitchen" style={cardStyle}>
-                    <FaUtensils size={40} color="var(--success)" />
-                    <h3>Oshxona</h3>
-                    <p style={{ fontSize: '0.9rem', color: '#666' }}>Chek chiqarish</p>
                 </Link>
 
                 <Link to="/admin" style={cardStyle}>

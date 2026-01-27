@@ -102,11 +102,19 @@ export const DataProvider = ({ children }) => {
         socket.emit('clear_history');
     };
 
+    const clearKitchenHistory = (orderIds) => {
+        socket.emit('clear_kitchen_history', orderIds);
+    };
+
+    const cancelOrder = (orderId) => {
+        socket.emit('cancel_order', orderId);
+    };
+
     return (
         <DataContext.Provider value={{
             tables, menu, categories, activeOrders, completedOrders, archives, isConnected,
             sendOrder, updateOrder, checkoutTable, markOrderPrinted, addMenuItem, updateMenuItem, deleteMenuItem,
-            addCategory, deleteCategory, clearHistory, closeDay
+            addCategory, deleteCategory, clearHistory, closeDay, clearKitchenHistory, cancelOrder
         }}>
             {children}
         </DataContext.Provider>

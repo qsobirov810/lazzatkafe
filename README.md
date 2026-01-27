@@ -7,8 +7,20 @@ Boshqa kompyuterga ko'chirganda yoki qayta o'rnatganda ushbu ko'rsatmalardan foy
 Kompyuteringizda **Node.js** o'rnatilgan bo'lishi shart.
 - Tekshirish uchun terminalda: `node -v`
 
-## 2. O'rnatish (Birinchi marta)
-Agar loyihani yangi kompyuterga ko'chirsangiz, avval kerakli kutubxonalarni o'rnatish kerak:
+## 2. GitHubdan Yuklab Olish (Loyihani ko'chirish)
+Yangi kompyuterda loyihani ishga tushirish uchun avval uni ko'chirib olish kerak:
+1. Terminalni oching (xohlagan papkada).
+2. Buyruqni yozing:
+   ```bash
+   git clone https://github.com/qsobirov810/kafe-epos.git
+   ```
+3. Papka ichiga kiring:
+   ```bash
+   cd kafe-epos
+   ```
+
+## 3. O'rnatish (Birinchi marta)
+Loyihani ko'chirib olgach, kerakli kutubxonalarni o'rnatish kerak:
 
 1. Asosiy papkada terminal oching va yozing:
    ```bash

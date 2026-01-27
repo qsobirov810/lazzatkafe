@@ -1,0 +1,1134 @@
+{
+  "tables": [
+    {
+      "id": 1,
+      "name": "Stol 1",
+      "status": "free",
+      "total": 0,
+      "orders": []
+    },
+    {
+      "id": 2,
+      "name": "Stol 2",
+      "status": "free",
+      "total": 0,
+      "orders": []
+    },
+    {
+      "id": 3,
+      "name": "Stol 3",
+      "status": "free",
+      "total": 0,
+      "orders": []
+    },
+    {
+      "id": 4,
+      "name": "Stol 4",
+      "status": "free",
+      "total": 0,
+      "orders": []
+    },
+    {
+      "id": 5,
+      "name": "Stol 5",
+      "status": "free",
+      "total": 0,
+      "orders": []
+    },
+    {
+      "id": 6,
+      "name": "Stol 6",
+      "status": "free",
+      "total": 0,
+      "orders": []
+    }
+  ],
+  "menu": [
+    {
+      "id": 1,
+      "name": "Osh",
+      "price": 35000,
+      "category": "Taomlar",
+      "image": "/images/osh.png"
+    },
+    {
+      "id": 2,
+      "name": "Manti",
+      "price": 8000,
+      "category": "Taomlar",
+      "image": "/images/manti.png"
+    },
+    {
+      "id": 3,
+      "name": "Kebab",
+      "price": 18000,
+      "category": "Kaboblar",
+      "image": "/images/kebab.png"
+    },
+    {
+      "id": 4,
+      "name": "Cola 1.5L",
+      "price": 15000,
+      "category": "Ichimliklar",
+      "image": "/images/cola.png"
+    },
+    {
+      "id": 5,
+      "name": "Choy",
+      "price": 5000,
+      "category": "Ichimliklar",
+      "image": "/images/tea.png"
+    },
+    {
+      "id": 6,
+      "name": "Non",
+      "price": 4000,
+      "category": "Boshqa",
+      "image": "/images/non.png"
+    },
+    {
+      "name": "lagmon 0.7 porsi",
+      "price": 25000,
+      "category": "Taomlar",
+      "image": "http://localhost:3000/images/upload-1769406384859-456533128.jpg",
+      "id": 1769406414600
+    }
+  ],
+  "categories": [
+    {
+      "id": 1,
+      "name": "Taomlar"
+    },
+    {
+      "id": 2,
+      "name": "Kaboblar"
+    },
+    {
+      "id": 3,
+      "name": "Ichimliklar"
+    },
+    {
+      "id": 4,
+      "name": "Boshqa"
+    }
+  ],
+  "activeOrders": [
+    {
+      "id": 1769423963878,
+      "tableId": 2,
+      "items": [
+        {
+          "id": 1,
+          "name": "Osh",
+          "price": 35000,
+          "category": "Taomlar",
+          "image": "/images/osh.png",
+          "quantity": 2
+        },
+        {
+          "id": 2,
+          "name": "Manti",
+          "price": 8000,
+          "category": "Taomlar",
+          "image": "/images/manti.png",
+          "quantity": 2
+        },
+        {
+          "name": "lagmon 0.7 porsi",
+          "price": 25000,
+          "category": "Taomlar",
+          "image": "http://localhost:3000/images/upload-1769406384859-456533128.jpg",
+          "id": 1769406414600,
+          "quantity": 3
+        },
+        {
+          "id": 3,
+          "name": "Kebab",
+          "price": 18000,
+          "category": "Kaboblar",
+          "image": "/images/kebab.png",
+          "quantity": 2
+        },
+        {
+          "id": 4,
+          "name": "Cola 1.5L",
+          "price": 15000,
+          "category": "Ichimliklar",
+          "image": "/images/cola.png",
+          "quantity": 1
+        },
+        {
+          "id": 5,
+          "name": "Choy",
+          "price": 5000,
+          "category": "Ichimliklar",
+          "image": "/images/tea.png",
+          "quantity": 1
+        },
+        {
+          "id": 6,
+          "name": "Non",
+          "price": 4000,
+          "category": "Boshqa",
+          "image": "/images/non.png",
+          "quantity": 3
+        }
+      ],
+      "status": "pending",
+      "printed": false,
+      "timestamp": "2026-01-26T10:39:23.878Z",
+      "total": 229000
+    },
+    {
+      "id": 1769423950874,
+      "tableId": 1,
+      "items": [
+        {
+          "id": 2,
+          "name": "Manti",
+          "price": 8000,
+          "category": "Taomlar",
+          "image": "/images/manti.png",
+          "quantity": 3
+        }
+      ],
+      "status": "pending",
+      "printed": false,
+      "timestamp": "2026-01-26T10:39:10.874Z",
+      "total": 24000
+    },
+    {
+      "id": 1769422932494,
+      "tableId": 5,
+      "items": [
+        {
+          "id": 1,
+          "name": "Osh",
+          "price": 35000,
+          "category": "Taomlar",
+          "image": "/images/osh.png",
+          "quantity": 2
+        }
+      ],
+      "status": "pending",
+      "printed": false,
+      "timestamp": "2026-01-26T10:22:12.494Z",
+      "total": 70000
+    },
+    {
+      "id": 1769422929149,
+      "tableId": 4,
+      "items": [
+        {
+          "id": 2,
+          "name": "Manti",
+          "price": 8000,
+          "category": "Taomlar",
+          "image": "/images/manti.png",
+          "quantity": 2
+        }
+      ],
+      "status": "pending",
+      "printed": false,
+      "timestamp": "2026-01-26T10:22:09.149Z",
+      "total": 16000
+    },
+    {
+      "id": 1769422924535,
+      "tableId": 1,
+      "items": [
+        {
+          "name": "lagmon 0.7 porsi",
+          "price": 25000,
+          "category": "Taomlar",
+          "image": "http://localhost:3000/images/upload-1769406384859-456533128.jpg",
+          "id": 1769406414600,
+          "quantity": 3
+        },
+        {
+          "id": 2,
+          "name": "Manti",
+          "price": 8000,
+          "category": "Taomlar",
+          "image": "/images/manti.png",
+          "quantity": 2
+        }
+      ],
+      "status": "pending",
+      "printed": false,
+      "timestamp": "2026-01-26T10:22:04.535Z",
+      "total": 91000
+    },
+    {
+      "id": 1769422683953,
+      "tableId": 5,
+      "items": [
+        {
+          "id": 4,
+          "name": "Cola 1.5L",
+          "price": 15000,
+          "category": "Ichimliklar",
+          "image": "/images/cola.png",
+          "quantity": 2
+        },
+        {
+          "id": 3,
+          "name": "Kebab",
+          "price": 18000,
+          "category": "Kaboblar",
+          "image": "/images/kebab.png",
+          "quantity": 4
+        }
+      ],
+      "status": "pending",
+      "printed": false,
+      "timestamp": "2026-01-26T10:18:03.953Z",
+      "total": 102000
+    },
+    {
+      "id": 1769422666013,
+      "tableId": 2,
+      "items": [
+        {
+          "id": 2,
+          "name": "Manti",
+          "price": 8000,
+          "category": "Taomlar",
+          "image": "/images/manti.png",
+          "quantity": 2
+        }
+      ],
+      "status": "pending",
+      "printed": false,
+      "timestamp": "2026-01-26T10:17:46.013Z",
+      "total": 16000
+    },
+    {
+      "id": 1769422662110,
+      "tableId": 1,
+      "items": [
+        {
+          "id": 1,
+          "name": "Osh",
+          "price": 35000,
+          "category": "Taomlar",
+          "image": "/images/osh.png",
+          "quantity": 1
+        },
+        {
+          "id": 2,
+          "name": "Manti",
+          "price": 8000,
+          "category": "Taomlar",
+          "image": "/images/manti.png",
+          "quantity": 1
+        }
+      ],
+      "status": "pending",
+      "printed": false,
+      "timestamp": "2026-01-26T10:17:42.110Z",
+      "total": 43000
+    },
+    {
+      "id": 1769422311570,
+      "tableId": 2,
+      "items": [
+        {
+          "id": 2,
+          "name": "Manti",
+          "price": 8000,
+          "category": "Taomlar",
+          "image": "/images/manti.png",
+          "quantity": 2
+        },
+        {
+          "id": 1,
+          "name": "Osh",
+          "price": 35000,
+          "category": "Taomlar",
+          "image": "/images/osh.png",
+          "quantity": 2
+        }
+      ],
+      "status": "pending",
+      "printed": false,
+      "timestamp": "2026-01-26T10:11:51.570Z",
+      "total": 86000
+    },
+    {
+      "id": 1769422307298,
+      "tableId": 4,
+      "items": [
+        {
+          "id": 2,
+          "name": "Manti",
+          "price": 8000,
+          "category": "Taomlar",
+          "image": "/images/manti.png",
+          "quantity": 2
+        },
+        {
+          "id": 1,
+          "name": "Osh",
+          "price": 35000,
+          "category": "Taomlar",
+          "image": "/images/osh.png",
+          "quantity": 2
+        }
+      ],
+      "status": "pending",
+      "printed": false,
+      "timestamp": "2026-01-26T10:11:47.298Z",
+      "total": 86000
+    },
+    {
+      "id": 1769422300188,
+      "tableId": 1,
+      "items": [
+        {
+          "name": "lagmon 0.7 porsi",
+          "price": 25000,
+          "category": "Taomlar",
+          "image": "http://localhost:3000/images/upload-1769406384859-456533128.jpg",
+          "id": 1769406414600,
+          "quantity": 2
+        },
+        {
+          "id": 2,
+          "name": "Manti",
+          "price": 8000,
+          "category": "Taomlar",
+          "image": "/images/manti.png",
+          "quantity": 3
+        }
+      ],
+      "status": "pending",
+      "printed": false,
+      "timestamp": "2026-01-26T10:11:40.188Z",
+      "total": 74000
+    },
+    {
+      "id": 1769421930025,
+      "tableId": 4,
+      "items": [
+        {
+          "id": 4,
+          "name": "Cola 1.5L",
+          "price": 15000,
+          "category": "Ichimliklar",
+          "image": "/images/cola.png",
+          "quantity": 2
+        },
+        {
+          "id": 1,
+          "name": "Osh",
+          "price": 35000,
+          "category": "Taomlar",
+          "image": "/images/osh.png",
+          "quantity": 4
+        },
+        {
+          "id": 6,
+          "name": "Non",
+          "price": 4000,
+          "category": "Boshqa",
+          "image": "/images/non.png",
+          "quantity": 3
+        }
+      ],
+      "status": "pending",
+      "printed": true,
+      "timestamp": "2026-01-26T10:05:30.025Z",
+      "total": 182000
+    },
+    {
+      "id": 1769421920409,
+      "tableId": 3,
+      "items": [
+        {
+          "id": 3,
+          "name": "Kebab",
+          "price": 18000,
+          "category": "Kaboblar",
+          "image": "/images/kebab.png",
+          "quantity": 7
+        }
+      ],
+      "status": "pending",
+      "printed": true,
+      "timestamp": "2026-01-26T10:05:20.409Z",
+      "total": 126000
+    },
+    {
+      "id": 1769421911833,
+      "tableId": 2,
+      "items": [
+        {
+          "id": 5,
+          "name": "Choy",
+          "price": 5000,
+          "category": "Ichimliklar",
+          "image": "/images/tea.png",
+          "quantity": 1
+        },
+        {
+          "id": 3,
+          "name": "Kebab",
+          "price": 18000,
+          "category": "Kaboblar",
+          "image": "/images/kebab.png",
+          "quantity": 5
+        }
+      ],
+      "status": "pending",
+      "printed": true,
+      "timestamp": "2026-01-26T10:05:11.833Z",
+      "total": 95000
+    },
+    {
+      "id": 1769421903337,
+      "tableId": 1,
+      "items": [
+        {
+          "name": "lagmon 0.7 porsi",
+          "price": 25000,
+          "category": "Taomlar",
+          "image": "http://localhost:3000/images/upload-1769406384859-456533128.jpg",
+          "id": 1769406414600,
+          "quantity": 2
+        },
+        {
+          "id": 2,
+          "name": "Manti",
+          "price": 8000,
+          "category": "Taomlar",
+          "image": "/images/manti.png",
+          "quantity": 2
+        },
+        {
+          "id": 1,
+          "name": "Osh",
+          "price": 35000,
+          "category": "Taomlar",
+          "image": "/images/osh.png",
+          "quantity": 1
+        },
+        {
+          "id": 4,
+          "name": "Cola 1.5L",
+          "price": 15000,
+          "category": "Ichimliklar",
+          "image": "/images/cola.png",
+          "quantity": 1
+        },
+        {
+          "id": 5,
+          "name": "Choy",
+          "price": 5000,
+          "category": "Ichimliklar",
+          "image": "/images/tea.png",
+          "quantity": 1
+        }
+      ],
+      "status": "pending",
+      "printed": true,
+      "timestamp": "2026-01-26T10:05:03.337Z",
+      "total": 121000
+    },
+    {
+      "id": 1769420733799,
+      "tableId": 6,
+      "items": [
+        {
+          "id": 4,
+          "name": "Cola 1.5L",
+          "price": 15000,
+          "category": "Ichimliklar",
+          "image": "/images/cola.png",
+          "quantity": 1
+        },
+        {
+          "id": 6,
+          "name": "Non",
+          "price": 4000,
+          "category": "Boshqa",
+          "image": "/images/non.png",
+          "quantity": 2
+        },
+        {
+          "id": 3,
+          "name": "Kebab",
+          "price": 18000,
+          "category": "Kaboblar",
+          "image": "/images/kebab.png",
+          "quantity": 5
+        }
+      ],
+      "status": "pending",
+      "printed": true,
+      "timestamp": "2026-01-26T09:45:33.799Z",
+      "total": 113000
+    },
+    {
+      "id": 1769420724179,
+      "tableId": 3,
+      "items": [
+        {
+          "id": 2,
+          "name": "Manti",
+          "price": 8000,
+          "category": "Taomlar",
+          "image": "/images/manti.png",
+          "quantity": 1
+        },
+        {
+          "name": "lagmon 0.7 porsi",
+          "price": 25000,
+          "category": "Taomlar",
+          "image": "http://localhost:3000/images/upload-1769406384859-456533128.jpg",
+          "id": 1769406414600,
+          "quantity": 1
+        },
+        {
+          "id": 6,
+          "name": "Non",
+          "price": 4000,
+          "category": "Boshqa",
+          "image": "/images/non.png",
+          "quantity": 1
+        },
+        {
+          "id": 4,
+          "name": "Cola 1.5L",
+          "price": 15000,
+          "category": "Ichimliklar",
+          "image": "/images/cola.png",
+          "quantity": 1
+        }
+      ],
+      "status": "pending",
+      "printed": true,
+      "timestamp": "2026-01-26T09:45:24.179Z",
+      "total": 52000
+    },
+    {
+      "id": 1769420716319,
+      "tableId": 1,
+      "items": [
+        {
+          "id": 2,
+          "name": "Manti",
+          "price": 8000,
+          "category": "Taomlar",
+          "image": "/images/manti.png",
+          "quantity": 1
+        },
+        {
+          "id": 1,
+          "name": "Osh",
+          "price": 35000,
+          "category": "Taomlar",
+          "image": "/images/osh.png",
+          "quantity": 1
+        }
+      ],
+      "status": "pending",
+      "printed": true,
+      "timestamp": "2026-01-26T09:45:16.319Z",
+      "total": 43000
+    },
+    {
+      "id": 1769420510240,
+      "tableId": 1,
+      "items": [
+        {
+          "id": 1,
+          "name": "Osh",
+          "price": 35000,
+          "category": "Taomlar",
+          "image": "/images/osh.png",
+          "quantity": 1
+        },
+        {
+          "id": 2,
+          "name": "Manti",
+          "price": 8000,
+          "category": "Taomlar",
+          "image": "/images/manti.png",
+          "quantity": 1
+        }
+      ],
+      "status": "pending",
+      "printed": true,
+      "timestamp": "2026-01-26T09:41:50.240Z",
+      "total": 43000
+    },
+    {
+      "id": 1769415801574,
+      "tableId": 1,
+      "items": [
+        {
+          "id": 1,
+          "name": "Osh",
+          "price": 35000,
+          "category": "Taomlar",
+          "image": "/images/osh.png",
+          "quantity": 1
+        }
+      ],
+      "status": "pending",
+      "printed": true,
+      "timestamp": "2026-01-26T08:23:21.574Z",
+      "total": 35000
+    },
+    {
+      "id": 1769411266673,
+      "tableId": 1,
+      "items": [
+        {
+          "id": 1,
+          "name": "Osh",
+          "price": 35000,
+          "category": "Taomlar",
+          "image": "/images/osh.png",
+          "quantity": 1
+        },
+        {
+          "id": 2,
+          "name": "Manti",
+          "price": 8000,
+          "category": "Taomlar",
+          "image": "/images/manti.png",
+          "quantity": 1
+        }
+      ],
+      "status": "pending",
+      "printed": true,
+      "timestamp": "2026-01-26T07:07:46.673Z",
+      "total": 43000
+    },
+    {
+      "id": 1769411052917,
+      "tableId": 1,
+      "items": [
+        {
+          "id": 1,
+          "name": "Osh",
+          "price": 35000,
+          "category": "Taomlar",
+          "image": "/images/osh.png",
+          "quantity": 1
+        },
+        {
+          "id": 2,
+          "name": "Manti",
+          "price": 8000,
+          "category": "Taomlar",
+          "image": "/images/manti.png",
+          "quantity": 1
+        },
+        {
+          "name": "lagmon 0.7 porsi",
+          "price": 25000,
+          "category": "Taomlar",
+          "image": "http://localhost:3000/images/upload-1769406384859-456533128.jpg",
+          "id": 1769406414600,
+          "quantity": 1
+        },
+        {
+          "id": 5,
+          "name": "Choy",
+          "price": 5000,
+          "category": "Ichimliklar",
+          "image": "/images/tea.png",
+          "quantity": 1
+        }
+      ],
+      "status": "pending",
+      "printed": true,
+      "timestamp": "2026-01-26T07:04:12.917Z",
+      "total": 73000
+    },
+    {
+      "id": 1769410908760,
+      "tableId": 1,
+      "items": [
+        {
+          "id": 6,
+          "name": "Non",
+          "price": 4000,
+          "category": "Boshqa",
+          "image": "/images/non.png",
+          "quantity": 3
+        }
+      ],
+      "status": "pending",
+      "printed": true,
+      "timestamp": "2026-01-26T07:01:48.760Z",
+      "total": 12000
+    },
+    {
+      "id": 1769410898436,
+      "tableId": 1,
+      "items": [
+        {
+          "id": 1,
+          "name": "Osh",
+          "price": 35000,
+          "category": "Taomlar",
+          "image": "/images/osh.png",
+          "quantity": 1
+        },
+        {
+          "id": 2,
+          "name": "Manti",
+          "price": 8000,
+          "category": "Taomlar",
+          "image": "/images/manti.png",
+          "quantity": 1
+        },
+        {
+          "name": "lagmon 0.7 porsi",
+          "price": 25000,
+          "category": "Taomlar",
+          "image": "http://localhost:3000/images/upload-1769406384859-456533128.jpg",
+          "id": 1769406414600,
+          "quantity": 1
+        },
+        {
+          "id": 3,
+          "name": "Kebab",
+          "price": 18000,
+          "category": "Kaboblar",
+          "image": "/images/kebab.png",
+          "quantity": 1
+        }
+      ],
+      "status": "pending",
+      "printed": true,
+      "timestamp": "2026-01-26T07:01:38.436Z",
+      "total": 86000
+    },
+    {
+      "id": 1769408683466,
+      "tableId": 3,
+      "items": [
+        {
+          "id": 2,
+          "name": "Manti",
+          "price": 8000,
+          "category": "Taomlar",
+          "image": "/images/manti.png",
+          "quantity": 1
+        }
+      ],
+      "status": "pending",
+      "printed": true,
+      "timestamp": "2026-01-26T06:49:30.427Z",
+      "total": 8000
+    },
+    {
+      "id": 1769408247801,
+      "tableId": 2,
+      "items": [
+        {
+          "id": 6,
+          "name": "Non",
+          "price": 4000,
+          "category": "Boshqa",
+          "image": "/images/non.png",
+          "quantity": 1
+        },
+        {
+          "id": 3,
+          "name": "Kebab",
+          "price": 18000,
+          "category": "Kaboblar",
+          "image": "/images/kebab.png",
+          "quantity": 1
+        }
+      ],
+      "status": "pending",
+      "printed": true,
+      "timestamp": "2026-01-26T06:17:27.801Z",
+      "total": 22000
+    },
+    {
+      "id": 1769407207435,
+      "tableId": 1,
+      "items": [
+        {
+          "id": 6,
+          "name": "Non",
+          "price": 4000,
+          "category": "Boshqa",
+          "image": "/images/non.png",
+          "quantity": 1
+        }
+      ],
+      "status": "pending",
+      "printed": true,
+      "timestamp": "2026-01-26T06:00:07.435Z",
+      "total": 4000
+    },
+    {
+      "id": 1769405740155,
+      "tableId": 1,
+      "items": [
+        {
+          "id": 2,
+          "name": "Manti",
+          "price": 8000,
+          "category": "Taomlar",
+          "image": "/images/manti.png",
+          "quantity": 1
+        },
+        {
+          "id": 3,
+          "name": "Kebab",
+          "price": 18000,
+          "category": "Kaboblar",
+          "image": "/images/kebab.png",
+          "quantity": 1
+        },
+        {
+          "id": 4,
+          "name": "Cola 1.5L",
+          "price": 15000,
+          "category": "Ichimliklar",
+          "image": "/images/cola.png",
+          "quantity": 1
+        },
+        {
+          "id": 6,
+          "name": "Non",
+          "price": 4000,
+          "category": "Boshqa",
+          "image": "/images/non.png",
+          "quantity": 2
+        }
+      ],
+      "status": "pending",
+      "printed": true,
+      "timestamp": "2026-01-26T06:24:36.535Z",
+      "total": 49000
+    },
+    {
+      "id": 1769253258533,
+      "tableId": 1,
+      "items": [
+        {
+          "id": 1,
+          "name": "Osh",
+          "price": 35000,
+          "category": "Taomlar",
+          "image": "/images/osh.png",
+          "quantity": 1
+        },
+        {
+          "id": 2,
+          "name": "Manti",
+          "price": 8000,
+          "category": "Taomlar",
+          "image": "/images/manti.png",
+          "quantity": 1
+        },
+        {
+          "id": 4,
+          "name": "Cola 1.5L",
+          "price": 15000,
+          "category": "Ichimliklar",
+          "image": "/images/cola.png",
+          "quantity": 1
+        }
+      ],
+      "status": "pending",
+      "timestamp": "2026-01-24T11:14:18.533Z",
+      "total": 58000,
+      "printed": true
+    }
+  ],
+  "history": [],
+  "archives": [
+    {
+      "id": "1769422970984",
+      "date": "2026-01-26T10:22:50.984Z",
+      "summary": {
+        "total": 177000,
+        "cash": 91000,
+        "card": 70000,
+        "click": 16000
+      },
+      "orders": [
+        {
+          "id": 1769422924535,
+          "tableId": 1,
+          "items": [
+            {
+              "name": "lagmon 0.7 porsi",
+              "price": 25000,
+              "category": "Taomlar",
+              "image": "http://localhost:3000/images/upload-1769406384859-456533128.jpg",
+              "id": 1769406414600,
+              "quantity": 3
+            },
+            {
+              "id": 2,
+              "name": "Manti",
+              "price": 8000,
+              "category": "Taomlar",
+              "image": "/images/manti.png",
+              "quantity": 2
+            }
+          ],
+          "status": "pending",
+          "printed": false,
+          "timestamp": "2026-01-26T10:22:04.535Z",
+          "total": 91000,
+          "closedAt": "2026-01-26T10:22:26.719Z",
+          "paymentMethod": "Naqd"
+        },
+        {
+          "id": 1769422929149,
+          "tableId": 4,
+          "items": [
+            {
+              "id": 2,
+              "name": "Manti",
+              "price": 8000,
+              "category": "Taomlar",
+              "image": "/images/manti.png",
+              "quantity": 2
+            }
+          ],
+          "status": "pending",
+          "printed": false,
+          "timestamp": "2026-01-26T10:22:09.149Z",
+          "total": 16000,
+          "closedAt": "2026-01-26T10:22:31.480Z",
+          "paymentMethod": "Click"
+        },
+        {
+          "id": 1769422932494,
+          "tableId": 5,
+          "items": [
+            {
+              "id": 1,
+              "name": "Osh",
+              "price": 35000,
+              "category": "Taomlar",
+              "image": "/images/osh.png",
+              "quantity": 2
+            }
+          ],
+          "status": "pending",
+          "printed": false,
+          "timestamp": "2026-01-26T10:22:12.494Z",
+          "total": 70000,
+          "closedAt": "2026-01-26T10:22:36.729Z",
+          "paymentMethod": "Karta"
+        }
+      ]
+    },
+    {
+      "id": "1769424006426",
+      "date": "2026-01-26T10:40:06.426Z",
+      "summary": {
+        "total": 253000,
+        "cash": 24000,
+        "card": 229000,
+        "click": 0
+      },
+      "orders": [
+        {
+          "id": 1769423950874,
+          "tableId": 1,
+          "items": [
+            {
+              "id": 2,
+              "name": "Manti",
+              "price": 8000,
+              "category": "Taomlar",
+              "image": "/images/manti.png",
+              "quantity": 3
+            }
+          ],
+          "status": "pending",
+          "printed": false,
+          "timestamp": "2026-01-26T10:39:10.874Z",
+          "total": 24000,
+          "closedAt": "2026-01-26T10:39:37.660Z",
+          "paymentMethod": "Naqd"
+        },
+        {
+          "id": 1769423963878,
+          "tableId": 2,
+          "items": [
+            {
+              "id": 1,
+              "name": "Osh",
+              "price": 35000,
+              "category": "Taomlar",
+              "image": "/images/osh.png",
+              "quantity": 2
+            },
+            {
+              "id": 2,
+              "name": "Manti",
+              "price": 8000,
+              "category": "Taomlar",
+              "image": "/images/manti.png",
+              "quantity": 2
+            },
+            {
+              "name": "lagmon 0.7 porsi",
+              "price": 25000,
+              "category": "Taomlar",
+              "image": "http://localhost:3000/images/upload-1769406384859-456533128.jpg",
+              "id": 1769406414600,
+              "quantity": 3
+            },
+            {
+              "id": 3,
+              "name": "Kebab",
+              "price": 18000,
+              "category": "Kaboblar",
+              "image": "/images/kebab.png",
+              "quantity": 2
+            },
+            {
+              "id": 4,
+              "name": "Cola 1.5L",
+              "price": 15000,
+              "category": "Ichimliklar",
+              "image": "/images/cola.png",
+              "quantity": 1
+            },
+            {
+              "id": 5,
+              "name": "Choy",
+              "price": 5000,
+              "category": "Ichimliklar",
+              "image": "/images/tea.png",
+              "quantity": 1
+            },
+            {
+              "id": 6,
+              "name": "Non",
+              "price": 4000,
+              "category": "Boshqa",
+              "image": "/images/non.png",
+              "quantity": 3
+            }
+          ],
+          "status": "pending",
+          "printed": false,
+          "timestamp": "2026-01-26T10:39:23.878Z",
+          "total": 229000,
+          "closedAt": "2026-01-26T10:39:42.232Z",
+          "paymentMethod": "Karta"
+        }
+      ]
+    }
+  ]
+}

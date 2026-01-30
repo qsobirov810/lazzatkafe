@@ -33,22 +33,16 @@ Loyihani ko'chirib olgach, kerakli kutubxonalarni o'rnatish kerak:
    ```
 
 ## 3. Dasturni Ishga Tushirish
-Dastur ishlashi uchun **2 ta terminal** ochish kerak (biri Server, biri Ekran uchun).
+Endi dasturni ishga tushirish juda oson. **Faqat bitta terminal** yetarli.
 
-### 1-Terminal (Backend Server):
-Ma'lumotlar bazasi va real vaqt rejimini ta'minlaydi.
-```bash
-cd server
-node index.js
-```
-*Kutib turing, "Server running on http://localhost:3000" yozuvi chiqishi kerak.*
+1. Asosiy papkada terminal oching.
+2. Quyidagi buyruqni yozing:
+   ```bash
+   npm start
+   ```
 
-### 2-Terminal (Frontend Client):
-Kassa va Ofitsiant ekranlarini ochadi.
-```bash
-npm run dev -- --host
-```
-*Bu buyruq dasturni tarmoqqa (Wi-Fi) uzatadi.*
+*Bu buyruq avtomatik ravishda Serverni ham, Ekranni ham bitta joyda ishga tushiradi.*
+*Agar to'xtatmoqchi bo'lsangiz: `Ctrl + C` tugmasini bosing.*
 
 ---
 

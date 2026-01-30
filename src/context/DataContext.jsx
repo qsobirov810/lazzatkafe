@@ -6,7 +6,7 @@ const DataContext = createContext();
 export const useData = () => useContext(DataContext);
 
 // Connect to Backend
-const socket = io('http://192.168.1.38:3000'); // Ensure this matches your server port
+const socket = io(`http://${window.location.hostname}:3000`); // Connect to backend on the same host
 
 export const DataProvider = ({ children }) => {
     // --- STATE ---
@@ -15,6 +15,7 @@ export const DataProvider = ({ children }) => {
     const [categories, setCategories] = useState([]);
     const [activeOrders, setActiveOrders] = useState([]);
     const [completedOrders, setCompletedOrders] = useState([]);
+    const [reservations, setReservations] = useState([]); // New
     const [archives, setArchives] = useState([]);
     const [isConnected, setIsConnected] = useState(socket.connected);
 
@@ -32,6 +33,7 @@ export const DataProvider = ({ children }) => {
             setActiveOrders(data.activeOrders);
             setCompletedOrders(data.history);
             setArchives(data.archives || []);
+            setReservations(data.reservations || []);
         });
 
         socket.on('data_update', (data) => {
@@ -42,6 +44,7 @@ export const DataProvider = ({ children }) => {
             setActiveOrders(data.activeOrders);
             setCompletedOrders(data.history);
             setArchives(data.archives || []);
+            setReservations(data.reservations || []);
         });
 
         return () => {
@@ -110,11 +113,34 @@ export const DataProvider = ({ children }) => {
         socket.emit('cancel_order', orderId);
     };
 
+    // 7. Admin: Table Management
+    const addTable = (name) => socket.emit('add_table', name);
+    const deleteTable = (id) => {
+        if (window.confirm("Stolni o'chirmoqchimisiz?")) {
+            socket.emit('delete_table', id);
+        }
+    };
+
+    // 8. Reservations (Banquet)
+    const addReservation = (data) => socket.emit('add_reservation', data);
+    const updateReservation = (data) => socket.emit('update_reservation', data);
+    const deleteReservation = (id) => {
+        if (window.confirm("Bronni bekor qilasizmi?")) {
+            socket.emit('delete_reservation', id);
+        }
+    };
+    const activateReservation = (id) => {
+        if (window.confirm("Banketni boshlaysizmi? Stollar band qilinadi.")) {
+            socket.emit('activate_reservation', id);
+        }
+    };
+
     return (
         <DataContext.Provider value={{
-            tables, menu, categories, activeOrders, completedOrders, archives, isConnected,
+            tables, menu, categories, activeOrders, completedOrders, archives, reservations, isConnected,
             sendOrder, updateOrder, checkoutTable, markOrderPrinted, addMenuItem, updateMenuItem, deleteMenuItem,
-            addCategory, deleteCategory, clearHistory, closeDay, clearKitchenHistory, cancelOrder
+            addCategory, deleteCategory, clearHistory, closeDay, clearKitchenHistory, cancelOrder,
+            addTable, deleteTable, addReservation, updateReservation, deleteReservation, activateReservation
         }}>
             {children}
         </DataContext.Provider>

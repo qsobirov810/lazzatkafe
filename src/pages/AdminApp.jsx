@@ -1,10 +1,231 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useData } from '../context/DataContext';
-import { FaCashRegister, FaUtensils, FaHistory, FaCheck, FaTimes, FaSignOutAlt, FaPrint, FaTrash, FaPlus, FaEdit, FaImage, FaCamera } from 'react-icons/fa';
+import { FaCashRegister, FaUtensils, FaHistory, FaCheck, FaTimes, FaSignOutAlt, FaPrint, FaTrash, FaPlus, FaEdit, FaImage, FaCamera, FaChair, FaSearch, FaCheckCircle } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
+
+// --- PRINT PORTAL COMPONENT ---
+const PrintPortal = ({ children }) => {
+    const mount = document.getElementById('print-root');
+    const el = React.useMemo(() => document.createElement('div'), []);
+
+    useEffect(() => {
+        mount.appendChild(el);
+        return () => mount.removeChild(el);
+    }, [el, mount]);
+
+    return createPortal(children, el);
+};
+
+// --- SUB-COMPONENTS ---
+
+// 0. KITCHEN VIEW (New)
+const KitchenView = () => {
+    const { activeOrders, markOrderPrinted, clearKitchenHistory, cancelOrder } = useData();
+    const [ticketToPrint, setTicketToPrint] = useState(null);
+    const [activeTab, setActiveTab] = useState('active'); // 'active' or 'history'
+
+    // Filter orders
+    const displayedOrders = activeOrders.filter(order => {
+        if (activeTab === 'active') return !order.printed;
+        if (activeTab === 'history') return order.printed && !order.kitchenHidden;
+        return true;
+    });
+
+    const handleClearHistory = () => {
+        if (activeTab !== 'history') return;
+        // Get all visible history items
+        const historyIds = displayedOrders.map(o => o.id);
+        if (historyIds.length === 0) return;
+
+        if (window.confirm("Tarixni butunlay tozalaysizmi? (Boshqa qurilmalarda ham o'chadi)")) {
+            clearKitchenHistory(historyIds);
+        }
+    };
+
+    const handlePrint = (order) => {
+        markOrderPrinted(order.id);
+        setTicketToPrint(order);
+    };
+
+    useEffect(() => {
+        if (ticketToPrint) {
+            const timer = setTimeout(() => {
+                window.print();
+                setTicketToPrint(null);
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [ticketToPrint]);
+
+    const handleDelete = (order) => {
+        if (window.confirm(`Haqiqatan ham Stol ${order.tableId} buyurtmasini O'CHIRMOQCHIMISIZ?`)) {
+            cancelOrder(order.id);
+        }
+    };
+
+    return (
+        <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                <h2>Oshxona (Buyurtmalar)</h2>
+                <div style={{ display: 'flex', gap: '1rem', background: '#252525', padding: '0.3rem', borderRadius: '8px' }}>
+                    <button
+                        onClick={() => setActiveTab('active')}
+                        style={{
+                            padding: '0.5rem 1.5rem', borderRadius: '6px', fontWeight: 'bold',
+                            background: activeTab === 'active' ? 'var(--accent-color)' : 'transparent',
+                            color: activeTab === 'active' ? '#000' : '#fff'
+                        }}
+                    >
+                        Yangi ({activeOrders.filter(o => !o.printed).length})
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('history')}
+                        style={{
+                            padding: '0.5rem 1.5rem', borderRadius: '6px', fontWeight: 'bold',
+                            background: activeTab === 'history' ? 'var(--accent-color)' : 'transparent',
+                            color: activeTab === 'history' ? '#000' : '#fff'
+                        }}
+                    >
+                        Tarix ({activeOrders.filter(o => o.printed && !o.kitchenHidden).length})
+                    </button>
+                    {activeTab === 'history' && (
+                        <button
+                            onClick={handleClearHistory}
+                            style={{
+                                padding: '0.5rem 1rem', borderRadius: '6px', fontWeight: 'bold',
+                                background: '#7f1d1d', color: '#fff', border: 'none', cursor: 'pointer'
+                            }}
+                        >
+                            Tozalash
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+                {displayedOrders.length === 0 && (
+                    <p style={{ color: '#666', gridColumn: '1/-1', textAlign: 'center', marginTop: '2rem' }}>
+                        {activeTab === 'active' ? 'Yangi buyurtmalar yo\'q' : 'Tarix bo\'sh'}
+                    </p>
+                )}
+
+                {displayedOrders.map(order => (
+                    <div key={order.id} style={{
+                        background: order.printed ? '#064e3b' : 'var(--bg-card)',
+                        border: order.printed ? '1px solid var(--success)' : '1px solid var(--border-color)',
+                        padding: '1.5rem',
+                        borderRadius: 'var(--radius)',
+                        display: 'flex', flexDirection: 'column', gap: '1rem',
+                        position: 'relative',
+                        opacity: order.printed ? 0.8 : 1
+                    }}>
+                        {order.printed && activeTab === 'history' && (
+                            <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'var(--success)', color: '#fff', padding: '2px 8px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                                ✅ CHIQARILGAN
+                            </div>
+                        )}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #333', paddingBottom: '0.5rem' }}>
+                            <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>STOL {order.tableId}</span>
+                            {activeTab === 'active' && (
+                                <button
+                                    onClick={() => handleDelete(order)}
+                                    style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}
+                                    title="Buyurtmani o'chirish"
+                                >
+                                    <FaTrash size={18} />
+                                </button>
+                            )}
+                            <span style={{ color: '#aaa', display: activeTab !== 'active' ? 'block' : 'none' }}>{new Date(order.timestamp).toLocaleTimeString()}</span>
+                        </div>
+
+                        <div style={{ flex: 1 }}>
+                            {order.items.map((item, idx) => (
+                                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '1.1rem' }}>
+                                    <span>{item.quantity}x {item.name}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        <button
+                            onClick={() => handlePrint(order)}
+                            style={{
+                                background: order.printed ? '#333' : '#fff',
+                                color: order.printed ? '#fff' : '#000',
+                                padding: '0.8rem', borderRadius: '8px',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                                fontWeight: 'bold', fontSize: '1rem',
+                                border: order.printed ? '1px solid #555' : 'none'
+                            }}
+                        >
+                            <FaPrint /> {order.printed ? 'QAYTA CHIQARISH' : 'CHEK CHIQARISH'}
+                        </button>
+                    </div>
+                ))}
+            </div>
+
+            {/* KITCHEN TICKET PRINT PORTAL */}
+            {ticketToPrint && (
+                <PrintPortal>
+                    <div className="print-ticket">
+                        <h3>KAFE EPOS</h3>
+                        <p>Oshxona Cheki</p>
+                        <hr />
+                        <div className="ticket-header">
+                            <h2>STOL {ticketToPrint.tableId}</h2>
+                            <p>{new Date(ticketToPrint.timestamp).toLocaleString()}</p>
+                        </div>
+                        <hr />
+                        <div className="ticket-body">
+                            {ticketToPrint.items.map((item, i) => (
+                                <div key={i} className="ticket-item">
+                                    <div className="ticket-row-1">
+                                        <span>{item.quantity} x {item.name}</span>
+                                    </div>
+                                    {/* Kitchen ticket also shows price? Usually no, but sticking to structure in case user wants. 
+                                        Wait, original code didn't show price in Kitchen Ticket, only Name and Qty. 
+                                        Let's KEEP it straightforward for Kitchen: just Name and Qty line is fine, or maybe Name on one line, Qty on line?
+                                        Actually, User said "1ta no'l yoq", implying PRICE cutoff. Kitchen tickets usually don't have prices. 
+                                        The user complaint was about "hisob chekida" (receipt).
+                                        I will update Kitchen Ticket to match the robust 2-line style anyway for consistency if names are long.
+                                     */}
+                                </div>
+                            ))}
+                        </div>
+                        <hr />
+                        <p className="ticket-footer">--- ---------------- ---</p>
+                    </div>
+                    <style>{`
+                            .print-ticket {
+                                width: 44mm;
+                                margin: 0 auto;
+                                background: white;
+                                color: #000000 !important;
+                                font-family: 'Courier New', monospace;
+                                padding-bottom: 5mm;
+                                font-size: 16px;
+                                font-weight: 700;
+                            }
+                            .print-ticket h3 { margin: 0 0 5px 0; font-size: 20px; font-weight: 900; text-align: center; }
+                            .print-ticket p { margin: 0; font-size: 16px; text-align: center; font-weight: 800; }
+                            .print-ticket hr { border-top: 2px dashed #000; margin: 5px 0; }
+                            .ticket-header h2 { font-size: 18px; margin: 0; font-weight: 900; }
+                            .ticket-header p { font-size: 14px; margin: 0; font-weight: 700; }
+                            .ticket-body { font-size: 17px; font-weight: 900; }
+                            .ticket-item { margin-bottom: 8px; display: flex; flexDirection: column; border-bottom: 1px dotted #ccc; padding-bottom: 2px; }
+                            .ticket-row-1 { display: flex; justify-content: flex-start; text-align: left; overflow-wrap: break-word; }
+                            .ticket-row-2 { text-align: center; width: 100%; margin-top: 2px; } /* Centered Price/Qty */
+                            .ticket-footer { font-size: 14px; margin-top: 5px; text-align: center; font-weight: 700; }
+                        `}</style>
+                </PrintPortal>
+            )}
+        </div>
+    );
+};
+
 const AdminApp = () => {
-    const { tables, checkoutTable, completedOrders, archives, menu, categories, addMenuItem, updateMenuItem, deleteMenuItem, addCategory, deleteCategory, clearHistory, closeDay } = useData();
+    const { tables, checkoutTable, completedOrders, archives, menu, categories, addMenuItem, updateMenuItem, deleteMenuItem, addCategory, deleteCategory, clearHistory, closeDay, addTable, deleteTable, reservations, addReservation, updateReservation, deleteReservation, activateReservation } = useData();
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('cashier'); // cashier, menu, categories, history
     const [selectedTable, setSelectedTable] = useState(null); // We need direct socket access for categories or add to context. Better: add to context.
@@ -77,193 +298,269 @@ const AdminApp = () => {
         );
     }
 
+
+
     // --- SUB-COMPONENTS ---
 
-    // 0. KITCHEN VIEW (New)
-    const KitchenView = () => {
-        const { activeOrders, markOrderPrinted, clearKitchenHistory, cancelOrder } = useData();
-        const [ticketToPrint, setTicketToPrint] = useState(null);
-        const [activeTab, setActiveTab] = useState('active'); // 'active' or 'history'
 
-        // Filter orders
-        const displayedOrders = activeOrders.filter(order => {
-            if (activeTab === 'active') return !order.printed;
-            if (activeTab === 'history') return order.printed && !order.kitchenHidden;
-            return true;
-        });
 
-        const handleClearHistory = () => {
-            if (activeTab !== 'history') return;
-            // Get all visible history items
-            const historyIds = displayedOrders.map(o => o.id);
-            if (historyIds.length === 0) return;
+    // --- RESERVATION MODAL ---
+    const ReservationModal = ({ onClose, initialData }) => {
+        const [formData, setFormData] = useState(initialData ? {
+            customer: initialData.customer,
+            phone: initialData.phone,
+            date: initialData.date,
+            guests: initialData.guests,
+            deposit: initialData.deposit || 0
+        } : { customer: '', phone: '', date: '', guests: 10, deposit: 0 });
 
-            if (window.confirm("Tarixni butunlay tozalaysizmi? (Boshqa qurilmalarda ham o'chadi)")) {
-                clearKitchenHistory(historyIds);
+        const [selectedTables, setSelectedTables] = useState(initialData ? initialData.tableIds : []);
+        const [preOrderItems, setPreOrderItems] = useState((initialData && initialData.items) ? initialData.items : []);
+        const [menuSearch, setMenuSearch] = useState('');
+
+        const toggleTable = (id) => {
+            setSelectedTables(prev => prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]);
+        };
+
+        const addToPreOrder = (item) => {
+            setPreOrderItems(prev => {
+                const existing = prev.find(i => i.id === item.id);
+                if (existing) return prev.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i);
+                return [...prev, { ...item, quantity: 1 }];
+            });
+        };
+
+        const removeFromPreOrder = (id) => {
+            setPreOrderItems(prev => prev.filter(i => i.id !== id));
+        };
+
+        const handleSubmit = () => {
+            if (!formData.customer) return alert("Mijoz ismini kiriting!");
+            if (!formData.phone) return alert("Telefon raqamni kiriting!");
+            if (!formData.date) return alert("Sana va vaqtni tanlang!");
+            if (selectedTables.length === 0) return alert("Kamida bitta stol tanlang!");
+
+            const dataToSave = { ...formData, tableIds: selectedTables, items: preOrderItems };
+            if (initialData) {
+                updateReservation({ ...dataToSave, id: initialData.id });
+            } else {
+                addReservation(dataToSave);
             }
+            onClose();
         };
 
-        const handlePrint = (order) => {
-            markOrderPrinted(order.id);
-            setTicketToPrint(order);
-            // Allow React to render the ticket first, then print
-            setTimeout(() => {
-                window.print();
-            }, 100);
-        };
-
-        const handleDelete = (order) => {
-            if (window.confirm(`Haqiqatan ham Stol ${order.tableId} buyurtmasini O'CHIRMOQCHIMISIZ?`)) {
-                cancelOrder(order.id);
-            }
-        };
+        const filteredMenu = menu.filter(m => m.name.toLowerCase().includes(menuSearch.toLowerCase()));
+        const preOrderTotal = preOrderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
         return (
-            <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                    <h2>Oshxona (Buyurtmalar)</h2>
-                    <div style={{ display: 'flex', gap: '1rem', background: '#252525', padding: '0.3rem', borderRadius: '8px' }}>
-                        <button
-                            onClick={() => setActiveTab('active')}
-                            style={{
-                                padding: '0.5rem 1.5rem', borderRadius: '6px', fontWeight: 'bold',
-                                background: activeTab === 'active' ? 'var(--accent-color)' : 'transparent',
-                                color: activeTab === 'active' ? '#000' : '#fff'
-                            }}
-                        >
-                            Yangi ({activeOrders.filter(o => !o.printed).length})
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('history')}
-                            style={{
-                                padding: '0.5rem 1.5rem', borderRadius: '6px', fontWeight: 'bold',
-                                background: activeTab === 'history' ? 'var(--accent-color)' : 'transparent',
-                                color: activeTab === 'history' ? '#000' : '#fff'
-                            }}
-                        >
-                            Tarix ({activeOrders.filter(o => o.printed && !o.kitchenHidden).length})
-                        </button>
-                        {activeTab === 'history' && (
-                            <button
-                                onClick={handleClearHistory}
-                                style={{
-                                    padding: '0.5rem 1rem', borderRadius: '6px', fontWeight: 'bold',
-                                    background: '#7f1d1d', color: '#fff', border: 'none', cursor: 'pointer'
-                                }}
-                            >
-                                Tozalash
-                            </button>
-                        )}
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 200, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '2rem' }}>
+                <div style={{ width: '900px', maxWidth: '95%', maxHeight: '90vh', background: '#1a1a1a', borderRadius: '16px', border: '1px solid #444', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 0 50px rgba(0,0,0,0.8)' }}>
+
+                    {/* Header */}
+                    <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid #333', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#222' }}>
+                        <div>
+                            <h2 style={{ margin: 0, fontSize: '1.5rem', color: '#fff' }}>{initialData ? 'Bronni Tahrirlash' : 'Yangi Banket Broni'}</h2>
+                            <p style={{ margin: '5px 0 0 0', color: '#ccc', fontSize: '0.9rem' }}>Mijoz ma'lumotlari va oldindan buyurtma</p>
+                        </div>
+                        <button type="button" onClick={onClose} style={{ background: '#111', border: '1px solid #333', color: '#fff', padding: '0.8rem', borderRadius: '50%', cursor: 'pointer' }}><FaTimes size={18} /></button>
                     </div>
-                </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
-                    {displayedOrders.length === 0 && (
-                        <p style={{ color: '#666', gridColumn: '1/-1', textAlign: 'center', marginTop: '2rem' }}>
-                            {activeTab === 'active' ? 'Yangi buyurtmalar yo\'q' : 'Tarix bo\'sh'}
-                        </p>
-                    )}
+                    <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '2rem', scrollbarWidth: 'thin', scrollbarColor: '#333 #000' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
 
-                    {displayedOrders.map(order => (
-                        <div key={order.id} style={{
-                            background: order.printed ? '#064e3b' : 'var(--bg-card)',
-                            border: order.printed ? '1px solid var(--success)' : '1px solid var(--border-color)',
-                            padding: '1.5rem',
-                            borderRadius: 'var(--radius)',
-                            display: 'flex', flexDirection: 'column', gap: '1rem',
-                            position: 'relative',
-                            opacity: order.printed ? 0.8 : 1
-                        }}>
-                            {order.printed && activeTab === 'history' && (
-                                <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'var(--success)', color: '#fff', padding: '2px 8px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                                    ✅ CHIQARILGAN
+                            {/* 1. Customer Info */}
+                            {/* Row 1: Name & Phone */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    <label style={{ color: '#ccc', fontSize: '0.75rem', fontWeight: 'bold', letterSpacing: '0.5px' }}>MIJOZ ISMI</label>
+                                    <input required placeholder="Masalan: Ali Valiyev" value={formData.customer} onChange={e => setFormData({ ...formData, customer: e.target.value })}
+                                        style={{ padding: '0.8rem', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '8px', fontSize: '1rem', outline: 'none' }} />
                                 </div>
-                            )}
-                            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #333', paddingBottom: '0.5rem' }}>
-                                <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>STOL {order.tableId}</span>
-                                {activeTab === 'active' && (
-                                    <button
-                                        onClick={() => handleDelete(order)}
-                                        style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}
-                                        title="Buyurtmani o'chirish"
-                                    >
-                                        <FaTrash size={18} />
-                                    </button>
-                                )}
-                                <span style={{ color: '#aaa', display: activeTab !== 'active' ? 'block' : 'none' }}>{new Date(order.timestamp).toLocaleTimeString()}</span>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    <label style={{ color: '#ccc', fontSize: '0.75rem', fontWeight: 'bold', letterSpacing: '0.5px' }}>TELEFON RAQAM</label>
+                                    <input required placeholder="+998 90 123 45 67" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                                        style={{ padding: '0.8rem', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '8px', fontSize: '1rem', outline: 'none' }} />
+                                </div>
                             </div>
 
-                            <div style={{ flex: 1 }}>
-                                {order.items.map((item, idx) => (
-                                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '1.1rem' }}>
-                                        <span>{item.quantity}x {item.name}</span>
+                            {/* Row 2: Date, Time, Guests, Deposit */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '1rem', alignItems: 'end' }}>
+
+                                {/* Date & Time */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    <label style={{ color: '#ccc', fontSize: '0.75rem', fontWeight: 'bold', letterSpacing: '0.5px' }}>SANA VA VAQT</label>
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <input required type="date"
+                                            value={formData.date ? formData.date.split('T')[0] : ''}
+                                            onChange={e => setFormData({ ...formData, date: `${e.target.value}T${formData.date ? formData.date.split('T')[1] || '12:00' : '12:00'}` })}
+                                            style={{ flex: 1, padding: '0.6rem', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '8px', outline: 'none', colorScheme: 'dark', fontSize: '0.95rem' }} />
+                                        <input required type="time"
+                                            value={formData.date ? formData.date.split('T')[1] : '18:00'}
+                                            onChange={e => setFormData({ ...formData, date: `${formData.date ? formData.date.split('T')[0] || new Date().toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}T${e.target.value}` })}
+                                            style={{ width: '90px', padding: '0.6rem', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '8px', outline: 'none', colorScheme: 'dark', fontSize: '0.95rem' }} />
                                     </div>
-                                ))}
-                            </div>
-
-                            <button
-                                onClick={() => handlePrint(order)}
-                                style={{
-                                    background: order.printed ? '#333' : '#fff',
-                                    color: order.printed ? '#fff' : '#000',
-                                    padding: '0.8rem', borderRadius: '8px',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                                    fontWeight: 'bold', fontSize: '1rem',
-                                    border: order.printed ? '1px solid #555' : 'none'
-                                }}
-                            >
-                                <FaPrint /> {order.printed ? 'QAYTA CHIQARISH' : 'CHEK CHIQARISH'}
-                            </button>
-                        </div>
-                    ))}
-                </div>
-
-                {/* KITCHEN TICKET PRINT AREA */}
-                {ticketToPrint && (
-                    <div id="kitchen-ticket">
-                        <div className="ticket">
-                            <h3>KAFE EPOS</h3>
-                            <p>Oshxona Cheki</p>
-                            <hr />
-                            <div className="ticket-header">
-                                <h2>STOL {ticketToPrint.tableId}</h2>
-                                <p>{new Date(ticketToPrint.timestamp).toLocaleString()}</p>
-                            </div>
-                            <hr />
-                            <div className="ticket-body">
-                                {ticketToPrint.items.map((item, i) => (
-                                    <div key={i} className="ticket-item">
-                                        <span className="qty">{item.quantity} x</span>
-                                        <span className="name">{item.name}</span>
+                                    {/* Short Buttons: Bugun/Ertaga */}
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <button type="button" onClick={() => {
+                                            const d = new Date();
+                                            const dateStr = d.toISOString().split('T')[0];
+                                            setFormData(prev => ({ ...prev, date: `${dateStr}T${prev.date ? prev.date.split('T')[1] || '18:00' : '18:00'}` }));
+                                        }} style={{ flex: 1, padding: '0.3rem', background: '#222', color: '#aaa', border: '1px solid #333', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem' }}>Bugun</button>
+                                        <button type="button" onClick={() => {
+                                            const d = new Date();
+                                            d.setDate(d.getDate() + 1);
+                                            const dateStr = d.toISOString().split('T')[0];
+                                            setFormData(prev => ({ ...prev, date: `${dateStr}T${prev.date ? prev.date.split('T')[1] || '18:00' : '18:00'}` }));
+                                        }} style={{ flex: 1, padding: '0.3rem', background: '#222', color: '#aaa', border: '1px solid #333', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem' }}>Ertaga</button>
                                     </div>
-                                ))}
+                                </div>
+
+                                {/* Guests */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    <label style={{ color: '#ccc', fontSize: '0.75rem', fontWeight: 'bold', letterSpacing: '0.5px' }}>MEHMONLAR</label>
+                                    <input required type="number" min="1" placeholder="10" value={formData.guests} onChange={e => setFormData({ ...formData, guests: Number(e.target.value) })}
+                                        style={{ padding: '0.6rem', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '8px', fontSize: '0.95rem', outline: 'none' }} />
+                                </div>
+
+                                {/* Deposit */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    <label style={{ color: '#ccc', fontSize: '0.75rem', fontWeight: 'bold', letterSpacing: '0.5px' }}>ZALOG</label>
+                                    <input
+                                        type="text"
+                                        placeholder="0"
+                                        value={formData.deposit > 0 ? formData.deposit.toLocaleString('ru-RU') : ''}
+                                        onChange={e => {
+                                            const val = e.target.value.replace(/\s/g, '');
+                                            if (!isNaN(val)) {
+                                                setFormData({ ...formData, deposit: Number(val) });
+                                            }
+                                        }}
+                                        style={{ padding: '0.6rem', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '8px', fontSize: '0.95rem', outline: 'none' }}
+                                    />
+                                </div>
                             </div>
-                            <hr />
-                            <p className="ticket-footer">--- ---------------- ---</p>
+
+                            {/* 2. Table Selection */}
+                            <div>
+                                <label style={{ color: '#ccc', fontSize: '0.75rem', fontWeight: 'bold', display: 'block', marginBottom: '1rem', letterSpacing: '0.5px' }}>STOLLARNI TANLASH</label>
+                                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                                    {tables.map(t => (
+                                        <button type="button" key={t.id} onClick={() => toggleTable(t.id)}
+                                            style={{
+                                                padding: '1rem 1.5rem', borderRadius: '8px',
+                                                border: selectedTables.includes(t.id) ? '1px solid var(--accent-color)' : '1px solid #222',
+                                                background: selectedTables.includes(t.id) ? 'var(--accent-color)' : '#111',
+                                                color: selectedTables.includes(t.id) ? '#000' : '#888',
+                                                fontWeight: 'bold', cursor: 'pointer', transition: '0.2s',
+                                                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem'
+                                            }}>
+                                            <span>{t.name}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* 3. Pre-order */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', height: '400px' }}>
+                                {/* Menu List */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    <label style={{ color: '#ccc', fontSize: '0.75rem', fontWeight: 'bold', letterSpacing: '0.5px' }}>TAOMLAR RO'YXATI</label>
+                                    <div style={{ position: 'relative' }}>
+                                        <FaSearch style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', color: '#666' }} />
+                                        <input placeholder="Qidirish..." value={menuSearch} onChange={e => setMenuSearch(e.target.value)}
+                                            style={{ width: '100%', padding: '0.8rem 1rem 0.8rem 2.8rem', background: '#2d2d2d', border: '1px solid #444', color: '#fff', borderRadius: '8px', outline: 'none' }} />
+                                    </div>
+                                    <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', border: '1px solid #222', borderRadius: '8px', background: '#050505' }}>
+                                        {filteredMenu.map(item => {
+                                            const qty = preOrderItems.find(i => i.id === item.id)?.quantity || 0;
+                                            return (
+                                                <div key={item.id} onClick={() => addToPreOrder(item)}
+                                                    style={{ padding: '0.8rem 1rem', borderBottom: '1px solid #1a1a1a', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                                                    onMouseEnter={e => e.currentTarget.style.background = '#111'}
+                                                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                                >
+                                                    <span style={{ fontWeight: '500', color: qty > 0 ? 'var(--accent-color)' : '#fff' }}>{item.name}</span>
+
+                                                    {qty > 0 ? (
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    if (qty === 1) removeFromPreOrder(item.id);
+                                                                    else setPreOrderItems(prev => prev.map(i => i.id === item.id ? { ...i, quantity: i.quantity - 1 } : i));
+                                                                }}
+                                                                style={{ width: '24px', height: '24px', borderRadius: '4px', border: '1px solid #444', background: '#222', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                                                            >-</button>
+                                                            <span
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    const val = prompt("Miqdorni kiriting:", qty);
+                                                                    if (val !== null) {
+                                                                        const num = parseInt(val);
+                                                                        if (!isNaN(num) && num > 0) {
+                                                                            setPreOrderItems(prev => prev.map(i => i.id === item.id ? { ...i, quantity: num } : i));
+                                                                        }
+                                                                    }
+                                                                }}
+                                                                style={{ fontWeight: 'bold', minWidth: '30px', textAlign: 'center', cursor: 'pointer', borderBottom: '1px dashed #666' }}
+                                                                title="O'zgartirish uchun bosing"
+                                                            >{qty}</span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => { e.stopPropagation(); addToPreOrder(item); }}
+                                                                style={{ width: '24px', height: '24px', borderRadius: '4px', border: '1px solid #444', background: 'var(--accent-color)', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                                                            >+</button>
+                                                        </div>
+                                                    ) : (
+                                                        <span style={{ color: 'var(--accent-color)', fontSize: '0.9rem' }}>{item.price.toLocaleString()}</span>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Pre-order Cart */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    <label style={{ color: '#ccc', fontSize: '0.75rem', fontWeight: 'bold', letterSpacing: '0.5px' }}>TANLANGAN TAOMLAR</label>
+                                    <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', border: '1px solid #222', borderRadius: '8px', background: '#111', padding: '1rem' }}>
+                                        {preOrderItems.length === 0 ? (
+                                            <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#444', fontSize: '0.9rem' }}>Hech narsa tanlanmadi</div>
+                                        ) : (
+                                            preOrderItems.map(item => (
+                                                <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem', paddingBottom: '0.8rem', borderBottom: '1px solid #222' }}>
+                                                    <div>
+                                                        <div style={{ fontWeight: 'bold' }}>{item.name}</div>
+                                                        <div style={{ fontSize: '0.8rem', color: '#888' }}>{item.quantity} x {item.price.toLocaleString()}</div>
+                                                    </div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                                        <span style={{ fontWeight: 'bold', color: '#fff' }}>{(item.price * item.quantity).toLocaleString()}</span>
+                                                        <button type="button" onClick={() => removeFromPreOrder(item.id)} style={{ color: '#ef4444', background: 'transparent', border: '1px solid #ef4444', padding: '0.3rem 0.5rem', borderRadius: '4px', cursor: 'pointer' }}><FaTrash size={10} /></button>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                    <div style={{ background: '#111', padding: '1rem', borderRadius: '8px', border: '1px solid #222', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ color: '#888' }}>Jami summa:</span>
+                                        <span style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--accent-color)' }}>{preOrderTotal.toLocaleString()} so'm</span>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
-                )}
 
-                <style>{`
-                    #kitchen-ticket { display: none; }
-                    @media print {
-                        #kitchen-ticket, #kitchen-ticket * { visibility: visible; }
-                        #kitchen-ticket {
-                            position: absolute; left: 0; top: 0; width: 100%;
-                            display: block; background: white; color: black;
-                            font-family: 'Courier New', monospace;
-                            padding: 10px;
-                            text-align: center;
-                        }
-                        .ticket { width: 300px; margin: 0 auto; }
-                        .ticket h3 { margin: 5px 0; font-size: 1.5rem; }
-                        .ticket hr { border-top: 2px dashed #000; margin: 10px 0; }
-                        .ticket-header { text-align: left; margin-bottom: 10px; }
-                        .ticket-body { text-align: left; font-size: 1.2rem; font-weight: bold; }
-                        .ticket-item { margin-bottom: 5px; display: flex; gap: 10px; }
-                        .qty { min-width: 30px; }
-                    }
-                `}</style>
+                    {/* Footer */}
+                    <div style={{ padding: '1.5rem', borderTop: '1px solid #333', background: '#222', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                        <button type="button" onClick={onClose} style={{ padding: '1rem 2rem', background: 'transparent', color: '#888', border: '1px solid #333', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>BEKOR QILISH</button>
+                        <button type="button" onClick={handleSubmit}
+                            style={{ padding: '1rem 3rem', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}>
+                            TASDIQLASH
+                        </button>
+                    </div>
+                </div>
             </div>
         );
     };
@@ -279,6 +576,15 @@ const AdminApp = () => {
         const [showPaymentModal, setShowPaymentModal] = useState(false);
         const [paymentMethod, setPaymentMethod] = useState('Naqd');
         const [splitValues, setSplitValues] = useState({ cash: 0, card: 0, click: 0 });
+        const [showReservations, setShowReservations] = useState(false);
+        const [showAddResModal, setShowAddResModal] = useState(false);
+        const [editingReservation, setEditingReservation] = useState(null);
+        const [reservationToPrint, setReservationToPrint] = useState(null);
+
+        const handlePrintReservation = (res) => {
+            setReservationToPrint(res);
+            setTimeout(() => window.print(), 100);
+        };
 
         const handleCheckoutClick = () => {
             if (!selectedTable) return;
@@ -317,30 +623,52 @@ const AdminApp = () => {
         return (
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem', height: '100%' }}>
                 {/* Table Grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '1rem', alignContent: 'start' }}>
-                    {tables.map(table => (
-                        <div
-                            key={table.id}
-                            onClick={() => setSelectedTable(table)}
-                            style={{
-                                background: selectedTable?.id === table.id ? 'var(--accent-color)' : (table.status === 'free' ? '#252525' : '#451a1a'),
-                                color: selectedTable?.id === table.id ? '#000' : '#fff',
-                                border: `1px solid ${table.status === 'free' ? '#444' : 'var(--danger)'}`,
-                                borderRadius: 'var(--radius)',
-                                padding: '1.5rem',
-                                cursor: 'pointer',
-                                textAlign: 'center'
-                            }}
-                        >
-                            <h3>{table.name}</h3>
-                            <p style={{ marginTop: '0.5rem', opacity: 0.8 }}>
-                                {table.status === 'free' ? 'Bo\'sh' : 'BAND'}
-                            </p>
-                            {table.status === 'busy' && (
-                                <p style={{ fontWeight: 'bold', marginTop: '0.5rem' }}>{getTableTotal(table).toLocaleString()} so'm</p>
-                            )}
-                        </div>
-                    ))}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h2 style={{ color: '#888' }}>Stollar Holati</h2>
+                        <button onClick={() => setShowReservations(true)} style={{ background: '#7c3aed', color: '#fff', padding: '0.8rem 1.5rem', borderRadius: '8px', fontWeight: 'bold' }}>
+                            📅 BRONLAR ({reservations.length})
+                        </button>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '1rem', alignContent: 'start', flex: 1, overflowY: 'auto' }}>
+                        {tables.map(table => (
+                            <div
+                                key={table.id}
+                                onClick={() => setSelectedTable(table)}
+                                style={{
+                                    background: selectedTable?.id === table.id ? 'var(--accent-color)' : (table.status === 'free' ? '#252525' : '#451a1a'),
+                                    color: selectedTable?.id === table.id ? '#000' : '#fff',
+                                    border: `1px solid ${table.status === 'free' ? '#444' : 'var(--danger)'}`,
+                                    borderRadius: 'var(--radius)',
+                                    padding: '1.5rem',
+                                    cursor: 'pointer',
+                                    textAlign: 'center',
+                                    position: 'relative'
+                                }}
+                            >
+                                {table.status !== 'free' && table.total === 0 && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (confirm("Stolni majburiy bo'shatishni xohlaysizmi?")) {
+                                                checkoutTable(table.id, "MAJBURIY");
+                                            }
+                                        }}
+                                        style={{ position: 'absolute', top: 5, right: 5, background: 'red', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', fontSize: '12px', cursor: 'pointer' }}
+                                        title="Majburiy bo'shatish"
+                                    >x</button>
+                                )}
+                                <h3>{table.name}</h3>
+                                <p style={{ marginTop: '0.5rem', opacity: 0.8 }}>
+                                    {table.status === 'free' ? 'Bo\'sh' : 'BAND'}
+                                </p>
+                                {table.status === 'busy' && (
+                                    <p style={{ fontWeight: 'bold', marginTop: '0.5rem' }}>{getTableTotal(table).toLocaleString()} so'm</p>
+                                )}
+                            </div>
+                        ))}
+                    </div>
                 </div>
 
                 {/* Checkout Panel */}
@@ -470,10 +798,10 @@ const AdminApp = () => {
                                 </div>
                             )}
 
-                            {/* CUSTOMER RECEIPT (Hidden on Screen) */}
+                            {/* CUSTOMER RECEIPT PORTAL */}
                             {showPaymentModal && (
-                                <div id="customer-receipt">
-                                    <div className="receipt-content">
+                                <PrintPortal>
+                                    <div className="print-receipt">
                                         <h3>KAFE EPOS</h3>
                                         <p>Mijoz Cheki</p>
                                         <hr />
@@ -485,8 +813,12 @@ const AdminApp = () => {
                                         <div className="receipt-items">
                                             {selectedTable.orders.flatMap(o => o.items).map((item, i) => (
                                                 <div key={i} className="receipt-item">
-                                                    <span>{item.quantity} x {item.name}</span>
-                                                    <span>{(item.price * item.quantity).toLocaleString()}</span>
+                                                    <div className="receipt-row-1">
+                                                        {item.quantity} x {item.name}
+                                                    </div>
+                                                    <div className="receipt-row-2">
+                                                        {(item.price * item.quantity).toLocaleString()}
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>
@@ -496,33 +828,35 @@ const AdminApp = () => {
                                             <span>{getTableTotal(selectedTable).toLocaleString()} so'm</span>
                                         </div>
                                         <hr />
-                                        <div style={{ textAlign: 'left', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                                        <div style={{ textAlign: 'left', fontSize: '12px', fontWeight: 'bold' }}>
                                             To'lov: {paymentMethod === 'Aralash'
-                                                ? `Aralash (Naqd: ${splitValues.cash.toLocaleString()}, Karta: ${splitValues.card.toLocaleString()}, Click: ${splitValues.click.toLocaleString()})`
+                                                ? `Aralash`
                                                 : paymentMethod}
                                         </div>
                                         <p style={{ textAlign: 'center', marginTop: '10px' }}>Xizmatlaringiz uchun rahmat!</p>
                                     </div>
-                                </div>
+                                    <style>{`
+                                        .print-receipt {
+                                            width: 44mm;
+                                            margin: 0 auto;
+                                            background: white;
+                                            color: #000000 !important;
+                                            font-family: 'Courier New', monospace;
+                                            padding-bottom: 5mm;
+                                            text-align: center;
+                                            font-size: 16px;
+                                            font-weight: 700;
+                                        }
+                                        .print-receipt h3 { margin: 0; font-size: 20px; font-weight: 900; }
+                                        .print-receipt p { margin: 2px 0; font-size: 16px; font-weight: 800; }
+                                        .receipt-item { display: flex; flex-direction: column; margin-bottom: 8px; border-bottom: 1px dotted #ccc; padding-bottom: 2px; }
+                                        .receipt-row-1 { text-align: left; width: 100%; overflow-wrap: break-word; }
+                                        .receipt-row-2 { text-align: center; width: 100%; margin-top: 2px; font-size: 18px; font-weight: 900; } /* Centered Price */
+                                        .receipt-total { display: flex; justifyContent: space-between; font-weight: 900; font-size: 18px; margin: 5px 0; }
+                                        hr { border-top: 2px dashed #000; margin: 5px 0; }
+                                    `}</style>
+                                </PrintPortal>
                             )}
-
-                            <style>{`
-                                #customer-receipt { display: none; }
-                                @media print {
-                                    body * { visibility: hidden; }
-                                    #customer-receipt, #customer-receipt * { visibility: visible; }
-                                    #customer-receipt {
-                                        position: absolute; left: 0; top: 0; width: 100%;
-                                        display: block; background: white; color: black;
-                                        font-family: 'Courier New', monospace;
-                                        padding: 10px;
-                                    }
-                                    .receipt-content { width: 300px; margin: 0 auto; text-align: center; }
-                                    .receipt-item { display: flex; justifyContent: space-between; margin-bottom: 5px; }
-                                    .receipt-total { display: flex; justifyContent: space-between; font-weight: bold; font-size: 1.2rem; }
-                                    hr { border-top: 1px dashed #000; }
-                                }
-                            `}</style>
                         </>
                     ) : (
                         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666' }}>
@@ -530,6 +864,113 @@ const AdminApp = () => {
                         </div>
                     )}
                 </div>
+
+                {/* RESERVATIONS LIST MODAL */}
+                {showReservations && (
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 150, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        <div style={{ width: '800px', maxWidth: '95%', height: '80%', background: '#1e1e1e', borderRadius: '16px', padding: '2rem', display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
+                                <h2>Bronlar Ro'yxati</h2>
+                                <div style={{ display: 'flex', gap: '1rem' }}>
+                                    <button onClick={() => { setEditingReservation(null); setShowAddResModal(true); }} style={{ background: 'var(--success)', color: '#fff', padding: '0.5rem 1rem', borderRadius: '8px' }}>+ Yangi Bron</button>
+                                    <button onClick={() => setShowReservations(false)} style={{ background: '#333', color: '#fff', padding: '0.5rem 1rem', borderRadius: '8px' }}>Yopish</button>
+                                </div>
+                            </div>
+
+                            <div style={{ flex: 1, overflowY: 'auto', display: 'grid', gap: '1rem' }}>
+                                {reservations.length === 0 ? <p style={{ textAlign: 'center', color: '#666' }}>Bronlar yo'q</p> :
+                                    reservations.map(res => (
+                                        <div key={res.id} style={{ background: '#252525', padding: '1.5rem', borderRadius: '12px', borderLeft: '4px solid #7c3aed', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div>
+                                                <h3 style={{ margin: 0 }}>{res.customer} <span style={{ fontSize: '0.9rem', color: '#aaa' }}>({res.guests} kishi)</span></h3>
+                                                <p style={{ margin: '5px 0', color: 'var(--accent-color)' }}>{new Date(res.date).toLocaleString()}</p>
+                                                <p style={{ margin: 0, fontSize: '0.9rem', color: '#aaa' }}>Stollar: {res.tableIds.map(tid => tables.find(t => t.id === tid)?.name).join(', ')}</p>
+                                                {res.items && res.items.length > 0 && <p style={{ fontSize: '0.8rem', color: '#888', marginTop: '5px' }}>+ {res.items.length} ta taom oldindan</p>}
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                                <button onClick={() => activateReservation(res.id)} style={{ padding: '0.8rem 1.5rem', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold' }}>BOSHLASH</button>
+                                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                    <button onClick={() => { setEditingReservation(res); setShowAddResModal(true); }} style={{ flex: 1, padding: '0.5rem', background: '#eab308', color: '#000', border: 'none', borderRadius: '6px' }}><FaEdit /></button>
+                                                    <button onClick={() => handlePrintReservation(res)} style={{ flex: 1, padding: '0.5rem', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px' }}><FaPrint /></button>
+                                                    <button onClick={() => deleteReservation(res.id)} style={{ flex: 1, padding: '0.5rem', background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: '6px' }}>Bekor qilish</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                }
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* ADD RESERVATION FORM MODAL */}
+                {showAddResModal && <ReservationModal onClose={() => { setShowAddResModal(false); setEditingReservation(null); }} initialData={editingReservation} />}
+
+                {/* RESERVATION RECEIPT PORTAL */}
+                {reservationToPrint && (
+                    <PrintPortal>
+                        <div className="print-res">
+                            <h3>KAFE EPOS</h3>
+                            <p>Banket Cheki</p>
+                            <hr />
+                            <div style={{ textAlign: 'left', margin: '10px 0' }}>
+                                <p>Mijoz: {reservationToPrint.customer}</p>
+                                <p>Tel: {reservationToPrint.phone}</p>
+                                <p>Sana: {new Date(reservationToPrint.date).toLocaleString()}</p>
+                                <p>Mehmonlar: {reservationToPrint.guests} kishi</p>
+                                <p>Stollar: {reservationToPrint.tableIds.map(tid => tables.find(t => t.id === tid)?.name).join(', ')}</p>
+                            </div>
+                            <hr />
+                            <div className="res-items">
+                                {reservationToPrint.items && reservationToPrint.items.map((item, i) => (
+                                    <div key={i} className="res-item">
+                                        <div className="res-row-1">
+                                            {item.quantity} x {item.name}
+                                        </div>
+                                        <div className="res-row-2">
+                                            {(item.price * item.quantity).toLocaleString()}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            {reservationToPrint.items && reservationToPrint.items.length > 0 && <hr />}
+                            <div className="res-total">
+                                <span>JAMI BUYURTMA:</span>
+                                <span>{reservationToPrint.items ? reservationToPrint.items.reduce((sum, i) => sum + (i.price * i.quantity), 0).toLocaleString() : 0} so'm</span>
+                            </div>
+                            <div className="res-total">
+                                <span>ZALOG:</span>
+                                <span>{reservationToPrint.deposit ? reservationToPrint.deposit.toLocaleString() : 0} so'm</span>
+                            </div>
+                            <hr />
+                            <div className="res-total" style={{ fontSize: '20px' }}>
+                                <span>QOLDIQ:</span>
+                                <span>{((reservationToPrint.items ? reservationToPrint.items.reduce((sum, i) => sum + (i.price * i.quantity), 0) : 0) - (reservationToPrint.deposit || 0)).toLocaleString()} so'm</span>
+                            </div>
+                            <p style={{ textAlign: 'center', marginTop: '10px' }}>Kutingizni kutamiz!</p>
+                        </div>
+                        <style>{`
+                            .print-res {
+                                width: 58mm;
+                                margin: 0 auto;
+                                background: white;
+                                color: #000000 !important;
+                                font-family: 'Courier New', monospace;
+                                padding-bottom: 5mm;
+                                text-align: center;
+                                font-size: 16px;
+                                font-weight: 700;
+                            }
+                            .print-res h3 { margin: 0; font-size: 20px; font-weight: 900; }
+                            .print-res p { margin: 2px 0; font-size: 16px; font-weight: 800; }
+                            .res-item { display: flex; flex-direction: column; margin-bottom: 8px; border-bottom: 1px dotted #ccc; padding-bottom: 2px; }
+                            .res-row-1 { text-align: left; width: 100%; overflow-wrap: break-word; }
+                            .res-row-2 { text-align: center; width: 100%; margin-top: 2px; font-weight: 900; }
+                            .res-total { display: flex; justifyContent: space-between; font-weight: 900; font-size: 16px; margin: 5px 0; }
+                            hr { border-top: 2px dashed #000; margin: 5px 0; }
+                        `}</style>
+                    </PrintPortal>
+                )}
             </div >
         );
     };
@@ -850,6 +1291,61 @@ const AdminApp = () => {
         );
     };
 
+    // 3.5 PLACES VIEW (Tables)
+    const PlacesView = () => {
+        const [newTable, setNewTable] = useState('');
+
+        const handleAdd = (e) => {
+            e.preventDefault();
+            if (newTable.trim()) {
+                addTable(newTable.trim());
+                setNewTable('');
+            }
+        };
+
+        return (
+            <div>
+                <h2>Joylar (Stollar)</h2>
+                <div style={{ maxWidth: '600px', margin: '2rem 0' }}>
+                    <form onSubmit={handleAdd} style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+                        <input
+                            value={newTable}
+                            onChange={e => setNewTable(e.target.value)}
+                            placeholder="Yangi stol nomi (masalan: Stol 10)"
+                            style={{ flex: 1, padding: '1rem', borderRadius: 'var(--radius)', border: '1px solid #333', background: '#252525', color: '#fff' }}
+                        />
+                        <button type="submit" style={{ padding: '0 2rem', background: 'var(--accent-color)', borderRadius: 'var(--radius)', fontWeight: 'bold' }}>Qo'shish</button>
+                    </form>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
+                        {tables.map(table => (
+                            <div key={table.id} style={{ background: '#252525', padding: '1rem', borderRadius: 'var(--radius)', display: 'flex', flexDirection: 'column', gap: '0.5rem', border: '1px solid #333' }}>
+                                <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{table.name}</div>
+                                <div style={{ fontSize: '0.9rem', color: table.orders?.length > 0 ? '#ef4444' : '#4caf50' }}>
+                                    {table.orders?.length > 0 ? 'Band' : 'Bo\'sh'}
+                                </div>
+                                <button
+                                    onClick={() => deleteTable(table.id)}
+                                    disabled={table.orders?.length > 0} // Prevent deleting busy tables
+                                    style={{
+                                        marginTop: 'auto',
+                                        background: table.orders?.length > 0 ? '#555' : '#ef4444',
+                                        color: '#fff', padding: '0.5rem', borderRadius: '6px',
+                                        cursor: table.orders?.length > 0 ? 'not-allowed' : 'pointer',
+                                        border: 'none'
+                                    }}
+                                    title={table.orders?.length > 0 ? "Band stollarni o'chirib bo'lmaydi" : ""}
+                                >
+                                    O'chirish
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     // 4. HISTORY VIEW
     const HistoryView = () => {
         const [showDailyReport, setShowDailyReport] = useState(false);
@@ -940,10 +1436,10 @@ const AdminApp = () => {
                     )}
                 </div>
 
-                {/* DAILY REPORT (Hidden on Screen) */}
+                {/* DAILY REPORT PORTAL */}
                 {showDailyReport && (
-                    <div id="daily-report">
-                        <div className="receipt-content">
+                    <PrintPortal>
+                        <div className="print-report">
                             <h3>KAFE EPOS</h3>
                             <p style={{ fontWeight: 'bold' }}>KUNLIK HISOBOT (Z-REPORT)</p>
                             <p>{new Date().toLocaleDateString()}</p>
@@ -953,7 +1449,7 @@ const AdminApp = () => {
                                 <span>{dailyStats.total.toLocaleString()} so'm</span>
                             </div>
                             <hr />
-                            <div style={{ textAlign: 'left', margin: '1rem 0' }}>
+                            <div style={{ textAlign: 'left', margin: '1rem 0', fontSize: '13px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                     <span>Naqd:</span>
                                     <span>{dailyStats.cash.toLocaleString()}</span>
@@ -968,31 +1464,35 @@ const AdminApp = () => {
                                 </div>
                             </div>
                             <hr />
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '13px' }}>
                                 <span>Cheklar soni:</span>
                                 <span>{completedOrders.length} ta</span>
                             </div>
                             <p style={{ textAlign: 'center', marginTop: '20px' }}>Kassa yopildi.</p>
                         </div>
-                    </div>
+                        <style>{`
+                            .print-report {
+                                width: 48mm;
+                                margin: 0 auto;
+                                background: white;
+                                color: #000000 !important;
+                                font-family: 'Courier New', monospace;
+                                padding-bottom: 5mm;
+                                text-align: center;
+                                font-size: 16px;
+                                font-weight: 700;
+                            }
+                            .print-report h3 { margin: 0 0 5px 0; font-size: 20px; font-weight: 900; }
+                            .print-report p { margin: 0; font-size: 16px; font-weight: 800; }
+                            .receipt-total { font-size: 18px; font-weight: 900; display: flex; justifyContent: space-between; margin: 5px 0; }
+                            hr { border-top: 2px dashed #000; margin: 5px 0; }
+                        `}</style>
+                    </PrintPortal>
                 )}
-
-                <style>{`
-                    #daily-report { display: none; }
-                    @media print {
-                        #daily-report, #daily-report * { visibility: visible; }
-                        #daily-report {
-                            position: absolute; left: 0; top: 0; width: 100%;
-                            display: block; background: white; color: black;
-                            font-family: 'Courier New', monospace;
-                            padding: 10px;
-                            z-index: 9999;
-                        }
-                    }
-                `}</style>
             </div>
         );
     };
+
 
     // 5. STATISTICS VIEW
     const StatsView = () => {
@@ -1293,59 +1793,63 @@ const AdminApp = () => {
                 </div>
 
 
-                {/* HIDDEN RECEIPT FOR REPRINT */}
-                {
-                    receiptOrder && (
-                        <div id="archive-receipt">
-                            <div className="receipt-content">
-                                <h3>KAFE EPOS</h3>
-                                <p>Chek nusxasi (Arxiv)</p>
-                                <hr />
-                                <div className="receipt-header">
-                                    <h2>Stol {receiptOrder.tableId}</h2>
-                                    <p>{new Date(receiptOrder.timestamp).toLocaleString()}</p>
-                                </div>
-                                <hr />
-                                <div className="receipt-items">
-                                    {receiptOrder.items.map((item, i) => (
-                                        <div key={i} className="receipt-item">
-                                            <span>{item.quantity} x {item.name}</span>
-                                            <span>{(item.price * item.quantity).toLocaleString()}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                                <hr />
-                                <div className="receipt-total">
-                                    <span>JAMI:</span>
-                                    <span>{receiptOrder.total.toLocaleString()} so'm</span>
-                                </div>
-                                <hr />
-                                <div style={{ textAlign: 'left', fontSize: '0.9rem', fontWeight: 'bold' }}>
-                                    To'lov: {receiptOrder.paymentMethod}
-                                </div>
-                                <p style={{ textAlign: 'center', marginTop: '10px' }}>Qayta chop etildi</p>
+                {/* ARCHIVE RECEIPT PORTAL */}
+                {receiptOrder && (
+                    <PrintPortal>
+                        <div className="print-archive">
+                            <h3>KAFE EPOS</h3>
+                            <p>Chek nusxasi (Arxiv)</p>
+                            <hr />
+                            <div className="receipt-header">
+                                <h2>Stol {receiptOrder.tableId}</h2>
+                                <p>{new Date(receiptOrder.timestamp).toLocaleString()}</p>
                             </div>
+                            <hr />
+                            <div className="receipt-items">
+                                {receiptOrder.items.map((item, i) => (
+                                    <div key={i} className="receipt-item">
+                                        <div className="receipt-row-1">
+                                            {item.quantity} x {item.name}
+                                        </div>
+                                        <div className="receipt-row-2">
+                                            {(item.price * item.quantity).toLocaleString()}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <hr />
+                            <div className="receipt-total">
+                                <span>JAMI:</span>
+                                <span>{receiptOrder.total.toLocaleString()} so'm</span>
+                            </div>
+                            <hr />
+                            <div style={{ textAlign: 'left', fontSize: '12px', fontWeight: 'bold' }}>
+                                To'lov: {receiptOrder.paymentMethod}
+                            </div>
+                            <p style={{ textAlign: 'center', marginTop: '10px' }}>Qayta chop etildi</p>
                         </div>
-                    )
-                }
-
-                <style>{`
-                    #archive-receipt { display: none; }
-                    @media print {
-                        body * { visibility: hidden; }
-                        #archive-receipt, #archive-receipt * { visibility: visible; }
-                        #archive-receipt {
-                            position: absolute; left: 0; top: 0; width: 100%;
-                            display: block; background: white; color: black;
-                            font-family: 'Courier New', monospace;
-                            padding: 10px;
-                        }
-                        .receipt-content { width: 300px; margin: 0 auto; text-align: center; }
-                        .receipt-item { display: flex; justifyContent: space-between; margin-bottom: 5px; }
-                        .receipt-total { display: flex; justifyContent: space-between; font-weight: bold; font-size: 1.2rem; }
-                        hr { border-top: 1px dashed #000; }
-                    }
-                `}</style>
+                        <style>{`
+                            .print-archive {
+                                width: 44mm;
+                                margin: 0 auto;
+                                background: white;
+                                color: #000000 !important;
+                                font-family: 'Courier New', monospace;
+                                padding-bottom: 5mm;
+                                text-align: center;
+                                font-size: 16px;
+                                font-weight: 700;
+                            }
+                            .print-archive h3 { margin: 0; font-size: 20px; font-weight: 900; }
+                            .print-archive p { margin: 2px 0; font-size: 16px; font-weight: 800; }
+                            .receipt-item { display: flex; flex-direction: column; margin-bottom: 8px; border-bottom: 1px dotted #ccc; padding-bottom: 2px; }
+                            .receipt-row-1 { text-align: left; width: 100%; overflow-wrap: break-word; }
+                            .receipt-row-2 { text-align: center; width: 100%; margin-top: 2px; font-size: 18px; font-weight: 900; } /* Centered Price */
+                            .receipt-total { display: flex; justifyContent: space-between; font-weight: 900; font-size: 18px; margin: 5px 0; }
+                            hr { border-top: 2px dashed #000; margin: 5px 0; }
+                        `}</style>
+                    </PrintPortal>
+                )}
             </div >
         );
     };
@@ -1391,6 +1895,15 @@ const AdminApp = () => {
                                 <FaCheck /> Kategoriyalar
                             </button>
                             <button
+                                onClick={() => setActiveTab('places')}
+                                style={{
+                                    padding: '1rem', textAlign: 'left', borderRadius: '8px', display: 'flex', gap: '10px', alignItems: 'center',
+                                    background: activeTab === 'places' ? '#333' : 'transparent', color: '#fff'
+                                }}
+                            >
+                                <FaChair /> Joylar
+                            </button>
+                            <button
                                 onClick={() => setActiveTab('stats')}
                                 style={{
                                     padding: '1rem', textAlign: 'left', borderRadius: '8px', display: 'flex', gap: '10px', alignItems: 'center',
@@ -1424,15 +1937,17 @@ const AdminApp = () => {
                             <FaPrint /> Oshxona
                         </button>
                     )}
-                    <button
-                        onClick={() => setActiveTab('history')}
-                        style={{
-                            padding: '1rem', textAlign: 'left', borderRadius: '8px', display: 'flex', gap: '10px', alignItems: 'center',
-                            background: activeTab === 'history' ? '#333' : 'transparent', color: '#fff'
-                        }}
-                    >
-                        <FaHistory /> Tarix
-                    </button>
+                    {userRole === 'cashier' && (
+                        <button
+                            onClick={() => setActiveTab('history')}
+                            style={{
+                                padding: '1rem', textAlign: 'left', borderRadius: '8px', display: 'flex', gap: '10px', alignItems: 'center',
+                                background: activeTab === 'history' ? '#333' : 'transparent', color: '#fff'
+                            }}
+                        >
+                            <FaHistory /> Tarix
+                        </button>
+                    )}
                 </nav>
 
                 <button
@@ -1449,6 +1964,7 @@ const AdminApp = () => {
                 {activeTab === 'kitchen' && <KitchenView />}
                 {activeTab === 'menu' && <MenuView />}
                 {activeTab === 'categories' && <CategoriesView />}
+                {activeTab === 'places' && <PlacesView />}
                 {activeTab === 'stats' && <StatsView />}
                 {activeTab === 'history' && <HistoryView />}
                 {activeTab === 'archives' && <ArchivesView />}

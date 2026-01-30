@@ -3,22 +3,24 @@
   --bg-primary: #121212;
   --bg-secondary: #1e1e1e;
   --bg-card: #252525;
-  
+
   --text-primary: #ffffff;
   --text-secondary: #a0a0a0;
   --text-muted: #666666;
 
-  --accent-color: #f59e0b; /* Amber 500 */
-  --accent-hover: #d97706; /* Amber 600 */
-  
+  --accent-color: #f59e0b;
+  /* Amber 500 */
+  --accent-hover: #d97706;
+  /* Amber 600 */
+
   --success: #10b981;
   --danger: #ef4444;
   --warning: #f59e0b;
-  
+
   /* Borders */
   --border-color: #333333;
   --radius: 12px;
-  
+
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
@@ -32,7 +34,8 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  -webkit-tap-highlight-color: transparent; /* Remove blue highlight on mobile tap */
+  -webkit-tap-highlight-color: transparent;
+  /* Remove blue highlight on mobile tap */
 }
 
 body {
@@ -70,8 +73,15 @@ a {
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-fade-in {
@@ -82,13 +92,43 @@ a {
 ::-webkit-scrollbar {
   width: 8px;
 }
+
 ::-webkit-scrollbar-track {
-  background: var(--bg-primary); 
+  background: var(--bg-primary);
 }
+
 ::-webkit-scrollbar-thumb {
-  background: #444; 
+  background: #444;
   border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: #555; 
+  background: #555;
+}
+
+/* Printing Portals */
+#print-root {
+  display: none;
+}
+
+@media print {
+
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+    background: white;
+  }
+
+  #root {
+    display: none !important;
+  }
+
+  #print-root {
+    display: block !important;
+    position: static;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
 }

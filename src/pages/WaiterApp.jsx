@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useData } from '../context/DataContext';
-import { FaUserTie, FaCheckCircle, FaShoppingBasket, FaArrowLeft, FaTrash } from 'react-icons/fa';
+import { FaUserTie, FaCheckCircle, FaShoppingBasket, FaArrowLeft, FaTrash, FaSearch, FaCheckDouble, FaTimes } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
 // --- COMPONENTS ---
@@ -84,23 +84,68 @@ const MenuItem = ({ item, onAdd }) => (
     </div>
 );
 
+// --- TOAST COMPONENT ---
+const Toast = ({ message, type, onClose }) => (
+    <div className="animate-fade-in" style={{
+        position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)',
+        background: type === 'error' ? '#7f1d1d' : '#064e3b',
+        color: '#fff',
+        padding: '1rem 2rem',
+        borderRadius: '50px',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+        zIndex: 1000,
+        display: 'flex', alignItems: 'center', gap: '1rem',
+        fontWeight: 'bold',
+        minWidth: '300px', justifyContent: 'center'
+    }}>
+        {type === 'error' ? <FaTimes /> : <FaCheckCircle />}
+        {message}
+    </div>
+);
+
 // --- MAIN PAGE ---
 
 const WaiterApp = () => {
-    const { tables, menu, sendOrder, updateOrder } = useData();
+    const { tables, menu, categories: ctxCategories, sendOrder, updateOrder } = useData();
     const navigate = useNavigate();
 
     const [selectedTable, setSelectedTable] = useState(null);
-    const [activeCategory, setActiveCategory] = useState("Taomlar");
+    const [activeCategory, setActiveCategory] = useState("Taomlar"); // Will update effect below
     const [cart, setCart] = useState([]);
     const [editingOrderId, setEditingOrderId] = useState(null);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [toast, setToast] = useState(null); // { message, type }
 
-    // Create unique categories
-    const categories = useMemo(() => ["Taomlar", "Kaboblar", "Ichimliklar", "Boshqa"], []);
+    // Show Toast Helper
+    const showToast = (message, type = 'success') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+    };
+
+    // Use Categories from Context, fallback to default if empty (though specific usage might vary)
+    const categories = useMemo(() => {
+        if (ctxCategories && ctxCategories.length > 0) {
+            return ctxCategories.map(c => c.name);
+        }
+        return ["Taomlar", "Kaboblar", "Ichimliklar", "Boshqa"];
+    }, [ctxCategories]);
+
+    // Update active category if current selection is invalid
+    React.useEffect(() => {
+        if (categories.length > 0 && !categories.includes(activeCategory)) {
+            setActiveCategory(categories[0]);
+        }
+    }, [categories, activeCategory]);
 
     // Filtered Menu
-    // Filtered Menu (Category + Availability)
-    const filteredMenu = menu.filter(m => m.category === activeCategory && m.available !== false);
+    const filteredMenu = menu.filter(m => {
+        const matchesCategory = m.category === activeCategory;
+        const matchesSearch = m.name.toLowerCase().includes(searchQuery.toLowerCase());
+        const isAvailable = m.available !== false;
+
+        if (searchQuery) return matchesSearch && isAvailable; // If searching, ignore category (optional, but better UX)
+        return matchesCategory && isAvailable;
+    });
 
     const addToCart = (item) => {
         setCart(prev => {
@@ -131,10 +176,10 @@ const WaiterApp = () => {
 
         if (editingOrderId) {
             updateOrder(editingOrderId, cart);
-            alert("Buyurtma yangilandi!");
+            showToast("Buyurtma yangilandi!");
         } else {
             sendOrder(selectedTable.id, cart);
-            alert("Buyurtma yuborildi!");
+            showToast("Buyurtma yuborildi!");
         }
 
         // Reset
@@ -195,6 +240,9 @@ const WaiterApp = () => {
                 </div>
             </header>
 
+            {/* Toast Notification */}
+            {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+
             {/* Active Orders List (Show only if not editing) */}
             {!editingOrderId && activeTableOrders.length > 0 && (
                 <div style={{ padding: '1rem', background: '#222', borderBottom: '1px solid #333' }}>
@@ -205,22 +253,54 @@ const WaiterApp = () => {
                                 key={order.id}
                                 onClick={() => handleEditOrder(order)}
                                 style={{
-                                    background: '#333', border: '1px solid #555', borderRadius: '8px', padding: '0.5rem',
-                                    minWidth: '120px', textAlign: 'left', cursor: 'pointer'
+                                    background: order.printed ? '#064e3b' : '#333', // Dark Green if printed
+                                    border: order.printed ? '1px solid var(--success)' : '1px solid #555',
+                                    borderRadius: '8px', padding: '0.5rem',
+                                    minWidth: '120px', textAlign: 'left', cursor: 'pointer',
+                                    position: 'relative', overflow: 'hidden'
                                 }}
                             >
+                                {order.printed && (
+                                    <div style={{ position: 'absolute', top: 0, right: 0, background: 'var(--success)', padding: '2px 4px', borderBottomLeftRadius: '4px' }}>
+                                        <FaCheckDouble size={10} color="#fff" />
+                                    </div>
+                                )}
                                 <div style={{ fontWeight: 'bold', fontSize: '0.8rem' }}>#{idx + 1} - {new Date(order.timestamp).toLocaleTimeString()}</div>
-                                <div style={{ fontSize: '0.7rem', color: '#aaa' }}>{order.items.length} ta taom</div>
-                                <div style={{ color: 'var(--accent-color)', fontWeight: 'bold' }}>{order.total.toLocaleString()}</div>
+                                <div style={{ fontSize: '0.7rem', color: order.printed ? '#fff' : '#aaa' }}>{order.items.length} ta taom</div>
+                                <div style={{ color: order.printed ? '#fff' : 'var(--accent-color)', fontWeight: 'bold' }}>{order.total.toLocaleString()}</div>
                             </button>
                         ))}
                     </div>
                 </div>
             )}
 
-            {/* Categories */}
-            <div style={{ padding: '0 1rem' }}>
-                <CategoryFilter categories={categories} active={activeCategory} onSelect={setActiveCategory} />
+            {/* Categories & Search */}
+            <div style={{ padding: '0 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ position: 'relative' }}>
+                    <FaSearch style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#aaa' }} />
+                    <input
+                        type="text"
+                        placeholder="Qidirish..."
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        style={{
+                            width: '100%', padding: '0.8rem', paddingLeft: '2.5rem',
+                            borderRadius: '12px', border: '1px solid #444',
+                            background: '#252525', color: '#fff', fontSize: '1rem'
+                        }}
+                    />
+                    {searchQuery && (
+                        <button
+                            onClick={() => setSearchQuery('')}
+                            style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', color: '#aaa' }}
+                        >
+                            <FaTimes />
+                        </button>
+                    )}
+                </div>
+                {!searchQuery && (
+                    <CategoryFilter categories={categories} active={activeCategory} onSelect={setActiveCategory} />
+                )}
             </div>
 
             {/* Menu List */}

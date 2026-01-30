@@ -81,7 +81,8 @@ const defaultData = {
     ],
     activeOrders: [],
     history: [],
-    archives: []
+    archives: [],
+    reservations: []
 };
 
 // Load DB
@@ -93,6 +94,7 @@ if (fs.existsSync(DB_FILE)) {
         // Default categories if missing
         if (!db.categories) db.categories = defaultData.categories;
         if (!db.archives) db.archives = [];
+        if (!db.reservations) db.reservations = [];
 
         // --- AUTO-CLEANUP: Remove archives older than 30 days ---
         const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
@@ -220,6 +222,20 @@ io.on('connection', (socket) => {
         if (tableIndex === -1) return;
 
         const table = db.tables[tableIndex];
+
+        // Force Clear Bypass
+        if (paymentMethod === 'MAJBURIY') {
+            db.tables[tableIndex] = {
+                ...table,
+                status: 'free',
+                total: 0,
+                orders: []
+            };
+            saveDb();
+            io.emit('data_update', db);
+            return;
+        }
+
         if (table.orders.length === 0) return;
 
         // Move to History with Payment Info
@@ -231,13 +247,36 @@ io.on('connection', (socket) => {
 
         db.history.push(...closedOrders);
 
-        // Reset Table
+        // Check for related tables (Multi-table checkout)
+        const relatedTables = new Set();
+        table.orders.forEach(o => {
+            if (o.relatedTableIds) {
+                o.relatedTableIds.forEach(id => relatedTables.add(id));
+            }
+        });
+
+        // Reset Primary Table
         db.tables[tableIndex] = {
             ...table,
             status: 'free',
             total: 0,
             orders: []
         };
+
+        // Reset Related Tables
+        relatedTables.forEach(tId => {
+            if (tId !== tableId) {
+                const tIdx = db.tables.findIndex(t => t.id === tId);
+                if (tIdx !== -1) {
+                    db.tables[tIdx] = {
+                        ...db.tables[tIdx],
+                        status: 'free',
+                        total: 0,
+                        orders: []
+                    };
+                }
+            }
+        });
 
         // Cleanup: Remove these orders from Active Orders list
         db.activeOrders = db.activeOrders.filter(o => o.tableId !== tableId);
@@ -269,6 +308,123 @@ io.on('connection', (socket) => {
 
     socket.on('delete_menu_item', (itemId) => {
         db.menu = db.menu.filter(i => i.id !== itemId);
+        saveDb();
+        io.emit('data_update', db);
+    });
+
+
+    // 5.5 Category Management
+    socket.on('add_category', (name) => {
+        const newCat = { id: Date.now(), name };
+        if (!db.categories) db.categories = [];
+        db.categories.push(newCat);
+        saveDb();
+        io.emit('data_update', db);
+    });
+
+    socket.on('delete_category', (id) => {
+        if (db.categories) {
+            db.categories = db.categories.filter(c => c.id !== id);
+            saveDb();
+            io.emit('data_update', db);
+        }
+    });
+
+    // 5.6 RESERVATIONS (BANQUET SYSTEM)
+    socket.on('add_reservation', (resData) => {
+        const newRes = { ...resData, id: Date.now() };
+        if (!db.reservations) db.reservations = [];
+        db.reservations.push(newRes);
+        saveDb();
+        io.emit('data_update', db);
+    });
+
+    socket.on('update_reservation', (updatedRes) => {
+        console.log('Update Reservation Received:', updatedRes); // DEBUG
+        if (!db.reservations) return;
+        const index = db.reservations.findIndex(r => r.id === updatedRes.id);
+        console.log('Found Index:', index); // DEBUG
+        if (index !== -1) {
+            db.reservations[index] = { ...db.reservations[index], ...updatedRes };
+            saveDb();
+            io.emit('data_update', db);
+        }
+    });
+
+    socket.on('delete_reservation', (id) => {
+        if (db.reservations) {
+            db.reservations = db.reservations.filter(r => r.id !== id);
+            saveDb();
+            io.emit('data_update', db);
+        }
+    });
+
+    socket.on('activate_reservation', (resId) => {
+        const resIndex = db.reservations.findIndex(r => r.id === resId);
+        if (resIndex === -1) return;
+
+        const reservation = db.reservations[resIndex];
+        const { tableIds, items } = reservation;
+
+        if (!tableIds || tableIds.length === 0) return;
+
+        // 1. Mark tables as busy
+        let primaryTableId = tableIds[0];
+        tableIds.forEach(tId => {
+            const tIndex = db.tables.findIndex(t => t.id === tId);
+            if (tIndex !== -1) {
+                db.tables[tIndex].status = 'busy';
+                // If it's a secondary table, maybe link it? For now, we just mark busy.
+                // We'll put the order on the PRIMARY table.
+            }
+        });
+
+        // 2. Create Active Order for Primary Table
+        const newOrder = {
+            id: Date.now(),
+            tableId: primaryTableId,
+            items: items || [],
+            status: 'pending',
+            printed: false,
+            timestamp: new Date().toISOString(),
+            total: (items || []).reduce((sum, item) => sum + (item.price * item.quantity), 0),
+            note: `Banket: ${reservation.customer} (${reservation.guestCount} kishi)`,
+            relatedTableIds: tableIds // Store all related tables
+        };
+
+        db.activeOrders.unshift(newOrder);
+
+        // Update Primary Table Total/Orders
+        const tIndex = db.tables.findIndex(t => t.id === primaryTableId);
+        if (tIndex !== -1) {
+            db.tables[tIndex].orders.push(newOrder);
+            db.tables[tIndex].total += newOrder.total;
+        }
+
+        // 3. Delete Reservation (It's now active)
+        db.reservations.splice(resIndex, 1);
+
+        saveDb();
+        io.emit('data_update', db);
+    });
+
+    // 6. Table Management (NEW)
+    socket.on('add_table', (tableName) => {
+        const newTable = {
+            id: Date.now(),
+            name: tableName,
+            status: 'free',
+            total: 0,
+            orders: []
+        };
+        db.tables.push(newTable);
+        saveDb();
+        io.emit('data_update', db);
+    });
+
+    socket.on('delete_table', (tableId) => {
+        // Prevent deleting busy tables? Maybe. For now, strict allow.
+        db.tables = db.tables.filter(t => t.id !== tableId);
         saveDb();
         io.emit('data_update', db);
     });

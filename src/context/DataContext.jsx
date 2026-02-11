@@ -16,6 +16,7 @@ export const DataProvider = ({ children }) => {
     const [activeOrders, setActiveOrders] = useState([]);
     const [completedOrders, setCompletedOrders] = useState([]);
     const [reservations, setReservations] = useState([]); // New
+    const [settings, setSettings] = useState({ servicePercentage: 0 }); // Settings
     const [archives, setArchives] = useState([]);
     const [isConnected, setIsConnected] = useState(socket.connected);
 
@@ -34,6 +35,7 @@ export const DataProvider = ({ children }) => {
             setCompletedOrders(data.history);
             setArchives(data.archives || []);
             setReservations(data.reservations || []);
+            setSettings(data.settings || { servicePercentage: 0 });
         });
 
         socket.on('data_update', (data) => {
@@ -45,6 +47,7 @@ export const DataProvider = ({ children }) => {
             setCompletedOrders(data.history);
             setArchives(data.archives || []);
             setReservations(data.reservations || []);
+            setSettings(data.settings || { servicePercentage: 0 });
         });
 
         return () => {
@@ -58,13 +61,13 @@ export const DataProvider = ({ children }) => {
     // --- ACTIONS ---
 
     // 1. Send Order (Waiter)
-    const sendOrder = (tableId, items) => {
+    const sendOrder = (tableId, items, waiterName) => {
         if (items.length === 0) return;
-        socket.emit('place_order', { tableId, items });
+        socket.emit('place_order', { tableId, items, waiterName });
     };
 
     const updateOrder = (orderId, items) => {
-        if (items.length === 0) return; // Or allow allow delete order? For now just prevent empty.
+        // if (items.length === 0) return; // Allow empty items (voiding)
         socket.emit('update_order', { orderId, items });
     };
 
@@ -74,8 +77,8 @@ export const DataProvider = ({ children }) => {
     };
 
     // 3. Cashier: Checkout Table
-    const checkoutTable = (tableId, paymentMethod) => {
-        socket.emit('checkout_table', { tableId, paymentMethod });
+    const checkoutTable = (tableId, paymentMethod, extras = {}) => {
+        socket.emit('checkout_table', { tableId, paymentMethod, ...extras });
     };
 
     // 4. Admin: Update Menu
@@ -135,12 +138,18 @@ export const DataProvider = ({ children }) => {
         }
     };
 
+    // 9. Settings
+    const updateSettings = (newSettings) => {
+        socket.emit('update_settings', newSettings);
+    };
+
     return (
         <DataContext.Provider value={{
-            tables, menu, categories, activeOrders, completedOrders, archives, reservations, isConnected,
+            tables, menu, categories, activeOrders, completedOrders, archives, reservations, settings, isConnected,
             sendOrder, updateOrder, checkoutTable, markOrderPrinted, addMenuItem, updateMenuItem, deleteMenuItem,
             addCategory, deleteCategory, clearHistory, closeDay, clearKitchenHistory, cancelOrder,
-            addTable, deleteTable, addReservation, updateReservation, deleteReservation, activateReservation
+            addTable, deleteTable, addReservation, updateReservation, deleteReservation, activateReservation,
+            updateSettings
         }}>
             {children}
         </DataContext.Provider>

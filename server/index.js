@@ -82,7 +82,8 @@ const defaultData = {
     activeOrders: [],
     history: [],
     archives: [],
-    reservations: []
+    reservations: [],
+    settings: { servicePercentage: 0 } // Default service charge
 };
 
 // Load DB
@@ -95,6 +96,8 @@ if (fs.existsSync(DB_FILE)) {
         if (!db.categories) db.categories = defaultData.categories;
         if (!db.archives) db.archives = [];
         if (!db.reservations) db.reservations = [];
+        if (!db.settings) db.settings = { servicePercentage: 0 }; // Ensure settings exist
+
 
         // --- AUTO-CLEANUP: Remove archives older than 30 days ---
         const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
@@ -137,18 +140,27 @@ io.on('connection', (socket) => {
     socket.emit('init_data', db);
 
     // 2. Place Order
-    socket.on('place_order', ({ tableId, items }) => {
+    socket.on('place_order', ({ tableId, items, waiterName }) => {
         const tableIndex = db.tables.findIndex(t => t.id === tableId);
         if (tableIndex === -1) return;
+
+        const itemsTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const servicePercentage = db.settings.servicePercentage || 0;
+        const serviceAmount = itemsTotal * (servicePercentage / 100);
+        const total = itemsTotal + serviceAmount;
 
         const newOrder = {
             id: Date.now(),
             tableId,
             items,
-            status: 'pending',
+            status: 'pending', // pending, printed, completed
             printed: false,
             timestamp: new Date().toISOString(),
-            total: items.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+            itemsTotal,
+            servicePercentage,
+            serviceAmount,
+            total,
+            waiterName: waiterName || 'Noma\'lum'
         };
 
         // Update Table
@@ -171,12 +183,28 @@ io.on('connection', (socket) => {
         if (orderIndex === -1) return;
 
         const oldOrder = db.activeOrders[orderIndex];
-        const newTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+        // Recalculate totals
+        const itemsTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        // Use existing percentage if already set, or current settings? 
+        // Usually, if you edit an order, you might want to keep the old rate or update to new.
+        // Let's use the rate stored in the order to avoid surprise price changes if settings changed.
+        // OR, if the user explicitly wants to update settings, maybe we should update.
+        // For now: keep the original percentage fixed for the order unless we want to "re-apply" settings.
+        // But wait, if they add items, the service charge should apply to new items too.
+        // So we use oldOrder.servicePercentage.
+
+        const servicePercentage = (oldOrder.servicePercentage !== undefined) ? oldOrder.servicePercentage : (db.settings.servicePercentage || 0);
+        const serviceAmount = itemsTotal * (servicePercentage / 100);
+        const newTotal = itemsTotal + serviceAmount;
 
         // Update Active Order
         db.activeOrders[orderIndex] = {
             ...oldOrder,
             items,
+            itemsTotal,
+            servicePercentage,
+            serviceAmount,
             total: newTotal,
             // Keep printed status? Or reset? Usually reset if changed, but maybe keep for simplicity.
             // Let's keep printed status but Kitchen will see new items if they reprint.
@@ -217,7 +245,7 @@ io.on('connection', (socket) => {
     });
 
     // 4. Checkout Table
-    socket.on('checkout_table', ({ tableId, paymentMethod }) => {
+    socket.on('checkout_table', ({ tableId, paymentMethod, discount = 0, serviceOff = false }) => {
         const tableIndex = db.tables.findIndex(t => t.id === tableId);
         if (tableIndex === -1) return;
 
@@ -238,14 +266,45 @@ io.on('connection', (socket) => {
 
         if (table.orders.length === 0) return;
 
-        // Move to History with Payment Info
-        const closedOrders = table.orders.map(o => ({
-            ...o,
-            closedAt: new Date().toISOString(),
-            paymentMethod: paymentMethod || 'Naqd'
-        }));
+        // Calculate totals for distribution
+        let currentTotal = table.orders.reduce((sum, o) => sum + o.total, 0);
 
-        db.history.push(...closedOrders);
+        // If Service is OFF, recalculate totals
+        let ordersToClose = table.orders.map(o => {
+            let newTotal = o.total;
+            let finalServiceAmount = o.serviceAmount;
+
+            if (serviceOff) {
+                newTotal = o.itemsTotal; // Remove service charge
+                finalServiceAmount = 0;
+            }
+
+            return { ...o, total: newTotal, serviceAmount: finalServiceAmount, servicePercentage: serviceOff ? 0 : o.servicePercentage };
+        });
+
+        // Recalculate total after service adjustment
+        let adjustedTotal = ordersToClose.reduce((sum, o) => sum + o.total, 0);
+
+        // Apply Discount (Pro-rated)
+        ordersToClose = ordersToClose.map(o => {
+            const ratio = adjustedTotal > 0 ? (o.total / adjustedTotal) : 0;
+            const orderDiscount = Math.round(discount * ratio);
+
+            return {
+                ...o,
+                closedAt: new Date().toISOString(),
+                paymentMethod: paymentMethod || 'Naqd',
+                discount: orderDiscount,
+                finalPrice: o.total - orderDiscount, // What was actually paid for this order
+                total: o.total - orderDiscount // Update the main total to reflect actual payment? 
+                // BETTER: Keep 'total' as the original price, and 'finalPrice' or 'totalPaid' as what was paid.
+                // But existing logic uses 'total' for reports. 
+                // For simplicity in reports, let's update 'total' but keep 'originalTotal' if needed.
+                // Let's update 'total' to be the Final Paid Amount so reports sum up correctly.
+            };
+        });
+
+        db.history.push(...ordersToClose);
 
         // Check for related tables (Multi-table checkout)
         const relatedTables = new Set();
@@ -375,7 +434,6 @@ io.on('connection', (socket) => {
             if (tIndex !== -1) {
                 db.tables[tIndex].status = 'busy';
                 // If it's a secondary table, maybe link it? For now, we just mark busy.
-                // We'll put the order on the PRIMARY table.
             }
         });
 
@@ -425,6 +483,13 @@ io.on('connection', (socket) => {
     socket.on('delete_table', (tableId) => {
         // Prevent deleting busy tables? Maybe. For now, strict allow.
         db.tables = db.tables.filter(t => t.id !== tableId);
+        saveDb();
+        io.emit('data_update', db);
+    });
+
+    // 6.5 Settings Management
+    socket.on('update_settings', (newSettings) => {
+        db.settings = { ...db.settings, ...newSettings };
         saveDb();
         io.emit('data_update', db);
     });

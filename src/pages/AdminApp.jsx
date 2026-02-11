@@ -224,24 +224,209 @@ const KitchenView = () => {
     );
 };
 
-const AdminApp = () => {
-    const { tables, checkoutTable, completedOrders, archives, menu, categories, addMenuItem, updateMenuItem, deleteMenuItem, addCategory, deleteCategory, clearHistory, closeDay, addTable, deleteTable, reservations, addReservation, updateReservation, deleteReservation, activateReservation } = useData();
-    const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState('cashier'); // cashier, menu, categories, history
-    const [selectedTable, setSelectedTable] = useState(null); // We need direct socket access for categories or add to context. Better: add to context.
-    // For now, let's assume we can get categories from db.json via init_data in context.
-    // Wait, context doesn't expose categories yet. Let's fix Context first or hack it here.
-    // Actually, I should update Context to provide categories.
-    // But for speed, I will update Context concurrently or just fetch it.
+// --- HELPERS ---
+const getTableTotal = (table) => {
+    return table.orders.reduce((sum, order) => sum + order.total, 0);
+};
 
-    // Correction: I should update DataContext first.
-    // Let's assume DataContext *will* provide categories in next steps.
-    // I'll add `categories` to the destructuring.
+// --- PAYMENT MODAL COMPONENT ---
+const PaymentModalContent = ({ selectedTable, onClose, onCheckout, settings }) => {
+    const [paymentMethod, setPaymentMethod] = useState('Naqd');
+    const [splitValues, setSplitValues] = useState({ cash: 0, card: 0, click: 0 });
+    const [serviceOff, setServiceOff] = useState(false);
+    const [discount, setDiscount] = useState(0);
+    // Calculate initial totals
+    const initialItemsTotal = selectedTable.orders.reduce((sum, o) => sum + (o.itemsTotal || o.total), 0); // itemsTotal might be missing on old orders
+    const initialService = selectedTable.orders.reduce((sum, o) => sum + (o.serviceAmount || 0), 0);
+    const initialTotal = getTableTotal(selectedTable);
+
+    // If serviceOff is toggled, we need to recalc
+    // Actually, let's derive values from state
+    const servicePercentage = settings.servicePercentage || 0;
+
+    // We can't easily recalc service amount from itemsTotal if we don't have it for all orders.
+    // But updated orders should have it.
+    // Let's assume current stored serviceAmount is correct for the "ON" state.
+    const currentServiceAmount = serviceOff ? 0 : initialService;
+
+    // Base total (items only)
+    // If orders don't have itemsTotal, we assume total - serviceAmount?
+    // Let's rely on getTableTotal representing (Items + Service).
+    // So Items = Total - Service.
+    const itemsTotal = initialTotal - initialService;
+
+    const grossTotal = itemsTotal + currentServiceAmount;
+    const finalTotal = grossTotal - discount;
+
+    const handleFinalize = () => {
+        let finalMethod = paymentMethod;
+
+        if (paymentMethod === 'Aralash') {
+            const { cash, card, click } = splitValues;
+            const sum = Number(cash) + Number(card) + Number(click);
+            if (sum !== finalTotal) {
+                alert(`Summa to'g'ri kelmadi! Jami: ${finalTotal.toLocaleString()}, Kiritildi: ${sum.toLocaleString()}`);
+                return;
+            }
+            finalMethod = `Aralash (Naqd: ${cash.toLocaleString()}, Karta: ${card.toLocaleString()}, Click: ${click.toLocaleString()})`;
+        }
+
+        onCheckout(finalMethod, { discount, serviceOff });
+    };
+
+    return (
+        <div style={{ background: '#252525', padding: '2rem', borderRadius: '16px', width: '450px', maxWidth: '95%', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                <h2>To'lov: {selectedTable.name}</h2>
+                <button onClick={onClose} style={{ background: 'transparent', color: '#fff', fontSize: '1.5rem', border: 'none', cursor: 'pointer' }}><FaTimes /></button>
+            </div>
+
+            {/* Totals Breakdown */}
+            <div style={{ background: '#333', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: '#aaa' }}>
+                    <span>Taomlar:</span>
+                    <span>{itemsTotal.toLocaleString()}</span>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', alignItems: 'center' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', userSelect: 'none' }}>
+                        <input
+                            type="checkbox"
+                            checked={!serviceOff}
+                            onChange={() => setServiceOff(!serviceOff)}
+                            style={{ width: '16px', height: '16px', accentColor: 'var(--accent-color)' }}
+                        />
+                        <span>Xizmat ({serviceOff ? '0' : servicePercentage}%):</span>
+                    </label>
+                    <span style={{ color: serviceOff ? '#666' : '#fff' }}>{currentServiceAmount.toLocaleString()}</span>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', alignItems: 'center' }}>
+                    <span>Chegirma (Skidka):</span>
+                    <input
+                        type="number"
+                        value={discount}
+                        onChange={(e) => setDiscount(Number(e.target.value))}
+                        onFocus={(e) => e.target.select()}
+                        style={{ width: '100px', padding: '0.3rem', borderRadius: '4px', border: '1px solid #555', background: '#222', color: '#fff', textAlign: 'right' }}
+                    />
+                </div>
+
+                <div style={{ borderTop: '1px solid #555', paddingTop: '0.5rem', marginTop: '0.5rem', display: 'flex', justifyContent: 'space-between', fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--success)' }}>
+                    <span>JAMI:</span>
+                    <span>{finalTotal.toLocaleString()} so'm</span>
+                </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '2rem' }}>
+                {['Naqd', 'Karta', 'Click', 'Aralash'].map(method => (
+                    <button
+                        key={method}
+                        onClick={() => setPaymentMethod(method)}
+                        style={{
+                            padding: '1rem', borderRadius: '8px', fontWeight: 'bold',
+                            background: paymentMethod === method ? 'var(--accent-color)' : '#333',
+                            color: paymentMethod === method ? '#000' : '#fff',
+                            border: paymentMethod === method ? 'none' : '1px solid #444',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        {method}
+                    </button>
+                ))}
+            </div>
+
+            {/* Split Payment Inputs */}
+            {paymentMethod === 'Aralash' && (
+                <div style={{ marginBottom: '2rem', background: '#333', padding: '1rem', borderRadius: '8px' }}>
+                    <h4 style={{ marginBottom: '0.5rem', borderBottom: '1px solid #555', paddingBottom: '0.5rem' }}>Summalarni kiriting:</h4>
+                    <div style={{ display: 'grid', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <label>Naqd:</label>
+                            <input
+                                type="number"
+                                value={splitValues.cash || ''}
+                                onChange={e => setSplitValues({ ...splitValues, cash: Number(e.target.value) })}
+                                style={{ width: '120px', padding: '0.5rem', borderRadius: '4px', background: '#222', border: '1px solid #555', color: '#fff' }}
+                            />
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <label>Plastik (Karta):</label>
+                            <input
+                                type="number"
+                                value={splitValues.card || ''}
+                                onChange={e => setSplitValues({ ...splitValues, card: Number(e.target.value) })}
+                                style={{ width: '120px', padding: '0.5rem', borderRadius: '4px', background: '#222', border: '1px solid #555', color: '#fff' }}
+                            />
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <label>Click:</label>
+                            <input
+                                type="number"
+                                value={splitValues.click || ''}
+                                onChange={e => setSplitValues({ ...splitValues, click: Number(e.target.value) })}
+                                style={{ width: '120px', padding: '0.5rem', borderRadius: '4px', background: '#222', border: '1px solid #555', color: '#fff' }}
+                            />
+                        </div>
+                    </div>
+                    <div style={{ marginTop: '0.5rem', textAlign: 'right', fontWeight: 'bold', color: (splitValues.cash + splitValues.card + splitValues.click) === finalTotal ? 'var(--success)' : 'var(--danger)' }}>
+                        Kiritildi: {(splitValues.cash + splitValues.card + splitValues.click).toLocaleString()} so'm
+                    </div>
+                </div>
+            )}
+
+            <button
+                onClick={handleFinalize}
+                style={{ width: '100%', padding: '1rem', background: 'var(--success)', color: '#fff', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.2rem', border: 'none', cursor: 'pointer' }}
+            >
+                YOPISH VA CHOP ETISH
+            </button>
+        </div>
+    );
+};
+
+const AdminApp = () => {
+    const { tables, checkoutTable, updateOrder, completedOrders, archives, menu, categories, addMenuItem, updateMenuItem, deleteMenuItem, addCategory, deleteCategory, clearHistory, closeDay, addTable, deleteTable, reservations, addReservation, updateReservation, deleteReservation, activateReservation, settings, updateSettings } = useData();
+    const navigate = useNavigate();
+    const [activeTab, setActiveTab] = useState('cashier'); // cashier, menu, categories, history, settings
+    const [selectedTable, setSelectedTable] = useState(null);
+    const [printingBill, setPrintingBill] = useState(false);
+
+    // Auto-print effect
+    useEffect(() => {
+        if (printingBill) {
+            const timer = setTimeout(() => {
+                window.print();
+                setPrintingBill(false);
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [printingBill]);
+
+    // Confirmation Modal State
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [pendingCheckout, setPendingCheckout] = useState(null);
+
+    // Error Modal State
+    const [showErrorModal, setShowErrorModal] = useState(false);
+    const [errorMsg, setErrorMsg] = useState('');
 
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [password, setPassword] = useState('');
     const [loginRole, setLoginRole] = useState('cashier'); // 'cashier' or 'admin' 
     const [userRole, setUserRole] = useState(''); // The authenticated role
+
+    // SYNC SELECTED TABLE w/ REALTIME DATA
+    useEffect(() => {
+        if (selectedTable) {
+            const updatedTable = tables.find(t => t.id === selectedTable.id);
+            if (updatedTable) {
+                // Only update if data actually changed to avoid loop (though react handles obj ref diff)
+                // Actually we want to update to get new totals/orders
+                setSelectedTable(updatedTable);
+            }
+        }
+    }, [tables, selectedTable?.id]); // Depend on tables and current ID
 
     const handleLogin = () => {
         if (loginRole === 'cashier' && password === '1111') {
@@ -253,7 +438,8 @@ const AdminApp = () => {
             setActiveTab('menu');
             setIsAuthenticated(true);
         } else {
-            alert("Parol noto'g'ri!");
+            setErrorMsg("Parol noto'g'ri!");
+            setShowErrorModal(true);
         }
     };
 
@@ -294,6 +480,40 @@ const AdminApp = () => {
                         Kirish
                     </button>
                 </div>
+
+                {/* CUSTOM ERROR MODAL LOGIN */}
+                {showErrorModal && (
+                    <div style={{
+                        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                        background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        zIndex: 2200
+                    }}>
+                        <div style={{
+                            background: '#1e1e1e', padding: '2rem', borderRadius: '12px',
+                            width: '350px', textAlign: 'center', border: '1px solid #ff4444',
+                            boxShadow: '0 10px 25px rgba(255, 68, 68, 0.2)'
+                        }}>
+                            <div style={{ color: '#ff4444', marginBottom: '1rem' }}>
+                                <FaTimes size={40} />
+                            </div>
+                            <h2 style={{ color: '#ff4444', marginBottom: '1rem' }}>Xatolik</h2>
+                            <p style={{ color: '#ccc', marginBottom: '2rem', fontSize: '1.2rem' }}>
+                                {errorMsg}
+                            </p>
+                            <button
+                                onClick={() => setShowErrorModal(false)}
+                                style={{
+                                    padding: '0.8rem 2rem',
+                                    background: '#333', color: '#fff',
+                                    border: '1px solid #555', borderRadius: '8px',
+                                    cursor: 'pointer', fontSize: '1rem', width: '100%'
+                                }}
+                            >
+                                OK
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         );
     }
@@ -570,6 +790,12 @@ const AdminApp = () => {
 
         // Calculate Total for Table
         const getTableTotal = (table) => {
+            // "total" property in table is ALREADY the sum of order.total (which includes service charge).
+            // But let's be sure. In server, table.total += newOrder.total.
+            // So table.total is correct.
+            // Only for receipt breakdown we might want raw items total.
+            // For now, this function is mostly used for "Jami" display.
+            // But wait, the previous code was: table.orders.reduce((sum, order) => sum + order.total, 0);
             return table.orders.reduce((sum, order) => sum + order.total, 0);
         };
 
@@ -683,11 +909,62 @@ const AdminApp = () => {
                                 ) : (
                                     selectedTable.orders.map((order, idx) => (
                                         <div key={order.id} style={{ marginBottom: '1rem', borderBottom: '1px dashed #333', paddingBottom: '0.5rem' }}>
-                                            <div style={{ fontSize: '0.8rem', color: '#aaa', marginBottom: '0.2rem' }}>Buyurtma #{idx + 1} - {new Date(order.timestamp).toLocaleTimeString()}</div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#aaa', marginBottom: '0.2rem' }}>
+                                                <span>Buyurtma #{idx + 1} - {new Date(order.timestamp).toLocaleTimeString()}</span>
+                                                <span style={{ color: 'var(--accent-color)' }}>Ofitsiant: {order.waiterName || "Noma'lum"}</span>
+                                            </div>
                                             {order.items.map((item, i) => (
-                                                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                                                    <span>{item.quantity} x {item.name}</span>
-                                                    <span>{(item.price * item.quantity).toLocaleString()}</span>
+                                                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', alignItems: 'center' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                const newItems = [...order.items];
+                                                                if (newItems[i].quantity > 1) {
+                                                                    newItems[i].quantity -= 1;
+                                                                    updateOrder(order.id, newItems);
+                                                                } else {
+                                                                    if (window.confirm(`${item.name} ni hisobdan o'chirmoqchimisiz?`)) {
+                                                                        newItems.splice(i, 1);
+                                                                        updateOrder(order.id, newItems);
+                                                                    }
+                                                                }
+                                                            }}
+                                                            style={{ background: '#444', color: '#fff', border: 'none', borderRadius: '4px', width: '24px', height: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                        >-</button>
+                                                        <span style={{ fontWeight: 'bold' }}>{item.quantity}</span>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                const newItems = [...order.items];
+                                                                newItems[i].quantity += 1;
+                                                                updateOrder(order.id, newItems);
+                                                            }}
+                                                            style={{ background: '#444', color: '#fff', border: 'none', borderRadius: '4px', width: '24px', height: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                        >+</button>
+                                                        <span style={{ marginLeft: '5px' }}>x {item.name}</span>
+                                                    </div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                        <span>{(item.price * item.quantity).toLocaleString()}</span>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                if (window.confirm(`${item.name} ni hisobdan o'chirmoqchimisiz?`)) {
+                                                                    const newItems = [...order.items];
+                                                                    newItems.splice(i, 1);
+                                                                    updateOrder(order.id, newItems);
+                                                                }
+                                                            }}
+                                                            style={{
+                                                                background: '#333', border: 'none', color: '#ef4444',
+                                                                cursor: 'pointer', padding: '4px', borderRadius: '4px',
+                                                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                            }}
+                                                            title="O'chirish"
+                                                        >
+                                                            <FaTrash size={14} />
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>
@@ -700,100 +977,213 @@ const AdminApp = () => {
                                     <span>Jami:</span>
                                     <span style={{ color: 'var(--accent-color)' }}>{getTableTotal(selectedTable).toLocaleString()} so'm</span>
                                 </div>
-                                <button
-                                    disabled={selectedTable.status === 'free'}
-                                    onClick={handleCheckoutClick}
-                                    style={{
-                                        width: '100%', padding: '1rem',
-                                        background: selectedTable.status === 'free' ? '#333' : 'var(--success)',
-                                        color: '#fff', borderRadius: '8px', fontSize: '1.2rem'
-                                    }}
-                                >
-                                    {selectedTable.status === 'free' ? 'Stol Bo\'sh' : 'TO\'LOV QILISH'}
-                                </button>
+                                <div style={{ display: 'flex', gap: '1rem' }}>
+                                    <button
+                                        disabled={selectedTable.status === 'free'}
+                                        onClick={() => setPrintingBill(true)}
+                                        style={{
+                                            flex: 1, padding: '1rem',
+                                            background: '#333', border: '1px solid #555',
+                                            color: '#fff', borderRadius: '8px', fontSize: '1.2rem',
+                                            cursor: selectedTable.status === 'free' ? 'not-allowed' : 'pointer',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+                                        }}
+                                    >
+                                        <FaPrint /> CHEK
+                                    </button>
+                                    <button
+                                        disabled={selectedTable.status === 'free'}
+                                        onClick={handleCheckoutClick}
+                                        style={{
+                                            flex: 2, padding: '1rem',
+                                            background: selectedTable.status === 'free' ? '#333' : 'var(--success)',
+                                            color: '#fff', borderRadius: '8px', fontSize: '1.2rem',
+                                            cursor: selectedTable.status === 'free' ? 'not-allowed' : 'pointer'
+                                        }}
+                                    >
+                                        {selectedTable.status === 'free' ? 'Stol Bo\'sh' : 'TO\'LOV QILISH'}
+                                    </button>
+                                </div>
                             </div>
 
-                            {/* PAYMENT MODAL */}
+                            {/* PRE-CHECKOUT BILL PRINT */}
+                            {printingBill && (
+                                <PrintPortal>
+                                    <div className="print-receipt">
+                                        <h3>KAFE EPOS</h3>
+                                        <p>Hisob-kitob (To'lanmagan)</p>
+                                        <hr />
+                                        <div className="receipt-header">
+                                            <h2>{selectedTable.name}</h2>
+                                            <p>{new Date().toLocaleString()}</p>
+                                        </div>
+                                        <hr />
+                                        <div className="receipt-items">
+                                            {selectedTable.orders.flatMap(o => o.items).map((item, i) => (
+                                                <div key={i} className="receipt-item">
+                                                    <div className="receipt-row-1">
+                                                        {item.quantity} x {item.name}
+                                                    </div>
+                                                    <div className="receipt-row-2">
+                                                        {(item.price * item.quantity).toLocaleString()}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <hr />
+                                        <div className="receipt-total">
+                                            <span>JAMI (Taomlar):</span>
+                                            <span>{getTableTotal(selectedTable).toLocaleString()} so'm</span>
+                                        </div>
+                                        {/* Show default service charge if enabled in settings? 
+                                            We don't know if they will toggle it off, but standard bill shows it.
+                                            Let's show it based on settings.
+                                        */}
+                                        {settings.servicePercentage > 0 && (
+                                            <div className="receipt-total" style={{ fontSize: '16px', fontWeight: 'normal' }}>
+                                                <span>Xizmat ({settings.servicePercentage}%):</span>
+                                                <span>{(getTableTotal(selectedTable) * settings.servicePercentage / 100).toLocaleString()} so'm</span>
+                                            </div>
+                                        )}
+                                        <div className="receipt-total" style={{ fontSize: '20px', borderTop: '1px solid #000', paddingTop: '5px', marginTop: '5px' }}>
+                                            <span>JAMI:</span>
+                                            <span>{(getTableTotal(selectedTable) * (1 + (settings.servicePercentage || 0) / 100)).toLocaleString()} so'm</span>
+                                        </div>
+                                        <hr />
+                                        <style>{`
+                                            .print-receipt {
+                                                width: 44mm;
+                                                margin: 0 auto;
+                                                background: white;
+                                                color: #000000 !important;
+                                                font-family: 'Courier New', monospace;
+                                                padding-bottom: 5mm;
+                                                text-align: center;
+                                                font-size: 16px;
+                                                font-weight: 700;
+                                            }
+                                            .print-receipt h3 { margin: 0; font-size: 20px; font-weight: 900; }
+                                            .print-receipt p { margin: 2px 0; font-size: 16px; font-weight: 800; }
+                                            .receipt-item { display: flex; flex-direction: column; margin-bottom: 8px; border-bottom: 1px dotted #ccc; padding-bottom: 2px; }
+                                            .receipt-row-1 { text-align: left; width: 100%; overflow-wrap: break-word; }
+                                            .receipt-row-2 { text-align: center; width: 100%; margin-top: 2px; font-size: 18px; font-weight: 900; }
+                                            .receipt-total { display: flex; justifyContent: space-between; font-weight: 900; font-size: 18px; margin: 5px 0; }
+                                            hr { border-top: 2px dashed #000; margin: 5px 0; }
+                                        `}</style>
+                                    </div>
+                                </PrintPortal>
+                            )}
+
                             {showPaymentModal && (
                                 <div style={{
                                     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
                                     background: 'rgba(0,0,0,0.8)', zIndex: 100,
                                     display: 'flex', alignItems: 'center', justifyContent: 'center'
                                 }}>
-                                    <div style={{ background: '#252525', padding: '2rem', borderRadius: 'var(--radius)', width: '400px', maxWidth: '90%' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                                            <h2>To'lov: {selectedTable.name}</h2>
-                                            <button onClick={() => setShowPaymentModal(false)} style={{ background: 'transparent', color: '#fff', fontSize: '1.5rem' }}><FaTimes /></button>
-                                        </div>
+                                    <PaymentModalContent
+                                        selectedTable={selectedTable}
+                                        onClose={() => setShowPaymentModal(false)}
+                                        onCheckout={(method, extras) => {
+                                            // 1. Print
+                                            window.print();
 
-                                        <p style={{ fontSize: '1.5rem', textAlign: 'center', marginBottom: '1.5rem', color: 'var(--success)' }}>
-                                            {getTableTotal(selectedTable).toLocaleString()} so'm
+                                            // 2. Open Custom Confirm Modal
+                                            setTimeout(() => {
+                                                setPendingCheckout({ method, extras });
+                                                setShowConfirmModal(true);
+                                                setShowPaymentModal(false);
+                                            }, 100);
+                                        }}
+                                        settings={settings}
+                                    />
+                                </div>
+                            )}
+
+                            {/* CUSTOM CONFIRMATION MODAL */}
+                            {showConfirmModal && (
+                                <div style={{
+                                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                                    background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    zIndex: 2000
+                                }}>
+                                    <div style={{
+                                        background: '#1e1e1e', padding: '2rem', borderRadius: '12px',
+                                        width: '400px', textAlign: 'center', border: '1px solid #444',
+                                        boxShadow: '0 10px 25px rgba(0,0,0,0.5)'
+                                    }}>
+                                        <h2 style={{ color: '#fff', marginBottom: '1rem' }}>To'lovni Tasdiqlash</h2>
+                                        <p style={{ color: '#ccc', marginBottom: '2rem', fontSize: '1.2rem' }}>
+                                            Chek chiqarildi.<br />
+                                            To'lov to'liq qabul qilindimi va stol yopilsinmi?
                                         </p>
-
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '2rem' }}>
-                                            {['Naqd', 'Karta', 'Click', 'Aralash'].map(method => (
-                                                <button
-                                                    key={method}
-                                                    onClick={() => setPaymentMethod(method)}
-                                                    style={{
-                                                        padding: '1rem', borderRadius: '8px', fontWeight: 'bold',
-                                                        background: paymentMethod === method ? 'var(--accent-color)' : '#333',
-                                                        color: paymentMethod === method ? '#000' : '#fff',
-                                                        border: paymentMethod === method ? 'none' : '1px solid #444'
-                                                    }}
-                                                >
-                                                    {method}
-                                                </button>
-                                            ))}
-                                        </div>
-
-                                        {/* Split Payment Inputs */}
-                                        {paymentMethod === 'Aralash' && (
-                                            <div style={{ marginBottom: '2rem', background: '#333', padding: '1rem', borderRadius: '8px' }}>
-                                                <h4 style={{ marginBottom: '0.5rem', borderBottom: '1px solid #555', paddingBottom: '0.5rem' }}>Summalarni kiriting:</h4>
-                                                <div style={{ display: 'grid', gap: '0.5rem' }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                        <label>Naqd:</label>
-                                                        <input
-                                                            type="number"
-                                                            value={splitValues.cash || ''}
-                                                            onChange={e => setSplitValues({ ...splitValues, cash: Number(e.target.value) })}
-                                                            style={{ width: '120px', padding: '0.5rem', borderRadius: '4px', background: '#222', border: '1px solid #555', color: '#fff' }}
-                                                        />
-                                                    </div>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                        <label>Plastik (Karta):</label>
-                                                        <input
-                                                            type="number"
-                                                            value={splitValues.card || ''}
-                                                            onChange={e => setSplitValues({ ...splitValues, card: Number(e.target.value) })}
-                                                            style={{ width: '120px', padding: '0.5rem', borderRadius: '4px', background: '#222', border: '1px solid #555', color: '#fff' }}
-                                                        />
-                                                    </div>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                        <label>Click:</label>
-                                                        <input
-                                                            type="number"
-                                                            value={splitValues.click || ''}
-                                                            onChange={e => setSplitValues({ ...splitValues, click: Number(e.target.value) })}
-                                                            style={{ width: '120px', padding: '0.5rem', borderRadius: '4px', background: '#222', border: '1px solid #555', color: '#fff' }}
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div style={{ marginTop: '0.5rem', textAlign: 'right', fontWeight: 'bold', color: (splitValues.cash + splitValues.card + splitValues.click) === getTableTotal(selectedTable) ? 'var(--success)' : 'var(--danger)' }}>
-                                                    Kiritildi: {(splitValues.cash + splitValues.card + splitValues.click).toLocaleString()} so'm
-                                                </div>
-                                            </div>
-                                        )}
-
                                         <div style={{ display: 'flex', gap: '1rem' }}>
                                             <button
-                                                onClick={handleFinalize}
-                                                style={{ flex: 1, padding: '1rem', background: 'var(--success)', color: '#fff', borderRadius: '8px', fontWeight: 'bold' }}
+                                                onClick={() => {
+                                                    setShowConfirmModal(false);
+                                                    setPendingCheckout(null); // Cancel
+                                                }}
+                                                style={{
+                                                    flex: 1, padding: '1rem',
+                                                    background: '#333', color: '#fff',
+                                                    border: '1px solid #555', borderRadius: '8px',
+                                                    cursor: 'pointer', fontSize: '1rem'
+                                                }}
                                             >
-                                                YOPISH VA CHOP ETISH
+                                                YO'Q (Qaytish)
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    if (pendingCheckout && selectedTable) {
+                                                        checkoutTable(selectedTable.id, pendingCheckout.method, pendingCheckout.extras);
+                                                        setShowConfirmModal(false);
+                                                        setPendingCheckout(null);
+                                                        setSelectedTable(null);
+                                                    }
+                                                }}
+                                                style={{
+                                                    flex: 1, padding: '1rem',
+                                                    background: 'var(--success)', color: '#fff',
+                                                    border: 'none', borderRadius: '8px',
+                                                    cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem'
+                                                }}
+                                            >
+                                                HA, YOPILSIN
                                             </button>
                                         </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* CUSTOM ERROR MODAL */}
+                            {showErrorModal && (
+                                <div style={{
+                                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                                    background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    zIndex: 2200
+                                }}>
+                                    <div style={{
+                                        background: '#1e1e1e', padding: '2rem', borderRadius: '12px',
+                                        width: '350px', textAlign: 'center', border: '1px solid #ff4444',
+                                        boxShadow: '0 10px 25px rgba(255, 68, 68, 0.2)'
+                                    }}>
+                                        <div style={{ color: '#ff4444', marginBottom: '1rem' }}>
+                                            <FaTimes size={40} />
+                                        </div>
+                                        <h2 style={{ color: '#ff4444', marginBottom: '1rem' }}>Xatolik</h2>
+                                        <p style={{ color: '#ccc', marginBottom: '2rem', fontSize: '1.2rem' }}>
+                                            {errorMsg}
+                                        </p>
+                                        <button
+                                            onClick={() => setShowErrorModal(false)}
+                                            style={{
+                                                padding: '0.8rem 2rem',
+                                                background: '#333', color: '#fff',
+                                                border: '1px solid #555', borderRadius: '8px',
+                                                cursor: 'pointer', fontSize: '1rem', width: '100%'
+                                            }}
+                                        >
+                                            OK
+                                        </button>
                                     </div>
                                 </div>
                             )}
@@ -824,8 +1214,18 @@ const AdminApp = () => {
                                         </div>
                                         <hr />
                                         <div className="receipt-total">
-                                            <span>JAMI:</span>
+                                            <span>JAMI (Taomlar):</span>
                                             <span>{getTableTotal(selectedTable).toLocaleString()} so'm</span>
+                                        </div>
+                                        {((selectedTable.orders.reduce((sum, o) => sum + (o.serviceAmount || 0), 0)) > 0) && (
+                                            <div className="receipt-total" style={{ fontSize: '16px', fontWeight: 'normal' }}>
+                                                <span>Xizmat ({settings.servicePercentage}%):</span>
+                                                <span>{selectedTable.orders.reduce((sum, o) => sum + (o.serviceAmount || 0), 0).toLocaleString()} so'm</span>
+                                            </div>
+                                        )}
+                                        <div className="receipt-total" style={{ fontSize: '20px', borderTop: '1px solid #000', paddingTop: '5px', marginTop: '5px' }}>
+                                            <span>JAMI TO'LOV:</span>
+                                            <span>{selectedTable.orders.reduce((sum, o) => sum + o.total, 0).toLocaleString()} so'm</span>
                                         </div>
                                         <hr />
                                         <div style={{ textAlign: 'left', fontSize: '12px', fontWeight: 'bold' }}>
@@ -856,100 +1256,104 @@ const AdminApp = () => {
                                         hr { border-top: 2px dashed #000; margin: 5px 0; }
                                     `}</style>
                                 </PrintPortal>
-                            )}
+                            )
+                            }
                         </>
                     ) : (
                         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666' }}>
                             Stol tanlang
                         </div>
                     )}
-                </div>
+                </div >
 
                 {/* RESERVATIONS LIST MODAL */}
-                {showReservations && (
-                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 150, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                        <div style={{ width: '800px', maxWidth: '95%', height: '80%', background: '#1e1e1e', borderRadius: '16px', padding: '2rem', display: 'flex', flexDirection: 'column' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
-                                <h2>Bronlar Ro'yxati</h2>
-                                <div style={{ display: 'flex', gap: '1rem' }}>
-                                    <button onClick={() => { setEditingReservation(null); setShowAddResModal(true); }} style={{ background: 'var(--success)', color: '#fff', padding: '0.5rem 1rem', borderRadius: '8px' }}>+ Yangi Bron</button>
-                                    <button onClick={() => setShowReservations(false)} style={{ background: '#333', color: '#fff', padding: '0.5rem 1rem', borderRadius: '8px' }}>Yopish</button>
+                {
+                    showReservations && (
+                        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 150, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                            <div style={{ width: '800px', maxWidth: '95%', height: '80%', background: '#1e1e1e', borderRadius: '16px', padding: '2rem', display: 'flex', flexDirection: 'column' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
+                                    <h2>Bronlar Ro'yxati</h2>
+                                    <div style={{ display: 'flex', gap: '1rem' }}>
+                                        <button onClick={() => { setEditingReservation(null); setShowAddResModal(true); }} style={{ background: 'var(--success)', color: '#fff', padding: '0.5rem 1rem', borderRadius: '8px' }}>+ Yangi Bron</button>
+                                        <button onClick={() => setShowReservations(false)} style={{ background: '#333', color: '#fff', padding: '0.5rem 1rem', borderRadius: '8px' }}>Yopish</button>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div style={{ flex: 1, overflowY: 'auto', display: 'grid', gap: '1rem' }}>
-                                {reservations.length === 0 ? <p style={{ textAlign: 'center', color: '#666' }}>Bronlar yo'q</p> :
-                                    reservations.map(res => (
-                                        <div key={res.id} style={{ background: '#252525', padding: '1.5rem', borderRadius: '12px', borderLeft: '4px solid #7c3aed', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <div>
-                                                <h3 style={{ margin: 0 }}>{res.customer} <span style={{ fontSize: '0.9rem', color: '#aaa' }}>({res.guests} kishi)</span></h3>
-                                                <p style={{ margin: '5px 0', color: 'var(--accent-color)' }}>{new Date(res.date).toLocaleString()}</p>
-                                                <p style={{ margin: 0, fontSize: '0.9rem', color: '#aaa' }}>Stollar: {res.tableIds.map(tid => tables.find(t => t.id === tid)?.name).join(', ')}</p>
-                                                {res.items && res.items.length > 0 && <p style={{ fontSize: '0.8rem', color: '#888', marginTop: '5px' }}>+ {res.items.length} ta taom oldindan</p>}
-                                            </div>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                                <button onClick={() => activateReservation(res.id)} style={{ padding: '0.8rem 1.5rem', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold' }}>BOSHLASH</button>
-                                                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                                    <button onClick={() => { setEditingReservation(res); setShowAddResModal(true); }} style={{ flex: 1, padding: '0.5rem', background: '#eab308', color: '#000', border: 'none', borderRadius: '6px' }}><FaEdit /></button>
-                                                    <button onClick={() => handlePrintReservation(res)} style={{ flex: 1, padding: '0.5rem', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px' }}><FaPrint /></button>
-                                                    <button onClick={() => deleteReservation(res.id)} style={{ flex: 1, padding: '0.5rem', background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: '6px' }}>Bekor qilish</button>
+                                <div style={{ flex: 1, overflowY: 'auto', display: 'grid', gap: '1rem' }}>
+                                    {reservations.length === 0 ? <p style={{ textAlign: 'center', color: '#666' }}>Bronlar yo'q</p> :
+                                        reservations.map(res => (
+                                            <div key={res.id} style={{ background: '#252525', padding: '1.5rem', borderRadius: '12px', borderLeft: '4px solid #7c3aed', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <div>
+                                                    <h3 style={{ margin: 0 }}>{res.customer} <span style={{ fontSize: '0.9rem', color: '#aaa' }}>({res.guests} kishi)</span></h3>
+                                                    <p style={{ margin: '5px 0', color: 'var(--accent-color)' }}>{new Date(res.date).toLocaleString()}</p>
+                                                    <p style={{ margin: 0, fontSize: '0.9rem', color: '#aaa' }}>Stollar: {res.tableIds.map(tid => tables.find(t => t.id === tid)?.name).join(', ')}</p>
+                                                    {res.items && res.items.length > 0 && <p style={{ fontSize: '0.8rem', color: '#888', marginTop: '5px' }}>+ {res.items.length} ta taom oldindan</p>}
+                                                </div>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                                    <button onClick={() => activateReservation(res.id)} style={{ padding: '0.8rem 1.5rem', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold' }}>BOSHLASH</button>
+                                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                        <button onClick={() => { setEditingReservation(res); setShowAddResModal(true); }} style={{ flex: 1, padding: '0.5rem', background: '#eab308', color: '#000', border: 'none', borderRadius: '6px' }}><FaEdit /></button>
+                                                        <button onClick={() => handlePrintReservation(res)} style={{ flex: 1, padding: '0.5rem', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px' }}><FaPrint /></button>
+                                                        <button onClick={() => deleteReservation(res.id)} style={{ flex: 1, padding: '0.5rem', background: 'var(--danger)', color: '#fff', border: 'none', borderRadius: '6px' }}>Bekor qilish</button>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))
-                                }
+                                        ))
+                                    }
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
+                    )
+                }
 
                 {/* ADD RESERVATION FORM MODAL */}
                 {showAddResModal && <ReservationModal onClose={() => { setShowAddResModal(false); setEditingReservation(null); }} initialData={editingReservation} />}
 
                 {/* RESERVATION RECEIPT PORTAL */}
-                {reservationToPrint && (
-                    <PrintPortal>
-                        <div className="print-res">
-                            <h3>KAFE EPOS</h3>
-                            <p>Banket Cheki</p>
-                            <hr />
-                            <div style={{ textAlign: 'left', margin: '10px 0' }}>
-                                <p>Mijoz: {reservationToPrint.customer}</p>
-                                <p>Tel: {reservationToPrint.phone}</p>
-                                <p>Sana: {new Date(reservationToPrint.date).toLocaleString()}</p>
-                                <p>Mehmonlar: {reservationToPrint.guests} kishi</p>
-                                <p>Stollar: {reservationToPrint.tableIds.map(tid => tables.find(t => t.id === tid)?.name).join(', ')}</p>
-                            </div>
-                            <hr />
-                            <div className="res-items">
-                                {reservationToPrint.items && reservationToPrint.items.map((item, i) => (
-                                    <div key={i} className="res-item">
-                                        <div className="res-row-1">
-                                            {item.quantity} x {item.name}
+                {
+                    reservationToPrint && (
+                        <PrintPortal>
+                            <div className="print-res">
+                                <h3>KAFE EPOS</h3>
+                                <p>Banket Cheki</p>
+                                <hr />
+                                <div style={{ textAlign: 'left', margin: '10px 0' }}>
+                                    <p>Mijoz: {reservationToPrint.customer}</p>
+                                    <p>Tel: {reservationToPrint.phone}</p>
+                                    <p>Sana: {new Date(reservationToPrint.date).toLocaleString()}</p>
+                                    <p>Mehmonlar: {reservationToPrint.guests} kishi</p>
+                                    <p>Stollar: {reservationToPrint.tableIds.map(tid => tables.find(t => t.id === tid)?.name).join(', ')}</p>
+                                </div>
+                                <hr />
+                                <div className="res-items">
+                                    {reservationToPrint.items && reservationToPrint.items.map((item, i) => (
+                                        <div key={i} className="res-item">
+                                            <div className="res-row-1">
+                                                {item.quantity} x {item.name}
+                                            </div>
+                                            <div className="res-row-2">
+                                                {(item.price * item.quantity).toLocaleString()}
+                                            </div>
                                         </div>
-                                        <div className="res-row-2">
-                                            {(item.price * item.quantity).toLocaleString()}
-                                        </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
+                                {reservationToPrint.items && reservationToPrint.items.length > 0 && <hr />}
+                                <div className="res-total">
+                                    <span>JAMI BUYURTMA:</span>
+                                    <span>{reservationToPrint.items ? reservationToPrint.items.reduce((sum, i) => sum + (i.price * i.quantity), 0).toLocaleString() : 0} so'm</span>
+                                </div>
+                                <div className="res-total">
+                                    <span>ZALOG:</span>
+                                    <span>{reservationToPrint.deposit ? reservationToPrint.deposit.toLocaleString() : 0} so'm</span>
+                                </div>
+                                <hr />
+                                <div className="res-total" style={{ fontSize: '20px' }}>
+                                    <span>QOLDIQ:</span>
+                                    <span>{((reservationToPrint.items ? reservationToPrint.items.reduce((sum, i) => sum + (i.price * i.quantity), 0) : 0) - (reservationToPrint.deposit || 0)).toLocaleString()} so'm</span>
+                                </div>
+                                <p style={{ textAlign: 'center', marginTop: '10px' }}>Kutingizni kutamiz!</p>
                             </div>
-                            {reservationToPrint.items && reservationToPrint.items.length > 0 && <hr />}
-                            <div className="res-total">
-                                <span>JAMI BUYURTMA:</span>
-                                <span>{reservationToPrint.items ? reservationToPrint.items.reduce((sum, i) => sum + (i.price * i.quantity), 0).toLocaleString() : 0} so'm</span>
-                            </div>
-                            <div className="res-total">
-                                <span>ZALOG:</span>
-                                <span>{reservationToPrint.deposit ? reservationToPrint.deposit.toLocaleString() : 0} so'm</span>
-                            </div>
-                            <hr />
-                            <div className="res-total" style={{ fontSize: '20px' }}>
-                                <span>QOLDIQ:</span>
-                                <span>{((reservationToPrint.items ? reservationToPrint.items.reduce((sum, i) => sum + (i.price * i.quantity), 0) : 0) - (reservationToPrint.deposit || 0)).toLocaleString()} so'm</span>
-                            </div>
-                            <p style={{ textAlign: 'center', marginTop: '10px' }}>Kutingizni kutamiz!</p>
-                        </div>
-                        <style>{`
+                            <style>{`
                             .print-res {
                                 width: 58mm;
                                 margin: 0 auto;
@@ -969,8 +1373,9 @@ const AdminApp = () => {
                             .res-total { display: flex; justifyContent: space-between; font-weight: 900; font-size: 16px; margin: 5px 0; }
                             hr { border-top: 2px dashed #000; margin: 5px 0; }
                         `}</style>
-                    </PrintPortal>
-                )}
+                        </PrintPortal>
+                    )
+                }
             </div >
         );
     };
@@ -1854,6 +2259,44 @@ const AdminApp = () => {
         );
     };
 
+    // 7. SETTINGS VIEW
+    const SettingsView = () => {
+        const [percentage, setPercentage] = useState(settings.servicePercentage || 0);
+
+        const handleSave = () => {
+            updateSettings({ servicePercentage: Number(percentage) });
+            alert("Sozlamalar saqlandi!");
+        };
+
+        return (
+            <div>
+                <h2>Sozlamalar</h2>
+                <div style={{ maxWidth: '400px', margin: '2rem 0', background: '#252525', padding: '1.5rem', borderRadius: '8px' }}>
+                    <div style={{ marginBottom: '1.5rem' }}>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#aaa' }}>Xizmat Haqi (Usluga) %</label>
+                        <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={percentage}
+                            onChange={(e) => setPercentage(e.target.value)}
+                            style={{ width: '100%', padding: '0.8rem', borderRadius: '4px', border: '1px solid #444', background: '#333', color: '#fff', fontSize: '1.1rem' }}
+                        />
+                        <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.5rem' }}>
+                            Ushbu foiz barcha <b>yangi</b> buyurtmalarga qo'shiladi.
+                        </p>
+                    </div>
+                    <button
+                        onClick={handleSave}
+                        style={{ width: '100%', padding: '1rem', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}
+                    >
+                        SAQLASH
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
     // --- LAYOUT ---
     return (
         <div style={{ display: 'flex', height: '100vh', background: 'var(--bg-primary)' }}>
@@ -1925,6 +2368,17 @@ const AdminApp = () => {
                             <FaHistory /> Arxiv (Z-Reports)
                         </button>
                     )}
+                    {userRole === 'admin' && (
+                        <button
+                            onClick={() => setActiveTab('settings')}
+                            style={{
+                                padding: '1rem', textAlign: 'left', borderRadius: '8px', display: 'flex', gap: '10px', alignItems: 'center',
+                                background: activeTab === 'settings' ? '#333' : 'transparent', color: '#fff'
+                            }}
+                        >
+                            <FaEdit /> Sozlamalar
+                        </button>
+                    )}
                     {/* KITCHEN BUTTON (Cashier Only) */}
                     {userRole === 'cashier' && (
                         <button
@@ -1967,7 +2421,9 @@ const AdminApp = () => {
                 {activeTab === 'places' && <PlacesView />}
                 {activeTab === 'stats' && <StatsView />}
                 {activeTab === 'history' && <HistoryView />}
+                {activeTab === 'history' && <HistoryView />}
                 {activeTab === 'archives' && <ArchivesView />}
+                {activeTab === 'settings' && <SettingsView />}
             </div>
 
         </div>

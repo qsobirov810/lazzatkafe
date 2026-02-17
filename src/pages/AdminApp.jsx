@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useData } from '../context/DataContext';
-import { FaCashRegister, FaUtensils, FaHistory, FaCheck, FaTimes, FaSignOutAlt, FaPrint, FaTrash, FaPlus, FaEdit, FaImage, FaCamera, FaChair, FaSearch, FaCheckCircle } from 'react-icons/fa';
+import { FaUsers, FaHistory, FaCheck, FaChartLine, FaPlus, FaTrash, FaEdit, FaPrint, FaUtensils, FaChair, FaSignOutAlt, FaTimes, FaCamera, FaImage, FaSearch, FaWallet, FaQrcode, FaCashRegister } from 'react-icons/fa';
+import { QRCodeSVG } from 'qrcode.react';
 import { useNavigate } from 'react-router-dom';
 
 
@@ -140,6 +141,10 @@ const KitchenView = () => {
                             <span style={{ color: '#aaa', display: activeTab !== 'active' ? 'block' : 'none' }}>{new Date(order.timestamp).toLocaleTimeString()}</span>
                         </div>
 
+                        <div style={{ fontSize: '0.9rem', color: 'var(--accent-color)', fontWeight: 'bold', marginBottom: '-0.5rem' }}>
+                            Ofitsiant: {order.waiterName || 'Noma\'lum'}
+                        </div>
+
                         <div style={{ flex: 1 }}>
                             {order.items.map((item, idx) => (
                                 <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '1.1rem' }}>
@@ -174,6 +179,7 @@ const KitchenView = () => {
                         <hr />
                         <div className="ticket-header">
                             <h2>STOL {ticketToPrint.tableId}</h2>
+                            <p>Ofitsiant: {ticketToPrint.waiterName || 'Noma\'lum'}</p>
                             <p>{new Date(ticketToPrint.timestamp).toLocaleString()}</p>
                         </div>
                         <hr />
@@ -230,11 +236,21 @@ const getTableTotal = (table) => {
 };
 
 // --- PAYMENT MODAL COMPONENT ---
-const PaymentModalContent = ({ selectedTable, onClose, onCheckout, settings }) => {
+const PaymentModalContent = ({ selectedTable, onClose, onCheckout, settings, onError }) => {
     const [paymentMethod, setPaymentMethod] = useState('Naqd');
     const [splitValues, setSplitValues] = useState({ cash: 0, card: 0, click: 0 });
     const [serviceOff, setServiceOff] = useState(false);
     const [discount, setDiscount] = useState(0);
+
+    // Helper for display formatting
+    const formatInput = (val) => {
+        if (!val && val !== 0) return '';
+        return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    };
+
+    const parseInput = (val) => {
+        return Number(val.replace(/\s+/g, ''));
+    };
     // Calculate initial totals
     const initialItemsTotal = selectedTable.orders.reduce((sum, o) => sum + (o.itemsTotal || o.total), 0); // itemsTotal might be missing on old orders
     const initialService = selectedTable.orders.reduce((sum, o) => sum + (o.serviceAmount || 0), 0);
@@ -264,8 +280,13 @@ const PaymentModalContent = ({ selectedTable, onClose, onCheckout, settings }) =
         if (paymentMethod === 'Aralash') {
             const { cash, card, click } = splitValues;
             const sum = Number(cash) + Number(card) + Number(click);
+            const diff = finalTotal - sum;
+
             if (sum !== finalTotal) {
-                alert(`Summa to'g'ri kelmadi! Jami: ${finalTotal.toLocaleString()}, Kiritildi: ${sum.toLocaleString()}`);
+                const diffMsg = diff > 0
+                    ? `Yetmagan summa: ${diff.toLocaleString()} so'm`
+                    : `Ortiqcha summa: ${Math.abs(diff).toLocaleString()} so'm`;
+                onError(`Summa to'g'ri kelmadi! Jami: ${finalTotal.toLocaleString()} so'm, Kiritildi: ${sum.toLocaleString()} so'm. ${diffMsg}`);
                 return;
             }
             finalMethod = `Aralash (Naqd: ${cash.toLocaleString()}, Karta: ${card.toLocaleString()}, Click: ${click.toLocaleString()})`;
@@ -304,11 +325,12 @@ const PaymentModalContent = ({ selectedTable, onClose, onCheckout, settings }) =
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', alignItems: 'center' }}>
                     <span>Chegirma (Skidka):</span>
                     <input
-                        type="number"
-                        value={discount}
-                        onChange={(e) => setDiscount(Number(e.target.value))}
+                        type="text"
+                        inputMode="numeric"
+                        value={formatInput(discount)}
+                        onChange={(e) => setDiscount(parseInput(e.target.value))}
                         onFocus={(e) => e.target.select()}
-                        style={{ width: '100px', padding: '0.3rem', borderRadius: '4px', border: '1px solid #555', background: '#222', color: '#fff', textAlign: 'right' }}
+                        style={{ width: '120px', padding: '0.3rem', borderRadius: '4px', border: '1px solid #555', background: '#222', color: '#fff', textAlign: 'right', fontWeight: 'bold' }}
                     />
                 </div>
 
@@ -344,33 +366,50 @@ const PaymentModalContent = ({ selectedTable, onClose, onCheckout, settings }) =
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <label>Naqd:</label>
                             <input
-                                type="number"
-                                value={splitValues.cash || ''}
-                                onChange={e => setSplitValues({ ...splitValues, cash: Number(e.target.value) })}
-                                style={{ width: '120px', padding: '0.5rem', borderRadius: '4px', background: '#222', border: '1px solid #555', color: '#fff' }}
+                                type="text"
+                                inputMode="numeric"
+                                value={formatInput(splitValues.cash) || ''}
+                                onChange={e => setSplitValues({ ...splitValues, cash: parseInput(e.target.value) })}
+                                onFocus={(e) => e.target.select()}
+                                style={{ width: '150px', padding: '0.5rem', borderRadius: '4px', background: '#222', border: '1px solid #555', color: '#fff', textAlign: 'right', fontWeight: 'bold' }}
                             />
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <label>Plastik (Karta):</label>
                             <input
-                                type="number"
-                                value={splitValues.card || ''}
-                                onChange={e => setSplitValues({ ...splitValues, card: Number(e.target.value) })}
-                                style={{ width: '120px', padding: '0.5rem', borderRadius: '4px', background: '#222', border: '1px solid #555', color: '#fff' }}
+                                type="text"
+                                inputMode="numeric"
+                                value={formatInput(splitValues.card) || ''}
+                                onChange={e => setSplitValues({ ...splitValues, card: parseInput(e.target.value) })}
+                                onFocus={(e) => e.target.select()}
+                                style={{ width: '150px', padding: '0.5rem', borderRadius: '4px', background: '#222', border: '1px solid #555', color: '#fff', textAlign: 'right', fontWeight: 'bold' }}
                             />
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <label>Click:</label>
                             <input
-                                type="number"
-                                value={splitValues.click || ''}
-                                onChange={e => setSplitValues({ ...splitValues, click: Number(e.target.value) })}
-                                style={{ width: '120px', padding: '0.5rem', borderRadius: '4px', background: '#222', border: '1px solid #555', color: '#fff' }}
+                                type="text"
+                                inputMode="numeric"
+                                value={formatInput(splitValues.click) || ''}
+                                onChange={e => setSplitValues({ ...splitValues, click: parseInput(e.target.value) })}
+                                onFocus={(e) => e.target.select()}
+                                style={{ width: '150px', padding: '0.5rem', borderRadius: '4px', background: '#222', border: '1px solid #555', color: '#fff', textAlign: 'right', fontWeight: 'bold' }}
                             />
                         </div>
                     </div>
-                    <div style={{ marginTop: '0.5rem', textAlign: 'right', fontWeight: 'bold', color: (splitValues.cash + splitValues.card + splitValues.click) === finalTotal ? 'var(--success)' : 'var(--danger)' }}>
-                        Kiritildi: {(splitValues.cash + splitValues.card + splitValues.click).toLocaleString()} so'm
+                    <div style={{ marginTop: '0.8rem', padding: '0.8rem', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid #444' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
+                            <span>Kiritildi:</span>
+                            <span style={{ color: (splitValues.cash + splitValues.card + splitValues.click) === finalTotal ? 'var(--success)' : '#fff' }}>
+                                {(splitValues.cash + splitValues.card + splitValues.click).toLocaleString()} so'm
+                            </span>
+                        </div>
+                        {(splitValues.cash + splitValues.card + splitValues.click) !== finalTotal && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.4rem', color: (finalTotal - (splitValues.cash + splitValues.card + splitValues.click)) > 0 ? '#ff4444' : '#ffaa00' }}>
+                                <span>{(finalTotal - (splitValues.cash + splitValues.card + splitValues.click)) > 0 ? 'Qoldiq:' : 'Ortiqcha:'}</span>
+                                <span style={{ fontWeight: '900' }}>{Math.abs(finalTotal - (splitValues.cash + splitValues.card + splitValues.click)).toLocaleString()} so'm</span>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
@@ -386,11 +425,30 @@ const PaymentModalContent = ({ selectedTable, onClose, onCheckout, settings }) =
 };
 
 const AdminApp = () => {
-    const { tables, checkoutTable, updateOrder, completedOrders, archives, menu, categories, addMenuItem, updateMenuItem, deleteMenuItem, addCategory, deleteCategory, clearHistory, closeDay, addTable, deleteTable, reservations, addReservation, updateReservation, deleteReservation, activateReservation, settings, updateSettings } = useData();
+    const { tables, checkoutTable, updateOrder, completedOrders, archives, menu, categories, addMenuItem, updateMenuItem, deleteMenuItem, addCategory, deleteCategory, clearHistory, closeDay, addTable, deleteTable, reservations, addReservation, updateReservation, deleteReservation, activateReservation, settings, updateSettings, isConnected } = useData();
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('cashier'); // cashier, menu, categories, history, settings
     const [selectedTable, setSelectedTable] = useState(null);
     const [printingBill, setPrintingBill] = useState(false);
+
+    // MISSING STATES RESTORED
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [userRole, setUserRole] = useState(null); // 'admin' or 'cashier'
+    const [loginRole, setLoginRole] = useState('cashier');
+    const [password, setPassword] = useState('');
+    const [errorMsg, setErrorMsg] = useState('');
+    const [showErrorModal, setShowErrorModal] = useState(false);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [pendingCheckout, setPendingCheckout] = useState(null);
+
+    // CASHIER VIEW STATES (Moved up to prevent re-mount loss)
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState('Naqd');
+    const [splitValues, setSplitValues] = useState({ cash: 0, card: 0, click: 0 });
+    const [showReservations, setShowReservations] = useState(false);
+    const [showAddResModal, setShowAddResModal] = useState(false);
+    const [editingReservation, setEditingReservation] = useState(null);
+    const [reservationToPrint, setReservationToPrint] = useState(null);
 
     // Auto-print effect
     useEffect(() => {
@@ -403,18 +461,34 @@ const AdminApp = () => {
         }
     }, [printingBill]);
 
-    // Confirmation Modal State
-    const [showConfirmModal, setShowConfirmModal] = useState(false);
-    const [pendingCheckout, setPendingCheckout] = useState(null);
+    // Generic Confirm Modal State
+    const [showGenericConfirm, setShowGenericConfirm] = useState(false);
+    const [confirmConfig, setConfirmConfig] = useState({ title: '', msg: '', onConfirm: () => { } });
 
-    // Error Modal State
-    const [showErrorModal, setShowErrorModal] = useState(false);
-    const [errorMsg, setErrorMsg] = useState('');
+    const openConfirm = (title, msg, onConfirm) => {
+        setConfirmConfig({ title, msg, onConfirm });
+        setShowGenericConfirm(true);
+    };
 
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [password, setPassword] = useState('');
-    const [loginRole, setLoginRole] = useState('cashier'); // 'cashier' or 'admin' 
-    const [userRole, setUserRole] = useState(''); // The authenticated role
+    // Success Modal State
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [successMsg, setSuccessMsg] = useState('');
+
+    const openSuccess = (msg) => {
+        setSuccessMsg(msg);
+        setShowSuccessModal(true);
+    };
+
+    // Password Prompt Modal State (For Z-Report)
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [passwordInput, setPasswordInput] = useState('');
+    const [onPasswordSuccess, setOnPasswordSuccess] = useState(null);
+
+    const openPasswordPrompt = (onSuccess) => {
+        setPasswordInput('');
+        setOnPasswordSuccess(() => onSuccess);
+        setShowPasswordModal(true);
+    };
 
     // SYNC SELECTED TABLE w/ REALTIME DATA
     useEffect(() => {
@@ -447,6 +521,11 @@ const AdminApp = () => {
         return (
             <div className="container flex-center" style={{ height: '100vh', flexDirection: 'column', gap: '1rem' }}>
                 <h1 style={{ color: 'var(--accent-color)' }}>Admin Tizim</h1>
+                {!isConnected && (
+                    <div style={{ background: 'red', color: 'white', padding: '0.5rem', borderRadius: '4px', fontWeight: 'bold' }}>
+                        SERVER BILAN ALOQA YO'Q! (OFFLINE)
+                    </div>
+                )}
 
                 {/* Role Tabs */}
                 <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
@@ -790,22 +869,8 @@ const AdminApp = () => {
 
         // Calculate Total for Table
         const getTableTotal = (table) => {
-            // "total" property in table is ALREADY the sum of order.total (which includes service charge).
-            // But let's be sure. In server, table.total += newOrder.total.
-            // So table.total is correct.
-            // Only for receipt breakdown we might want raw items total.
-            // For now, this function is mostly used for "Jami" display.
-            // But wait, the previous code was: table.orders.reduce((sum, order) => sum + order.total, 0);
             return table.orders.reduce((sum, order) => sum + order.total, 0);
         };
-
-        const [showPaymentModal, setShowPaymentModal] = useState(false);
-        const [paymentMethod, setPaymentMethod] = useState('Naqd');
-        const [splitValues, setSplitValues] = useState({ cash: 0, card: 0, click: 0 });
-        const [showReservations, setShowReservations] = useState(false);
-        const [showAddResModal, setShowAddResModal] = useState(false);
-        const [editingReservation, setEditingReservation] = useState(null);
-        const [reservationToPrint, setReservationToPrint] = useState(null);
 
         const handlePrintReservation = (res) => {
             setReservationToPrint(res);
@@ -817,29 +882,6 @@ const AdminApp = () => {
             setShowPaymentModal(true);
             setPaymentMethod('Naqd'); // Default
             setSplitValues({ cash: 0, card: 0, click: 0 }); // Reset
-        };
-
-        const handleFinalize = () => {
-            let finalMethod = paymentMethod;
-            const total = getTableTotal(selectedTable);
-
-            if (paymentMethod === 'Aralash') {
-                const { cash, card, click } = splitValues;
-                const sum = Number(cash) + Number(card) + Number(click);
-                if (sum !== total) {
-                    alert(`Summa to'g'ri kelmadi! Jami: ${total.toLocaleString()}, Kiritildi: ${sum.toLocaleString()}`);
-                    return;
-                }
-                finalMethod = `Aralash (Naqd: ${cash.toLocaleString()}, Karta: ${card.toLocaleString()}, Click: ${click.toLocaleString()})`;
-            }
-
-            // 1. Trigger Print
-            window.print();
-
-            // 2. Checkout
-            checkoutTable(selectedTable.id, finalMethod);
-            setShowPaymentModal(false);
-            setSelectedTable(null);
         };
 
         const handlePrintReceipt = () => {
@@ -858,7 +900,7 @@ const AdminApp = () => {
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '1rem', alignContent: 'start', flex: 1, overflowY: 'auto' }}>
-                        {tables.map(table => (
+                        {tables?.map(table => (
                             <div
                                 key={table.id}
                                 onClick={() => setSelectedTable(table)}
@@ -877,9 +919,11 @@ const AdminApp = () => {
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            if (confirm("Stolni majburiy bo'shatishni xohlaysizmi?")) {
-                                                checkoutTable(table.id, "MAJBURIY");
-                                            }
+                                            openConfirm(
+                                                "Stolni bo'shatish",
+                                                "Siz rostdan ham ushbu stolni majburiy bo'shatmoqchimisiz?",
+                                                () => checkoutTable(table.id, "MAJBURIY")
+                                            );
                                         }}
                                         style={{ position: 'absolute', top: 5, right: 5, background: 'red', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', fontSize: '12px', cursor: 'pointer' }}
                                         title="Majburiy bo'shatish"
@@ -924,10 +968,14 @@ const AdminApp = () => {
                                                                     newItems[i].quantity -= 1;
                                                                     updateOrder(order.id, newItems);
                                                                 } else {
-                                                                    if (window.confirm(`${item.name} ni hisobdan o'chirmoqchimisiz?`)) {
-                                                                        newItems.splice(i, 1);
-                                                                        updateOrder(order.id, newItems);
-                                                                    }
+                                                                    openConfirm(
+                                                                        "Taomni o'chirish",
+                                                                        `${item.name} ni hisobdan o'chirmoqchimisiz?`,
+                                                                        () => {
+                                                                            newItems.splice(i, 1);
+                                                                            updateOrder(order.id, newItems);
+                                                                        }
+                                                                    );
                                                                 }
                                                             }}
                                                             style={{ background: '#444', color: '#fff', border: 'none', borderRadius: '4px', width: '24px', height: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -949,11 +997,15 @@ const AdminApp = () => {
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                if (window.confirm(`${item.name} ni hisobdan o'chirmoqchimisiz?`)) {
-                                                                    const newItems = [...order.items];
-                                                                    newItems.splice(i, 1);
-                                                                    updateOrder(order.id, newItems);
-                                                                }
+                                                                openConfirm(
+                                                                    "Taomni o'chirish",
+                                                                    `${item.name} ni hisobdan o'chirmoqchimisiz?`,
+                                                                    () => {
+                                                                        const newItems = [...order.items];
+                                                                        newItems.splice(i, 1);
+                                                                        updateOrder(order.id, newItems);
+                                                                    }
+                                                                );
                                                             }}
                                                             style={{
                                                                 background: '#333', border: 'none', color: '#ef4444',
@@ -1083,6 +1135,10 @@ const AdminApp = () => {
                                     <PaymentModalContent
                                         selectedTable={selectedTable}
                                         onClose={() => setShowPaymentModal(false)}
+                                        onError={(msg) => {
+                                            setErrorMsg(msg);
+                                            setShowErrorModal(true);
+                                        }}
                                         onCheckout={(method, extras) => {
                                             // 1. Print
                                             window.print();
@@ -1103,33 +1159,41 @@ const AdminApp = () => {
                             {showConfirmModal && (
                                 <div style={{
                                     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                                    background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    zIndex: 2000
+                                    background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    zIndex: 2500
                                 }}>
                                     <div style={{
-                                        background: '#1e1e1e', padding: '2rem', borderRadius: '12px',
-                                        width: '400px', textAlign: 'center', border: '1px solid #444',
-                                        boxShadow: '0 10px 25px rgba(0,0,0,0.5)'
+                                        background: '#1a1a1a', padding: '2.5rem', borderRadius: '30px',
+                                        width: '450px', textAlign: 'center', border: '1px solid rgba(var(--success-rgb), 0.3)',
+                                        boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
+                                        position: 'relative', overflow: 'hidden'
                                     }}>
-                                        <h2 style={{ color: '#fff', marginBottom: '1rem' }}>To'lovni Tasdiqlash</h2>
-                                        <p style={{ color: '#ccc', marginBottom: '2rem', fontSize: '1.2rem' }}>
+                                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '6px', background: 'var(--success)' }} />
+
+                                        <h2 style={{ color: '#fff', fontSize: '1.8rem', marginBottom: '1rem', fontWeight: '900' }}>To'lovni Tasdiqlash</h2>
+                                        <p style={{ color: '#ccc', marginBottom: '2.5rem', fontSize: '1.2rem', lineHeight: '1.6' }}>
                                             Chek chiqarildi.<br />
                                             To'lov to'liq qabul qilindimi va stol yopilsinmi?
                                         </p>
-                                        <div style={{ display: 'flex', gap: '1rem' }}>
+
+                                        <div style={{ display: 'flex', gap: '1.5rem' }}>
                                             <button
                                                 onClick={() => {
                                                     setShowConfirmModal(false);
-                                                    setPendingCheckout(null); // Cancel
+                                                    setPendingCheckout(null);
                                                 }}
                                                 style={{
-                                                    flex: 1, padding: '1rem',
-                                                    background: '#333', color: '#fff',
-                                                    border: '1px solid #555', borderRadius: '8px',
-                                                    cursor: 'pointer', fontSize: '1rem'
+                                                    flex: 1, padding: '1.2rem',
+                                                    background: 'transparent', color: '#888',
+                                                    border: '1px solid #333', borderRadius: '15px',
+                                                    cursor: 'pointer', fontSize: '1.1rem', fontWeight: 'bold',
+                                                    transition: 'all 0.2s'
                                                 }}
+                                                onMouseEnter={(e) => e.target.style.background = '#222'}
+                                                onMouseLeave={(e) => e.target.style.background = 'transparent'}
                                             >
-                                                YO'Q (Qaytish)
+                                                QAYTISH
                                             </button>
                                             <button
                                                 onClick={() => {
@@ -1141,13 +1205,70 @@ const AdminApp = () => {
                                                     }
                                                 }}
                                                 style={{
-                                                    flex: 1, padding: '1rem',
+                                                    flex: 1, padding: '1.2rem',
                                                     background: 'var(--success)', color: '#fff',
-                                                    border: 'none', borderRadius: '8px',
-                                                    cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem'
+                                                    border: 'none', borderRadius: '15px',
+                                                    cursor: 'pointer', fontWeight: '900', fontSize: '1.1rem',
+                                                    boxShadow: '0 10px 20px rgba(var(--success-rgb), 0.3)',
+                                                    transition: 'transform 0.2s'
                                                 }}
+                                                onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
+                                                onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
                                             >
                                                 HA, YOPILSIN
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* GENERIC CONFIRM MODAL */}
+                            {showGenericConfirm && (
+                                <div style={{
+                                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                                    background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    zIndex: 3500
+                                }}>
+                                    <div style={{
+                                        background: '#1a1a1a', padding: '2.5rem', borderRadius: '30px',
+                                        width: '400px', textAlign: 'center', border: '1px solid rgba(var(--accent-rgb), 0.3)',
+                                        boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
+                                        position: 'relative', overflow: 'hidden'
+                                    }}>
+                                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '6px', background: 'var(--accent-color)' }} />
+
+                                        <h2 style={{ color: '#fff', fontSize: '1.6rem', marginBottom: '1rem', fontWeight: '900' }}>{confirmConfig.title}</h2>
+                                        <p style={{ color: '#ccc', marginBottom: '2.5rem', fontSize: '1.2rem', lineHeight: '1.6' }}>
+                                            {confirmConfig.msg}
+                                        </p>
+
+                                        <div style={{ display: 'flex', gap: '1.5rem' }}>
+                                            <button
+                                                onClick={() => setShowGenericConfirm(false)}
+                                                style={{
+                                                    flex: 1, padding: '1rem',
+                                                    background: 'transparent', color: '#888',
+                                                    border: '1px solid #333', borderRadius: '15px',
+                                                    cursor: 'pointer', fontSize: '1rem', fontWeight: 'bold'
+                                                }}
+                                            >
+                                                YO'Q
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    confirmConfig.onConfirm();
+                                                    setShowGenericConfirm(false);
+                                                }}
+                                                style={{
+                                                    flex: 1, padding: '1rem',
+                                                    background: 'var(--accent-color)', color: '#000',
+                                                    border: 'none', borderRadius: '15px',
+                                                    cursor: 'pointer', fontWeight: '900', fontSize: '1rem',
+                                                    boxShadow: '0 10px 20px rgba(var(--accent-rgb), 0.2)'
+                                                }}
+                                            >
+                                                HA, TASDIQLAYMAN
                                             </button>
                                         </div>
                                     </div>
@@ -1158,32 +1279,117 @@ const AdminApp = () => {
                             {showErrorModal && (
                                 <div style={{
                                     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                                    background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    zIndex: 2200
+                                    background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    zIndex: 4000
                                 }}>
                                     <div style={{
-                                        background: '#1e1e1e', padding: '2rem', borderRadius: '12px',
-                                        width: '350px', textAlign: 'center', border: '1px solid #ff4444',
-                                        boxShadow: '0 10px 25px rgba(255, 68, 68, 0.2)'
+                                        background: '#1a1a1a', padding: '2.5rem', borderRadius: '30px',
+                                        width: '400px', textAlign: 'center', border: '1px solid rgba(255, 68, 68, 0.4)',
+                                        boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
+                                        position: 'relative', overflow: 'hidden'
                                     }}>
-                                        <div style={{ color: '#ff4444', marginBottom: '1rem' }}>
-                                            <FaTimes size={40} />
+                                        {/* Accent bar */}
+                                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '6px', background: 'linear-gradient(90deg, #ff4444, #ff8833)' }} />
+
+                                        <div style={{
+                                            background: 'rgba(255, 68, 68, 0.15)',
+                                            color: '#ff4444', width: '70px', height: '70px',
+                                            borderRadius: '50%', display: 'flex', alignItems: 'center',
+                                            justifyContent: 'center', margin: '0 auto 1.5rem auto'
+                                        }}>
+                                            <FaTimes size={32} />
                                         </div>
-                                        <h2 style={{ color: '#ff4444', marginBottom: '1rem' }}>Xatolik</h2>
-                                        <p style={{ color: '#ccc', marginBottom: '2rem', fontSize: '1.2rem' }}>
+
+                                        <h2 style={{ color: '#fff', fontSize: '1.6rem', marginBottom: '1rem', fontWeight: '900' }}>Xatolik!</h2>
+                                        <p style={{ color: '#ccc', marginBottom: '2.5rem', fontSize: '1.2rem', lineHeight: '1.6' }}>
                                             {errorMsg}
                                         </p>
-                                        <button
-                                            onClick={() => setShowErrorModal(false)}
+
+                                        <button onClick={() => setShowErrorModal(false)} style={{ padding: '1.2rem', background: 'linear-gradient(135deg, #ff4444, #cc3333)', color: '#fff', border: 'none', borderRadius: '15px', cursor: 'pointer', fontSize: '1.2rem', width: '100%', fontWeight: '900', boxShadow: '0 10px 20px rgba(255, 68, 68, 0.3)' }}>TUSHUNARLI</button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* CUSTOM SUCCESS MODAL */}
+                            {showSuccessModal && (
+                                <div style={{
+                                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                                    background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    zIndex: 4000
+                                }}>
+                                    <div style={{
+                                        background: '#1a1a1a', padding: '2.5rem', borderRadius: '30px',
+                                        width: '400px', textAlign: 'center', border: '1px solid rgba(var(--success-rgb), 0.4)',
+                                        boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
+                                        position: 'relative', overflow: 'hidden'
+                                    }}>
+                                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '6px', background: 'var(--success)' }} />
+                                        <div style={{ background: 'rgba(var(--success-rgb), 0.15)', color: 'var(--success)', width: '70px', height: '70px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem auto' }}><FaCheck size={32} /></div>
+                                        <h2 style={{ color: '#fff', fontSize: '1.6rem', marginBottom: '1rem', fontWeight: '900' }}>Muvaffaqiyatli!</h2>
+                                        <p style={{ color: '#ccc', marginBottom: '2.5rem', fontSize: '1.2rem', lineHeight: '1.6' }}>{successMsg}</p>
+                                        <button onClick={() => setShowSuccessModal(false)} style={{ padding: '1.2rem', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '15px', cursor: 'pointer', fontSize: '1.2rem', width: '100%', fontWeight: '900', boxShadow: '0 10px 20px rgba(var(--success-rgb), 0.3)' }}>AJOYIB</button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* PASSWORD PROMPT MODAL */}
+                            {showPasswordModal && (
+                                <div style={{
+                                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                                    background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    zIndex: 4500
+                                }}>
+                                    <div style={{
+                                        background: '#1a1a1a', padding: '2.5rem', borderRadius: '30px',
+                                        width: '400px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.1)',
+                                        boxShadow: '0 25px 50px rgba(0,0,0,0.5)'
+                                    }}>
+                                        <h2 style={{ color: '#fff', fontSize: '1.6rem', marginBottom: '1rem', fontWeight: '900' }}>Admin Paroli</h2>
+                                        <p style={{ color: '#888', marginBottom: '2rem' }}>Kassani yopish uchun admin parolini kiriting</p>
+                                        <input
+                                            type="password"
+                                            value={passwordInput}
+                                            onChange={(e) => setPasswordInput(e.target.value)}
+                                            autoFocus
+                                            placeholder="****"
                                             style={{
-                                                padding: '0.8rem 2rem',
-                                                background: '#333', color: '#fff',
-                                                border: '1px solid #555', borderRadius: '8px',
-                                                cursor: 'pointer', fontSize: '1rem', width: '100%'
+                                                width: '100%', padding: '1.2rem', borderRadius: '15px',
+                                                background: '#222', border: '1px solid #444',
+                                                color: '#fff', fontSize: '1.5rem', textAlign: 'center',
+                                                letterSpacing: '10px', marginBottom: '2rem'
                                             }}
-                                        >
-                                            OK
-                                        </button>
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    if (passwordInput === '8888') {
+                                                        onPasswordSuccess();
+                                                        setShowPasswordModal(false);
+                                                    } else {
+                                                        setErrorMsg("Parol noto'g'ri!");
+                                                        setShowErrorModal(true);
+                                                    }
+                                                }
+                                            }}
+                                        />
+                                        <div style={{ display: 'flex', gap: '1rem' }}>
+                                            <button onClick={() => setShowPasswordModal(false)} style={{ flex: 1, padding: '1rem', background: '#333', color: '#fff', borderRadius: '12px', border: 'none', cursor: 'pointer' }}>BEKOR QILISH</button>
+                                            <button
+                                                onClick={() => {
+                                                    if (passwordInput === '8888') {
+                                                        onPasswordSuccess();
+                                                        setShowPasswordModal(false);
+                                                    } else {
+                                                        setErrorMsg("Parol noto'g'ri!");
+                                                        setShowErrorModal(true);
+                                                    }
+                                                }}
+                                                style={{ flex: 1, padding: '1rem', background: 'var(--accent-color)', color: '#000', borderRadius: '12px', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}
+                                            >
+                                                TASDIQLASH
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -1441,7 +1647,8 @@ const AdminApp = () => {
                 }
             } catch (err) {
                 console.error("Upload failed", err);
-                alert("Rasm yuklashda xatolik!");
+                setErrorMsg("Rasm yuklashda xatolik yuz berdi.");
+                setShowErrorModal(true);
             } finally {
                 setUploading(false);
             }
@@ -1699,6 +1906,7 @@ const AdminApp = () => {
     // 3.5 PLACES VIEW (Tables)
     const PlacesView = () => {
         const [newTable, setNewTable] = useState('');
+        const [qrTable, setQrTable] = useState(null);
 
         const handleAdd = (e) => {
             e.preventDefault();
@@ -1708,9 +1916,16 @@ const AdminApp = () => {
             }
         };
 
+        const handlePrintQR = () => {
+            window.print();
+        };
+
         return (
             <div>
-                <h2>Joylar (Stollar)</h2>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <h2>Joylar (Stollar)</h2>
+                </div>
+
                 <div style={{ maxWidth: '600px', margin: '2rem 0' }}>
                     <form onSubmit={handleAdd} style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
                         <input
@@ -1723,30 +1938,104 @@ const AdminApp = () => {
                     </form>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
-                        {tables.map(table => (
-                            <div key={table.id} style={{ background: '#252525', padding: '1rem', borderRadius: 'var(--radius)', display: 'flex', flexDirection: 'column', gap: '0.5rem', border: '1px solid #333' }}>
-                                <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{table.name}</div>
+                        {tables?.map(table => (
+                            <div key={table.id} style={{ background: '#252525', padding: '1.5rem', borderRadius: 'var(--radius)', display: 'flex', flexDirection: 'column', gap: '1rem', border: '1px solid #333' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{table.name}</div>
+                                    <button
+                                        onClick={() => setQrTable(table)}
+                                        style={{ background: '#333', color: 'var(--accent-color)', border: 'none', padding: '8px', borderRadius: '6px', cursor: 'pointer' }}
+                                        title="QR Kod"
+                                    >
+                                        <FaQrcode size={20} />
+                                    </button>
+                                </div>
+
                                 <div style={{ fontSize: '0.9rem', color: table.orders?.length > 0 ? '#ef4444' : '#4caf50' }}>
                                     {table.orders?.length > 0 ? 'Band' : 'Bo\'sh'}
                                 </div>
+
                                 <button
                                     onClick={() => deleteTable(table.id)}
-                                    disabled={table.orders?.length > 0} // Prevent deleting busy tables
+                                    disabled={table.orders?.length > 0}
                                     style={{
                                         marginTop: 'auto',
                                         background: table.orders?.length > 0 ? '#555' : '#ef4444',
-                                        color: '#fff', padding: '0.5rem', borderRadius: '6px',
+                                        color: '#fff', padding: '0.8rem', borderRadius: '6px',
                                         cursor: table.orders?.length > 0 ? 'not-allowed' : 'pointer',
-                                        border: 'none'
+                                        border: 'none', fontSize: '0.9rem'
                                     }}
-                                    title={table.orders?.length > 0 ? "Band stollarni o'chirib bo'lmaydi" : ""}
                                 >
-                                    O'chirish
+                                    <FaTrash /> O'chirish
                                 </button>
                             </div>
                         ))}
                     </div>
                 </div>
+
+                {/* QR Modal */}
+                {qrTable && (
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ background: '#1e1e1e', padding: '2rem', borderRadius: '16px', width: '350px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', border: '1px solid #333' }}>
+                            <h3 style={{ margin: 0 }}>{qrTable.name} QR Kodi</h3>
+
+                            <div style={{ background: '#fff', padding: '1rem', borderRadius: '12px' }}>
+                                <QRCodeSVG
+                                    value={`${window.location.origin}/menu/${qrTable.id}`}
+                                    size={200}
+                                    level={"H"}
+                                    includeMargin={true}
+                                />
+                            </div>
+
+                            <p style={{ fontSize: '0.8rem', color: '#888', textAlign: 'center' }}>
+                                Mijoz skaner qilganda bevosita ushbu stol uchun menyu ochiladi.
+                            </p>
+
+                            <div style={{ display: 'flex', gap: '1rem', width: '100%' }}>
+                                <button
+                                    onClick={() => setQrTable(null)}
+                                    style={{ flex: 1, padding: '0.8rem', background: '#333', color: '#fff', border: 'none', borderRadius: '8px' }}
+                                >
+                                    Yopish
+                                </button>
+                                <button
+                                    onClick={handlePrintQR}
+                                    style={{ flex: 1, padding: '0.8rem', background: 'var(--accent-color)', color: '#000', fontWeight: 'bold', border: 'none', borderRadius: '8px' }}
+                                >
+                                    <FaPrint /> CHOP ETISH
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Hidden print area */}
+                        <PrintPortal>
+                            <div className="print-qr-code">
+                                <h2>AFRUZA KAFE</h2>
+                                <h1 style={{ fontSize: '40px', margin: '10px 0' }}>{qrTable.name}</h1>
+                                <div style={{ background: '#fff', padding: '10px', display: 'inline-block' }}>
+                                    <QRCodeSVG
+                                        value={`${window.location.origin}/menu/${qrTable.id}`}
+                                        size={300}
+                                        level={"H"}
+                                    />
+                                </div>
+                                <p style={{ fontSize: '18px', marginTop: '20px' }}>Telefoningizda skaner qiling va buyurtma bering!</p>
+                                <style>{`
+                                    @media print {
+                                        .print-qr-code {
+                                            display: block !important;
+                                            text-align: center;
+                                            padding: 50px;
+                                            color: #000 !important;
+                                        }
+                                    }
+                                    .print-qr-code { display: none; }
+                                `}</style>
+                            </div>
+                        </PrintPortal>
+                    </div>
+                )}
             </div>
         );
     };
@@ -1784,23 +2073,23 @@ const AdminApp = () => {
         };
 
         const handleCloseDay = () => {
-            const pwd = prompt("Kassani yopish uchun ADMIN parolini kiriting:");
-            if (pwd === '8888') {
+            openPasswordPrompt(() => {
                 const stats = calculateStats();
                 setDailyStats(stats);
-                setShowDailyReport(true); // Triggers render of report
+                setShowDailyReport(true);
 
-                // Allow state to update then print
                 setTimeout(() => {
                     window.print();
-                    if (window.confirm("Kunlik hisobot chop etildimi? Tarixni tozalab, yangi kunni boshlaymizmi?")) {
-                        closeDay(stats);
-                        setShowDailyReport(false);
-                    }
+                    openConfirm(
+                        "Kunni yakunlash",
+                        "Kunlik hisobot chop etildimi? Tarixni tozalab, yangi kunni boshlaymizmi?",
+                        () => {
+                            closeDay(stats);
+                            setShowDailyReport(false);
+                        }
+                    );
                 }, 500);
-            } else if (pwd !== null) {
-                alert("Parol noto'g'ri!");
-            }
+            });
         };
 
         return (
@@ -1899,8 +2188,9 @@ const AdminApp = () => {
     };
 
 
-    // 5. STATISTICS VIEW
+    // 5. STATISTICS VIEW (Enhanced)
     const StatsView = () => {
+        const { completedOrders, archives, expenses } = useData();
         const [filterType, setFilterType] = useState('today'); // today, month, year, custom
         const [startDate, setStartDate] = useState('');
         const [endDate, setEndDate] = useState('');
@@ -1909,41 +2199,40 @@ const AdminApp = () => {
         const getAllOrders = () => {
             let all = [...completedOrders];
             archives.forEach(arch => {
-                if (arch.orders && Array.isArray(arch.orders)) {
-                    all = all.concat(arch.orders);
-                }
+                if (arch.orders && Array.isArray(arch.orders)) all = all.concat(arch.orders);
             });
             return all;
         };
 
-        const getFilteredOrders = () => {
-            const all = getAllOrders();
+        const getFilteredData = () => {
+            const allOrders = getAllOrders();
             const now = new Date();
             const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
 
-            return all.filter(order => {
-                const orderDate = new Date(order.timestamp).getTime();
-                const orderObj = new Date(order.timestamp);
+            const filterFn = (item) => {
+                const date = new Date(item.timestamp || item.date).getTime();
+                const dObj = new Date(item.timestamp || item.date);
 
-                if (filterType === 'today') {
-                    return orderDate >= startOfDay;
-                } else if (filterType === 'month') {
-                    return orderObj.getMonth() === now.getMonth() && orderObj.getFullYear() === now.getFullYear();
-                } else if (filterType === 'year') {
-                    return orderObj.getFullYear() === now.getFullYear();
-                } else if (filterType === 'custom') {
+                if (filterType === 'today') return date >= startOfDay;
+                if (filterType === 'month') return dObj.getMonth() === now.getMonth() && dObj.getFullYear() === now.getFullYear();
+                if (filterType === 'year') return dObj.getFullYear() === now.getFullYear();
+                if (filterType === 'custom') {
                     if (!startDate || !endDate) return true;
                     const start = new Date(startDate).getTime();
-                    const end = new Date(endDate).getTime() + 86400000; // Include end date
-                    return orderDate >= start && orderDate < end;
+                    const end = new Date(endDate).getTime() + 86400000;
+                    return date >= start && date < end;
                 }
                 return true;
-            });
+            };
+
+            const filteredOrders = allOrders.filter(filterFn);
+            const filteredExpenses = expenses.filter(filterFn);
+            return { filteredOrders, filteredExpenses };
         };
 
-        const filteredOrders = getFilteredOrders();
+        const { filteredOrders, filteredExpenses } = getFilteredData();
 
-        // Calculate Totals & Payment Methods
+        // Totals
         let totalRevenue = 0;
         let totalCash = 0;
         let totalCard = 0;
@@ -1952,7 +2241,6 @@ const AdminApp = () => {
         filteredOrders.forEach(order => {
             totalRevenue += order.total;
             const method = order.paymentMethod || 'Naqd';
-
             if (method === 'Naqd') totalCash += order.total;
             else if (method === 'Karta') totalCard += order.total;
             else if (method === 'Click') totalClick += order.total;
@@ -1963,131 +2251,313 @@ const AdminApp = () => {
                     totalCash += Number(match[1]);
                     totalCard += Number(match[2]);
                     totalClick += Number(match[3]);
-                } else {
-                    totalCash += order.total; // Fallback
-                }
+                } else totalCash += order.total;
             }
         });
 
-        const totalOrders = filteredOrders.length;
+        const totalExpenseAmount = filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+        const netProfit = totalRevenue - totalExpenseAmount;
 
-        // Calculate Top Items
+        // Employee Performance
+        const employeeStats = {};
+        filteredOrders.forEach(order => {
+            const waiter = order.waiterName || 'Noma\'lum';
+            if (!employeeStats[waiter]) employeeStats[waiter] = { revenue: 0, orders: 0 };
+            employeeStats[waiter].revenue += order.total;
+            employeeStats[waiter].orders += 1;
+        });
+        const performanceList = Object.entries(employeeStats).sort((a, b) => b[1].revenue - a[1].revenue);
+
+        // Top Items calculation
         const itemCounts = {};
         filteredOrders.forEach(order => {
-            if (order.items) {
-                order.items.forEach(item => {
-                    if (itemCounts[item.name]) {
-                        itemCounts[item.name] += item.quantity;
-                    } else {
-                        itemCounts[item.name] = item.quantity;
-                    }
-                });
-            }
+            order.items?.forEach(item => {
+                itemCounts[item.name] = (itemCounts[item.name] || 0) + item.quantity;
+            });
         });
-
-        const topItems = Object.entries(itemCounts)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 5); // Top 5
+        const topItems = Object.entries(itemCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
         return (
             <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h2>Statistika</h2>
-
-                    {/* Filter Controls */}
-                    <div style={{ display: 'flex', gap: '0.5rem', background: '#252525', padding: '0.5rem', borderRadius: '8px' }}>
-                        <button
-                            onClick={() => setFilterType('today')}
-                            style={{ padding: '0.5rem 1rem', borderRadius: '4px', border: 'none', background: filterType === 'today' ? 'var(--accent-color)' : 'transparent', color: filterType === 'today' ? '#000' : '#fff', cursor: 'pointer' }}
-                        >
-                            Bugun
-                        </button>
-                        <button
-                            onClick={() => setFilterType('month')}
-                            style={{ padding: '0.5rem 1rem', borderRadius: '4px', border: 'none', background: filterType === 'month' ? 'var(--accent-color)' : 'transparent', color: filterType === 'month' ? '#000' : '#fff', cursor: 'pointer' }}
-                        >
-                            Bu oy
-                        </button>
-                        <button
-                            onClick={() => setFilterType('year')}
-                            style={{ padding: '0.5rem 1rem', borderRadius: '4px', border: 'none', background: filterType === 'year' ? 'var(--accent-color)' : 'transparent', color: filterType === 'year' ? '#000' : '#fff', cursor: 'pointer' }}
-                        >
-                            Bu yil
-                        </button>
-                        <button
-                            onClick={() => setFilterType('custom')}
-                            style={{ padding: '0.5rem 1rem', borderRadius: '4px', border: 'none', background: filterType === 'custom' ? 'var(--accent-color)' : 'transparent', color: filterType === 'custom' ? '#000' : '#fff', cursor: 'pointer' }}
-                        >
-                            Davr
-                        </button>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                    <h2>Kengaytirilgan Statistika</h2>
+                    <div style={{ display: 'flex', gap: '0.5rem', background: '#252525', padding: '0.4rem', borderRadius: '10px' }}>
+                        {['today', 'month', 'year', 'custom'].map(type => (
+                            <button key={type} onClick={() => setFilterType(type)} style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: 'none', background: filterType === type ? 'var(--accent-color)' : 'transparent', color: filterType === type ? '#000' : '#888', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>
+                                {type === 'today' ? 'Bugun' : type === 'month' ? 'Oy' : type === 'year' ? 'Yil' : 'Davr'}
+                            </button>
+                        ))}
                     </div>
                 </div>
 
-                {/* Custom Date Inputs */}
                 {filterType === 'custom' && (
-                    <div style={{ marginBottom: '2rem', display: 'flex', gap: '1rem', alignItems: 'center', background: '#333', padding: '1rem', borderRadius: '8px' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.8rem', color: '#aaa', marginBottom: '0.2rem' }}>Boshlash</label>
-                            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={{ padding: '0.5rem', borderRadius: '4px', border: 'none' }} />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <label style={{ fontSize: '0.8rem', color: '#aaa', marginBottom: '0.2rem' }}>Tugash</label>
-                            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} style={{ padding: '0.5rem', borderRadius: '4px', border: 'none' }} />
-                        </div>
+                    <div style={{ marginBottom: '2rem', display: 'flex', gap: '1rem', background: '#252525', padding: '1rem', borderRadius: '12px', border: '1px solid #333' }}>
+                        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={{ padding: '0.5rem', borderRadius: '6px', background: '#333', color: '#fff', border: '1px solid #444' }} />
+                        <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} style={{ padding: '0.5rem', borderRadius: '6px', background: '#333', color: '#fff', border: '1px solid #444' }} />
                     </div>
                 )}
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginTop: '1rem', marginBottom: '2rem' }}>
-                    <div style={{ background: '#252525', padding: '1.5rem', borderRadius: 'var(--radius)', border: '1px solid #333' }}>
-                        <h4 style={{ color: '#888', marginBottom: '0.5rem' }}>Jami Tushum</h4>
-                        <p style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--success)' }}>{totalRevenue.toLocaleString()} <span style={{ fontSize: '1rem', color: '#fff' }}>so'm</span></p>
+                {/* Main Stats Cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+                    <div style={{ background: 'linear-gradient(135deg, #1e293b, #0f172a)', padding: '1.5rem', borderRadius: '16px', border: '1px solid #334155' }}>
+                        <div style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '0.5rem' }}>Jami Tushum</div>
+                        <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#fff' }}>{totalRevenue.toLocaleString()} <span style={{ fontSize: '0.9rem' }}>UZS</span></div>
                     </div>
-                    <div style={{ background: '#252525', padding: '1.5rem', borderRadius: 'var(--radius)', border: '1px solid #333' }}>
-                        <h4 style={{ color: '#888', marginBottom: '0.5rem' }}>Jami Cheklar</h4>
-                        <p style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent-color)' }}>{totalOrders}</p>
+                    <div style={{ background: 'linear-gradient(135deg, #451a1a, #2a0a0a)', padding: '1.5rem', borderRadius: '16px', border: '1px solid #7f1d1d' }}>
+                        <div style={{ color: '#fca5a5', fontSize: '0.9rem', marginBottom: '0.5rem' }}>Jami Xarajat</div>
+                        <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#fff' }}>{totalExpenseAmount.toLocaleString()} <span style={{ fontSize: '0.9rem' }}>UZS</span></div>
                     </div>
-                </div>
-
-                {/* Payment Breakdown */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-                    <div style={{ background: '#2a2a2a', padding: '1rem', borderRadius: 'var(--radius)', borderLeft: '4px solid #4caf50' }}>
-                        <h5 style={{ color: '#ccc', marginBottom: '0.5rem' }}>Naqd</h5>
-                        <p style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{totalCash.toLocaleString()}</p>
-                    </div>
-                    <div style={{ background: '#2a2a2a', padding: '1rem', borderRadius: 'var(--radius)', borderLeft: '4px solid #2196f3' }}>
-                        <h5 style={{ color: '#ccc', marginBottom: '0.5rem' }}>Plastik (Karta)</h5>
-                        <p style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{totalCard.toLocaleString()}</p>
-                    </div>
-                    <div style={{ background: '#2a2a2a', padding: '1rem', borderRadius: 'var(--radius)', borderLeft: '4px solid #ff9800' }}>
-                        <h5 style={{ color: '#ccc', marginBottom: '0.5rem' }}>Click</h5>
-                        <p style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{totalClick.toLocaleString()}</p>
+                    <div style={{ background: 'linear-gradient(135deg, #064e3b, #022c22)', padding: '1.5rem', borderRadius: '16px', border: '1px solid #065f46' }}>
+                        <div style={{ color: '#6ee7b7', fontSize: '0.9rem', marginBottom: '0.5rem' }}>Sof Foyda</div>
+                        <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#fff' }}>{netProfit.toLocaleString()} <span style={{ fontSize: '0.9rem' }}>UZS</span></div>
                     </div>
                 </div>
 
-                <h3>
-                    Top Sotilganlar
-                    <span style={{ fontSize: '1rem', fontWeight: 'normal', color: '#888', marginLeft: '0.5rem' }}>
-                        ({filterType === 'today' ? 'Bugun' : filterType === 'month' ? 'Bu oy' : filterType === 'year' ? 'Bu yil' : 'Tanlangan davr'})
-                    </span>
-                </h3>
-                <div style={{ marginTop: '1rem' }}>
-                    {topItems.length === 0 ? <p style={{ color: '#666' }}>Ma'lumot yo'q</p> : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                            {topItems.map(([name, count], index) => (
-                                <div key={name} style={{ display: 'flex', alignItems: 'center', background: '#252525', padding: '1rem', borderRadius: '8px', border: '1px solid #333' }}>
-                                    <div style={{ width: '30px', height: '30px', background: '#333', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', marginRight: '1rem' }}>
-                                        {index + 1}
+                {/* Charts Section */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2rem' }}>
+                    {/* Payment Breakdown */}
+                    <div style={{ background: '#1e1e1e', padding: '1.5rem', borderRadius: '16px', border: '1px solid #333' }}>
+                        <h3 style={{ marginBottom: '1.5rem' }}>To'lov turlari</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            {[
+                                { label: 'Naqd', value: totalCash, color: '#4caf50' },
+                                { label: 'Plastik', value: totalCard, color: '#2196f3' },
+                                { label: 'Click', value: totalClick, color: '#ff9800' }
+                            ].map(item => {
+                                const percent = totalRevenue > 0 ? (item.value / totalRevenue) * 100 : 0;
+                                return (
+                                    <div key={item.label}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem', fontSize: '0.85rem' }}>
+                                            <span>{item.label}</span>
+                                            <span style={{ color: '#aaa' }}>{item.value.toLocaleString()} UZS</span>
+                                        </div>
+                                        <div style={{ height: '10px', background: '#333', borderRadius: '5px', overflow: 'hidden' }}>
+                                            <div style={{ width: `${percent}%`, height: '100%', background: item.color, transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)' }}></div>
+                                        </div>
                                     </div>
-                                    <div style={{ flex: 1, fontSize: '1.1rem' }}>{name}</div>
-                                    <div style={{ fontWeight: 'bold', color: 'var(--accent-color)' }}>{count} ta</div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
-                    )}
+                    </div>
+
+                    {/* Employee Performance */}
+                    <div style={{ background: '#1e1e1e', padding: '1.5rem', borderRadius: '16px', border: '1px solid #333' }}>
+                        <h3 style={{ marginBottom: '1.5rem' }}>Xodimlar natijalari (Sotuv)</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            {performanceList.length === 0 ? <p style={{ color: '#666' }}>Ma'lumot yo'q</p> : performanceList.slice(0, 5).map(([name, data]) => {
+                                const maxRev = performanceList[0][1].revenue;
+                                const percent = (data.revenue / maxRev) * 100;
+                                return (
+                                    <div key={name}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem', fontSize: '0.85rem' }}>
+                                            <span>{name}</span>
+                                            <span style={{ color: 'var(--accent-color)' }}>{data.revenue.toLocaleString()} UZS</span>
+                                        </div>
+                                        <div style={{ height: '10px', background: '#333', borderRadius: '5px', overflow: 'hidden' }}>
+                                            <div style={{ width: `${percent}%`, height: '100%', background: '#6366f1', transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)' }}></div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Top Items */}
+                <div style={{ background: '#1e1e1e', padding: '1.5rem', borderRadius: '16px', border: '1px solid #333' }}>
+                    <h3 style={{ marginBottom: '1.5rem' }}>Eng ko'p sotilgan taomlar</h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                        {topItems.map(([name, count], i) => (
+                            <div key={name} style={{ background: '#252525', padding: '1.2rem', borderRadius: '12px', border: '1px solid #333', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
+                                    <span style={{ color: '#888', fontWeight: 'bold' }}>#{i + 1}</span>
+                                    <span style={{ fontWeight: '500' }}>{name}</span>
+                                </div>
+                                <span style={{ color: 'var(--accent-color)', fontWeight: 'bold' }}>{count} ta</span>
+                            </div>
+                        ))}
+                        {topItems.length === 0 && <p style={{ color: '#666' }}>Ma'lumot yo'q</p>}
+                    </div>
                 </div>
             </div>
         );
     };
+
+    // 5.2 EXPENSES VIEW
+    const ExpensesView = () => {
+        const { expenses, addExpense, deleteExpense } = useData();
+        const [newExpense, setNewExpense] = useState({ category: '', amount: '', comment: '', date: new Date().toISOString().split('T')[0] });
+
+        const handleSubmit = (e) => {
+            e.preventDefault();
+            if (!newExpense.category || !newExpense.amount) {
+                setErrorMsg("Iltimos, kategoriya va summani kiriting!");
+                setShowErrorModal(true);
+                return;
+            }
+            addExpense({ ...newExpense, amount: Number(newExpense.amount) });
+            setNewExpense({ category: '', amount: '', comment: '', date: new Date().toISOString().split('T')[0] });
+        };
+
+        return (
+            <div>
+                <h2>Xarajatlar (Rasxod)</h2>
+                <div style={{ background: '#252525', padding: '1.5rem', borderRadius: '12px', border: '1px solid #333', marginBottom: '2rem', maxWidth: '800px' }}>
+                    <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <label style={{ color: '#888', fontSize: '0.8rem' }}>Kategoriya</label>
+                            <input
+                                placeholder="Masalan: Bozor, Ijara..."
+                                value={newExpense.category}
+                                onChange={e => setNewExpense({ ...newExpense, category: e.target.value })}
+                                style={{ padding: '0.8rem', borderRadius: '8px', border: '1px solid #444', background: '#333', color: '#fff' }}
+                            />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <label style={{ color: '#888', fontSize: '0.8rem' }}>Summa</label>
+                            <input
+                                type="number"
+                                placeholder="0"
+                                value={newExpense.amount}
+                                onChange={e => setNewExpense({ ...newExpense, amount: e.target.value })}
+                                style={{ padding: '0.8rem', borderRadius: '8px', border: '1px solid #444', background: '#333', color: '#fff' }}
+                            />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <label style={{ color: '#888', fontSize: '0.8rem' }}>Sana</label>
+                            <input
+                                type="date"
+                                value={newExpense.date}
+                                onChange={e => setNewExpense({ ...newExpense, date: e.target.value })}
+                                style={{ padding: '0.8rem', borderRadius: '8px', border: '1px solid #444', background: '#333', color: '#fff', colorScheme: 'dark' }}
+                            />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', gridColumn: 'span 2' }}>
+                            <label style={{ color: '#888', fontSize: '0.8rem' }}>Izoh</label>
+                            <input
+                                placeholder="Qo'shimcha ma'lumot..."
+                                value={newExpense.comment}
+                                onChange={e => setNewExpense({ ...newExpense, comment: e.target.value })}
+                                style={{ padding: '0.8rem', borderRadius: '8px', border: '1px solid #444', background: '#333', color: '#fff' }}
+                            />
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                            <button type="submit" style={{ width: '100%', padding: '0.8rem', background: 'var(--accent-color)', color: '#000', borderRadius: '8px', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}>
+                                QO'SHISH
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                    <thead>
+                        <tr style={{ borderBottom: '1px solid #555', color: '#888' }}>
+                            <th style={{ padding: '1rem' }}>Sana</th>
+                            <th style={{ padding: '1rem' }}>Kategoriya</th>
+                            <th style={{ padding: '1rem' }}>Izoh</th>
+                            <th style={{ padding: '1rem' }}>Summa</th>
+                            <th style={{ padding: '1rem' }}>Amal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {expenses.slice().reverse().map(exp => (
+                            <tr key={exp.id} style={{ borderBottom: '1px solid #333' }}>
+                                <td style={{ padding: '1rem' }}>{new Date(exp.date).toLocaleDateString()}</td>
+                                <td style={{ padding: '1rem' }}>{exp.category}</td>
+                                <td style={{ padding: '1rem', color: '#aaa' }}>{exp.comment}</td>
+                                <td style={{ padding: '1rem', fontWeight: 'bold', color: '#ef4444' }}>-{exp.amount.toLocaleString()}</td>
+                                <td style={{ padding: '1rem' }}>
+                                    <button onClick={() => deleteExpense(exp.id)} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><FaTrash /></button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        );
+    };
+
+    // 5.3 EMPLOYEES VIEW
+    const EmployeesView = () => {
+        const { employees, addEmployee, updateEmployee, deleteEmployee } = useData();
+        const [isAdding, setIsAdding] = useState(false);
+        const [editingId, setEditingId] = useState(null);
+        const [formData, setFormData] = useState({ name: '', role: 'Ofitsiant', phone: '', status: 'active' });
+
+        const handleSubmit = (e) => {
+            e.preventDefault();
+            if (editingId) {
+                updateEmployee({ ...formData, id: editingId });
+                setEditingId(null);
+            } else {
+                addEmployee(formData);
+            }
+            setIsAdding(false);
+            setFormData({ name: '', role: 'Ofitsiant', phone: '', status: 'active' });
+        };
+
+        return (
+            <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                    <h2>Xodimlar Boshqaruvi</h2>
+                    <button
+                        onClick={() => { setIsAdding(true); setEditingId(null); setFormData({ name: '', role: 'Ofitsiant', phone: '', status: 'active' }); }}
+                        style={{ padding: '0.6rem 1.5rem', background: 'var(--accent-color)', color: '#000', borderRadius: '8px', fontWeight: 'bold', display: 'flex', gap: '0.5rem', alignItems: 'center' }}
+                    >
+                        <FaPlus /> Yangi Xodim
+                    </button>
+                </div>
+
+                {isAdding && (
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ background: '#252525', padding: '2rem', borderRadius: '16px', width: '400px', border: '1px solid #444' }}>
+                            <h3>{editingId ? 'Tahrirlash' : 'Yangi Xodim'}</h3>
+                            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1.5rem' }}>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: '#888' }}>F.I.O</label>
+                                    <input autoFocus value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid #444', background: '#333', color: '#fff' }} required />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: '#888' }}>Lavozim</label>
+                                    <select value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid #444', background: '#333', color: '#fff' }}>
+                                        <option>Ofitsiant</option>
+                                        <option>Oshpaz</option>
+                                        <option>Kassir</option>
+                                        <option>Boshqa</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: '#888' }}>Telefon</label>
+                                    <input value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid #444', background: '#333', color: '#fff' }} />
+                                </div>
+                                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                                    <button type="button" onClick={() => setIsAdding(false)} style={{ flex: 1, padding: '0.8rem', background: '#333', color: '#fff', borderRadius: '8px', border: 'none' }}>BEKOR</button>
+                                    <button type="submit" style={{ flex: 2, padding: '0.8rem', background: 'var(--success)', color: '#fff', borderRadius: '8px', border: 'none', fontWeight: 'bold' }}>SAQLASH</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1.5rem' }}>
+                    {employees.map(emp => (
+                        <div key={emp.id} style={{ background: '#252525', padding: '1.5rem', borderRadius: '12px', border: '1px solid #333', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ padding: '2px 8px', borderRadius: '4px', background: '#333', fontSize: '0.7rem', color: 'var(--accent-color)' }}>{emp.role}</span>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <button onClick={() => { setEditingId(emp.id); setFormData(emp); setIsAdding(true); }} style={{ background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer' }}><FaEdit /></button>
+                                    <button onClick={() => deleteEmployee(emp.id)} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><FaTrash /></button>
+                                </div>
+                            </div>
+                            <h3 style={{ margin: '0.5rem 0' }}>{emp.name}</h3>
+                            <div style={{ color: '#888', fontSize: '0.9rem' }}>📞 {emp.phone || 'Noma\'lum'}</div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    };
+
 
     // 6. ARCHIVES VIEW
     const ArchivesView = () => {
@@ -2262,35 +2732,80 @@ const AdminApp = () => {
     // 7. SETTINGS VIEW
     const SettingsView = () => {
         const [percentage, setPercentage] = useState(settings.servicePercentage || 0);
+        const [contact, setContact] = useState({
+            phone: settings.phone || '+998 90 123 45 67',
+            address: settings.address || 'Toshkent sh., Chilonzor tumani, 1-mavze',
+            hours: settings.hours || 'Har kuni: 09:00 - 23:00'
+        });
 
         const handleSave = () => {
-            updateSettings({ servicePercentage: Number(percentage) });
-            alert("Sozlamalar saqlandi!");
+            updateSettings({
+                servicePercentage: Number(percentage),
+                ...contact
+            });
+            openSuccess("Barcha sozlamalar muvaffaqiyatli saqlandi!");
         };
 
         return (
             <div>
                 <h2>Sozlamalar</h2>
-                <div style={{ maxWidth: '400px', margin: '2rem 0', background: '#252525', padding: '1.5rem', borderRadius: '8px' }}>
-                    <div style={{ marginBottom: '1.5rem' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#aaa' }}>Xizmat Haqi (Usluga) %</label>
-                        <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={percentage}
-                            onChange={(e) => setPercentage(e.target.value)}
-                            style={{ width: '100%', padding: '0.8rem', borderRadius: '4px', border: '1px solid #444', background: '#333', color: '#fff', fontSize: '1.1rem' }}
-                        />
-                        <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.5rem' }}>
-                            Ushbu foiz barcha <b>yangi</b> buyurtmalarga qo'shiladi.
-                        </p>
+                <div style={{ maxWidth: '600px', margin: '2rem 0', display: 'grid', gap: '2rem' }}>
+
+                    {/* General Settings */}
+                    <div style={{ background: '#252525', padding: '1.5rem', borderRadius: '8px', border: '1px solid #333' }}>
+                        <h3 style={{ marginBottom: '1.5rem', color: 'var(--accent-color)' }}>Umumiy</h3>
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#aaa' }}>Xizmat Haqi (Usluga) %</label>
+                            <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                value={percentage}
+                                onChange={(e) => setPercentage(e.target.value)}
+                                style={{ width: '100%', padding: '0.8rem', borderRadius: '4px', border: '1px solid #444', background: '#333', color: '#fff', fontSize: '1.1rem' }}
+                            />
+                            <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.5rem' }}>
+                                Ushbu foiz barcha <b>yangi</b> buyurtmalarga qo'shiladi.
+                            </p>
+                        </div>
                     </div>
+
+                    {/* Contact Settings */}
+                    <div style={{ background: '#252525', padding: '1.5rem', borderRadius: '8px', border: '1px solid #333' }}>
+                        <h3 style={{ marginBottom: '1.5rem', color: 'var(--accent-color)' }}>Sayt Kontakt Ma'lumotlari</h3>
+                        <div style={{ display: 'grid', gap: '1rem' }}>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#aaa' }}>Telefon raqami</label>
+                                <input
+                                    value={contact.phone}
+                                    onChange={(e) => setContact({ ...contact, phone: e.target.value })}
+                                    style={{ width: '100%', padding: '0.8rem', borderRadius: '4px', border: '1px solid #444', background: '#333', color: '#fff' }}
+                                />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#aaa' }}>Manzil</label>
+                                <input
+                                    value={contact.address}
+                                    onChange={(e) => setContact({ ...contact, address: e.target.value })}
+                                    style={{ width: '100%', padding: '0.8rem', borderRadius: '4px', border: '1px solid #444', background: '#333', color: '#fff' }}
+                                />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#aaa' }}>Ish vaqti</label>
+                                <input
+                                    value={contact.hours}
+                                    onChange={(e) => setContact({ ...contact, hours: e.target.value })}
+                                    style={{ width: '100%', padding: '0.8rem', borderRadius: '4px', border: '1px solid #444', background: '#333', color: '#fff' }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
                     <button
                         onClick={handleSave}
-                        style={{ width: '100%', padding: '1rem', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}
+                        style={{ padding: '1.2rem', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}
                     >
-                        SAQLASH
+                        BARCHA O'ZGARISHLARNI SAQLASH
                     </button>
                 </div>
             </div>
@@ -2353,7 +2868,25 @@ const AdminApp = () => {
                                     background: activeTab === 'stats' ? '#333' : 'transparent', color: '#fff'
                                 }}
                             >
-                                <FaHistory /> Statistika
+                                <FaChartLine /> Statistika
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('expenses')}
+                                style={{
+                                    padding: '1rem', textAlign: 'left', borderRadius: '8px', display: 'flex', gap: '10px', alignItems: 'center',
+                                    background: activeTab === 'expenses' ? '#333' : 'transparent', color: '#fff'
+                                }}
+                            >
+                                <FaWallet /> Xarajatlar
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('employees')}
+                                style={{
+                                    padding: '1rem', textAlign: 'left', borderRadius: '8px', display: 'flex', gap: '10px', alignItems: 'center',
+                                    background: activeTab === 'employees' ? '#333' : 'transparent', color: '#fff'
+                                }}
+                            >
+                                <FaUsers /> Xodimlar
                             </button>
                         </>
                     )}
@@ -2420,7 +2953,8 @@ const AdminApp = () => {
                 {activeTab === 'categories' && <CategoriesView />}
                 {activeTab === 'places' && <PlacesView />}
                 {activeTab === 'stats' && <StatsView />}
-                {activeTab === 'history' && <HistoryView />}
+                {activeTab === 'expenses' && <ExpensesView />}
+                {activeTab === 'employees' && <EmployeesView />}
                 {activeTab === 'history' && <HistoryView />}
                 {activeTab === 'archives' && <ArchivesView />}
                 {activeTab === 'settings' && <SettingsView />}

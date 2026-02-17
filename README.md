@@ -71,4 +71,13 @@ Misol: `http://192.168.1.38:5173/waiter`
 ## 5. Muammolar yechimi
 - **Telefonda ochilmasa:** Wi-Fi bir xil ekanligini tekshiring. Antivirus yoki Firewalldan portlarni ochish kerak bo'lishi mumkin.
 - **Ma'lumotlar ko'rinmasa:** 1-Terminalda (Server) xatolik yo'qligini tekshiring.
-# kafe-epos
+
+## 6. Server Konfiguratsiyasi (Xavfsizlik)
+Server `.env` fayli orqali sozlanadi.
+- **Fayl joylashuvi:** `server/.env`
+- **Asosiy Login Parol:** `admin123` (Agar o'zgartirilmagan bo'lsa)
+- **Parolni o'zgartirish:** `server/.env` faylida `ADMIN_PASSWORD` ni o'zgartiring.
+
+### Login Sahifasi
+- **Manzil:** `http://localhost:5173/login`
+- **Admin Parol:** `admin123`

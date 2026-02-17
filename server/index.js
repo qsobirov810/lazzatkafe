@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const { Server } = require("socket.io");
@@ -5,10 +6,37 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
+const jwt = require('jsonwebtoken');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-afruza-kafe-2024'; // In production, use process.env.JWT_SECRET
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// --- AUTHENTICATION ---
+app.post('/api/login', (req, res) => {
+    const { password } = req.body;
+    // For simplicity, using a hardcoded password. 
+    // In a real app, this would be hashed in a DB.
+    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    if (password === adminPassword) {
+        const token = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '12h' });
+        return res.json({ success: true, token });
+    }
+    res.status(401).json({ success: false, message: 'Parol noto\'g\'ri' });
+});
+
+app.post('/api/verify', (req, res) => {
+    const { token } = req.body;
+    if (!token) return res.json({ success: false });
+
+    jwt.verify(token, JWT_SECRET, (err, decoded) => {
+        if (err) return res.json({ success: false });
+        return res.json({ success: true, decoded });
+    });
+});
+
 // Serve static images from the frontend public folder
 app.use('/images', express.static(path.join(__dirname, '../public/images')));
 
@@ -18,8 +46,24 @@ const server = http.createServer(app);
 // Setup Socket.io
 const io = new Server(server, {
     cors: {
-        origin: "*", // Allow all origins for simplicity (development)
-        methods: ["GET", "POST"]
+        origin: "*",
+        methods: ["GET", "POST"],
+        allowedHeaders: ["my-custom-header"],
+        credentials: true
+    }
+});
+
+// --- SOCKET AUTH MIDDLEWARE ---
+io.use((socket, next) => {
+    const token = socket.handshake.auth?.token;
+    if (token) {
+        jwt.verify(token, JWT_SECRET, (err, decoded) => {
+            if (err) return next();
+            socket.user = decoded;
+            next();
+        });
+    } else {
+        next();
     }
 });
 
@@ -83,7 +127,14 @@ const defaultData = {
     history: [],
     archives: [],
     reservations: [],
-    settings: { servicePercentage: 0 } // Default service charge
+    expenses: [],
+    employees: [],
+    settings: {
+        servicePercentage: 0,
+        phone: '+998 90 123 45 67',
+        address: 'Toshkent sh., Chilonzor tumani, 1-mavze',
+        hours: 'Har kuni: 09:00 - 23:00'
+    }
 };
 
 // Load DB
@@ -97,6 +148,8 @@ if (fs.existsSync(DB_FILE)) {
         if (!db.archives) db.archives = [];
         if (!db.reservations) db.reservations = [];
         if (!db.settings) db.settings = { servicePercentage: 0 }; // Ensure settings exist
+        if (!db.expenses) db.expenses = [];
+        if (!db.employees) db.employees = [];
 
 
         // --- AUTO-CLEANUP: Remove archives older than 30 days ---
@@ -138,6 +191,12 @@ io.on('connection', (socket) => {
 
     // 1. Send Initial Data on Connect
     socket.emit('init_data', db);
+
+    // 1.5 Allow explicit data request (Fix for race conditions)
+    socket.on('request_data', () => {
+        console.log('Client requested data update');
+        socket.emit('init_data', db);
+    });
 
     // 2. Place Order
     socket.on('place_order', ({ tableId, items, waiterName }) => {
@@ -246,6 +305,7 @@ io.on('connection', (socket) => {
 
     // 4. Checkout Table
     socket.on('checkout_table', ({ tableId, paymentMethod, discount = 0, serviceOff = false }) => {
+        if (socket.user?.role !== 'admin') return;
         const tableIndex = db.tables.findIndex(t => t.id === tableId);
         if (tableIndex === -1) return;
 
@@ -350,6 +410,7 @@ io.on('connection', (socket) => {
 
     // 5. Menu Management
     socket.on('add_menu_item', (item) => {
+        if (socket.user?.role !== 'admin') return;
         const newItem = { ...item, id: Date.now() }; // Simple ID generation
         db.menu.push(newItem);
         saveDb();
@@ -357,6 +418,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('update_menu_item', (updatedItem) => {
+        if (socket.user?.role !== 'admin') return;
         const index = db.menu.findIndex(i => i.id === updatedItem.id);
         if (index !== -1) {
             db.menu[index] = updatedItem;
@@ -366,6 +428,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('delete_menu_item', (itemId) => {
+        if (socket.user?.role !== 'admin') return;
         db.menu = db.menu.filter(i => i.id !== itemId);
         saveDb();
         io.emit('data_update', db);
@@ -374,6 +437,7 @@ io.on('connection', (socket) => {
 
     // 5.5 Category Management
     socket.on('add_category', (name) => {
+        if (socket.user?.role !== 'admin') return;
         const newCat = { id: Date.now(), name };
         if (!db.categories) db.categories = [];
         db.categories.push(newCat);
@@ -382,6 +446,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('delete_category', (id) => {
+        if (socket.user?.role !== 'admin') return;
         if (db.categories) {
             db.categories = db.categories.filter(c => c.id !== id);
             saveDb();
@@ -391,6 +456,7 @@ io.on('connection', (socket) => {
 
     // 5.6 RESERVATIONS (BANQUET SYSTEM)
     socket.on('add_reservation', (resData) => {
+        if (socket.user?.role !== 'admin') return;
         const newRes = { ...resData, id: Date.now() };
         if (!db.reservations) db.reservations = [];
         db.reservations.push(newRes);
@@ -489,6 +555,7 @@ io.on('connection', (socket) => {
 
     // 6.5 Settings Management
     socket.on('update_settings', (newSettings) => {
+        if (socket.user?.role !== 'admin') return;
         db.settings = { ...db.settings, ...newSettings };
         saveDb();
         io.emit('data_update', db);
@@ -496,6 +563,7 @@ io.on('connection', (socket) => {
 
     // 7. Close Day (Archive)
     socket.on('close_day', (summary) => {
+        if (socket.user?.role !== 'admin') return;
         console.log("SERVER: Received close_day event", summary);
         console.log("SERVER: History length:", db.history.length);
 
@@ -547,6 +615,7 @@ io.on('connection', (socket) => {
 
     // 8. Clear History (Force) - Optional, keep for now or remove
     socket.on('clear_history', () => {
+        if (socket.user?.role !== 'admin') return;
         db.history = [];
         saveDb();
         io.emit('data_update', db);
@@ -581,12 +650,59 @@ io.on('connection', (socket) => {
         io.emit('data_update', db);
     });
 
+    // 11. Expense Management
+    socket.on('add_expense', (expenseData) => {
+        if (socket.user?.role !== 'admin') return;
+        const newExpense = { ...expenseData, id: Date.now() };
+        if (!db.expenses) db.expenses = [];
+        db.expenses.push(newExpense);
+        saveDb();
+        io.emit('data_update', db);
+    });
+
+    socket.on('delete_expense', (id) => {
+        if (socket.user?.role !== 'admin') return;
+        if (db.expenses) {
+            db.expenses = db.expenses.filter(e => e.id !== id);
+            saveDb();
+            io.emit('data_update', db);
+        }
+    });
+
+    // 12. Employee Management
+    socket.on('add_employee', (employeeData) => {
+        if (socket.user?.role !== 'admin') return;
+        const newEmployee = { ...employeeData, id: Date.now() };
+        if (!db.employees) db.employees = [];
+        db.employees.push(newEmployee);
+        saveDb();
+        io.emit('data_update', db);
+    });
+
+    socket.on('update_employee', (updatedEmp) => {
+        if (!db.employees) return;
+        const index = db.employees.findIndex(e => e.id === updatedEmp.id);
+        if (index !== -1) {
+            db.employees[index] = { ...db.employees[index], ...updatedEmp };
+            saveDb();
+            io.emit('data_update', db);
+        }
+    });
+
+    socket.on('delete_employee', (id) => {
+        if (db.employees) {
+            db.employees = db.employees.filter(e => e.id !== id);
+            saveDb();
+            io.emit('data_update', db);
+        }
+    });
+
     socket.on('disconnect', () => {
         console.log('Client disconnected', socket.id);
     });
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });

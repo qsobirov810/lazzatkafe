@@ -3,353 +3,44 @@
     {
       "id": 1769765279561,
       "name": "KABINA-1",
-      "status": "busy",
-      "total": 320760,
-      "orders": [
-        {
-          "id": 1770471542126,
-          "tableId": 1769765279561,
-          "items": [
-            {
-              "name": "lagmon 0.7 porsi",
-              "price": 25000,
-              "category": "Taomlar",
-              "image": "http://localhost:3000/images/upload-1769406384859-456533128.jpg",
-              "id": 1769406414600,
-              "quantity": 5
-            }
-          ],
-          "status": "pending",
-          "printed": false,
-          "timestamp": "2026-02-07T13:52:05.377Z",
-          "itemsTotal": 125000,
-          "servicePercentage": 8,
-          "serviceAmount": 10000,
-          "total": 135000
-        },
-        {
-          "id": 1770471551089,
-          "tableId": 1769765279561,
-          "items": [],
-          "status": "pending",
-          "printed": false,
-          "timestamp": "2026-02-07T13:53:18.090Z",
-          "itemsTotal": 0,
-          "servicePercentage": 8,
-          "serviceAmount": 0,
-          "total": 0
-        },
-        {
-          "id": 1770472436042,
-          "tableId": 1769765279561,
-          "items": [
-            {
-              "name": "Manti",
-              "price": 8000,
-              "category": "Taomlar",
-              "image": "/images/manti.png",
-              "id": 2,
-              "quantity": 4
-            }
-          ],
-          "status": "pending",
-          "printed": false,
-          "timestamp": "2026-02-07T14:08:09.512Z",
-          "itemsTotal": 32000,
-          "servicePercentage": 8,
-          "serviceAmount": 2560,
-          "total": 34560
-        },
-        {
-          "id": 1770474264524,
-          "tableId": 1769765279561,
-          "items": [
-            {
-              "name": "Osh",
-              "price": 35000,
-              "category": "Taomlar",
-              "image": "/images/osh.png",
-              "id": 1,
-              "quantity": 2
-            }
-          ],
-          "status": "pending",
-          "printed": false,
-          "timestamp": "2026-02-07T14:24:24.524Z",
-          "itemsTotal": 70000,
-          "servicePercentage": 8,
-          "serviceAmount": 5600,
-          "total": 75600
-        },
-        {
-          "id": 1770474529845,
-          "tableId": 1769765279561,
-          "items": [
-            {
-              "name": "Osh",
-              "price": 35000,
-              "category": "Taomlar",
-              "image": "/images/osh.png",
-              "id": 1,
-              "quantity": 2
-            }
-          ],
-          "status": "pending",
-          "printed": false,
-          "timestamp": "2026-02-07T14:28:49.845Z",
-          "itemsTotal": 70000,
-          "servicePercentage": 8,
-          "serviceAmount": 5600,
-          "total": 75600
-        }
-      ]
+      "status": "free",
+      "total": 0,
+      "orders": []
     },
     {
       "id": 1769765296073,
       "name": "KABINA-2",
-      "status": "busy",
-      "total": 75600,
-      "orders": [
-        {
-          "id": 1770474571104,
-          "tableId": 1769765296073,
-          "items": [
-            {
-              "name": "Osh",
-              "price": 35000,
-              "category": "Taomlar",
-              "image": "/images/osh.png",
-              "id": 1,
-              "quantity": 2
-            }
-          ],
-          "status": "pending",
-          "printed": false,
-          "timestamp": "2026-02-07T14:29:31.104Z",
-          "itemsTotal": 70000,
-          "servicePercentage": 8,
-          "serviceAmount": 5600,
-          "total": 75600
-        }
-      ]
+      "status": "free",
+      "total": 0,
+      "orders": []
     },
     {
       "id": 1769765302369,
       "name": "KABINA-3",
-      "status": "busy",
-      "total": 257040,
-      "orders": [
-        {
-          "id": 1770473331315,
-          "tableId": 1769765302369,
-          "items": [
-            {
-              "name": "Osh",
-              "price": 35000,
-              "category": "Taomlar",
-              "image": "/images/osh.png",
-              "id": 1,
-              "quantity": 1
-            },
-            {
-              "name": "lagmon 0.7 porsi",
-              "price": 25000,
-              "category": "Taomlar",
-              "image": "http://localhost:3000/images/upload-1769406384859-456533128.jpg",
-              "id": 1769406414600,
-              "quantity": 5
-            },
-            {
-              "name": "Manti",
-              "price": 8000,
-              "category": "Taomlar",
-              "image": "/images/manti.png",
-              "id": 2,
-              "quantity": 1
-            }
-          ],
-          "status": "pending",
-          "printed": false,
-          "timestamp": "2026-02-07T14:08:51.315Z",
-          "itemsTotal": 168000,
-          "servicePercentage": 8,
-          "serviceAmount": 13440,
-          "total": 181440
-        },
-        {
-          "id": 1770474565006,
-          "tableId": 1769765302369,
-          "items": [
-            {
-              "name": "Osh",
-              "price": 35000,
-              "category": "Taomlar",
-              "image": "/images/osh.png",
-              "id": 1,
-              "quantity": 2
-            }
-          ],
-          "status": "pending",
-          "printed": false,
-          "timestamp": "2026-02-07T14:29:25.006Z",
-          "itemsTotal": 70000,
-          "servicePercentage": 8,
-          "serviceAmount": 5600,
-          "total": 75600
-        }
-      ]
+      "status": "free",
+      "total": 0,
+      "orders": []
     },
     {
       "id": 1769765308513,
       "name": "KABINA-4",
-      "status": "busy",
-      "total": 75600,
-      "orders": [
-        {
-          "id": 1770474754072,
-          "tableId": 1769765308513,
-          "items": [
-            {
-              "name": "Osh",
-              "price": 35000,
-              "category": "Taomlar",
-              "image": "/images/osh.png",
-              "id": 1,
-              "quantity": 2
-            }
-          ],
-          "status": "pending",
-          "printed": false,
-          "timestamp": "2026-02-07T14:32:34.072Z",
-          "itemsTotal": 70000,
-          "servicePercentage": 8,
-          "serviceAmount": 5600,
-          "total": 75600
-        }
-      ]
+      "status": "free",
+      "total": 0,
+      "orders": []
     },
     {
       "id": 1769765335161,
       "name": "1-STOL",
-      "status": "busy",
-      "total": 345600,
-      "orders": [
-        {
-          "id": 1770475096372,
-          "tableId": 1769765335161,
-          "items": [
-            {
-              "name": "Osh",
-              "price": 35000,
-              "category": "Taomlar",
-              "image": "/images/osh.png",
-              "id": 1,
-              "quantity": 3
-            }
-          ],
-          "status": "pending",
-          "printed": false,
-          "timestamp": "2026-02-07T14:38:16.372Z",
-          "itemsTotal": 105000,
-          "servicePercentage": 8,
-          "serviceAmount": 8400,
-          "total": 113400
-        },
-        {
-          "id": 1770475100783,
-          "tableId": 1769765335161,
-          "items": [
-            {
-              "name": "lagmon 0.7 porsi",
-              "price": 25000,
-              "category": "Taomlar",
-              "image": "http://localhost:3000/images/upload-1769406384859-456533128.jpg",
-              "id": 1769406414600,
-              "quantity": 2
-            }
-          ],
-          "status": "pending",
-          "printed": false,
-          "timestamp": "2026-02-07T14:38:20.783Z",
-          "itemsTotal": 50000,
-          "servicePercentage": 8,
-          "serviceAmount": 4000,
-          "total": 54000
-        },
-        {
-          "id": 1770475109949,
-          "tableId": 1769765335161,
-          "items": [
-            {
-              "name": "jiz",
-              "price": 165000,
-              "category": "Taomlar",
-              "image": "",
-              "id": 1769596836566,
-              "quantity": 1
-            }
-          ],
-          "status": "pending",
-          "printed": false,
-          "timestamp": "2026-02-07T14:38:29.949Z",
-          "itemsTotal": 165000,
-          "servicePercentage": 8,
-          "serviceAmount": 13200,
-          "total": 178200
-        }
-      ]
+      "status": "free",
+      "total": 0,
+      "orders": []
     },
     {
       "id": 1769765339591,
       "name": "2-STOL",
-      "status": "busy",
-      "total": 92880,
-      "orders": [
-        {
-          "id": 1770475229589,
-          "tableId": 1769765339591,
-          "items": [
-            {
-              "name": "Osh",
-              "price": 35000,
-              "category": "Taomlar",
-              "image": "/images/osh.png",
-              "id": 1,
-              "quantity": 2
-            }
-          ],
-          "status": "pending",
-          "printed": false,
-          "timestamp": "2026-02-07T14:40:29.589Z",
-          "itemsTotal": 70000,
-          "servicePercentage": 8,
-          "serviceAmount": 5600,
-          "total": 75600,
-          "waiterName": "sardor"
-        },
-        {
-          "id": 1770475249922,
-          "tableId": 1769765339591,
-          "items": [
-            {
-              "name": "Manti",
-              "price": 8000,
-              "category": "Taomlar",
-              "image": "/images/manti.png",
-              "id": 2,
-              "quantity": 2
-            }
-          ],
-          "status": "pending",
-          "printed": false,
-          "timestamp": "2026-02-07T14:40:49.922Z",
-          "itemsTotal": 16000,
-          "servicePercentage": 8,
-          "serviceAmount": 1280,
-          "total": 17280,
-          "waiterName": "ali"
-        }
-      ]
+      "status": "free",
+      "total": 0,
+      "orders": []
     },
     {
       "id": 1769765343577,
@@ -399,6 +90,13 @@
       "status": "free",
       "total": 0,
       "orders": []
+    },
+    {
+      "id": 1771061976329,
+      "name": "Stol 10",
+      "status": "free",
+      "total": 0,
+      "orders": []
     }
   ],
   "menu": [
@@ -407,7 +105,8 @@
       "price": 35000,
       "category": "Taomlar",
       "image": "/images/osh.png",
-      "id": 1
+      "id": 1,
+      "available": true
     },
     {
       "name": "Manti",
@@ -482,309 +181,6 @@
     }
   ],
   "activeOrders": [
-    {
-      "id": 1770475249922,
-      "tableId": 1769765339591,
-      "items": [
-        {
-          "name": "Manti",
-          "price": 8000,
-          "category": "Taomlar",
-          "image": "/images/manti.png",
-          "id": 2,
-          "quantity": 2
-        }
-      ],
-      "status": "pending",
-      "printed": false,
-      "timestamp": "2026-02-07T14:40:49.922Z",
-      "itemsTotal": 16000,
-      "servicePercentage": 8,
-      "serviceAmount": 1280,
-      "total": 17280,
-      "waiterName": "ali"
-    },
-    {
-      "id": 1770475229589,
-      "tableId": 1769765339591,
-      "items": [
-        {
-          "name": "Osh",
-          "price": 35000,
-          "category": "Taomlar",
-          "image": "/images/osh.png",
-          "id": 1,
-          "quantity": 2
-        }
-      ],
-      "status": "pending",
-      "printed": false,
-      "timestamp": "2026-02-07T14:40:29.589Z",
-      "itemsTotal": 70000,
-      "servicePercentage": 8,
-      "serviceAmount": 5600,
-      "total": 75600,
-      "waiterName": "sardor"
-    },
-    {
-      "id": 1770475109949,
-      "tableId": 1769765335161,
-      "items": [
-        {
-          "name": "jiz",
-          "price": 165000,
-          "category": "Taomlar",
-          "image": "",
-          "id": 1769596836566,
-          "quantity": 1
-        }
-      ],
-      "status": "pending",
-      "printed": false,
-      "timestamp": "2026-02-07T14:38:29.949Z",
-      "itemsTotal": 165000,
-      "servicePercentage": 8,
-      "serviceAmount": 13200,
-      "total": 178200
-    },
-    {
-      "id": 1770475100783,
-      "tableId": 1769765335161,
-      "items": [
-        {
-          "name": "lagmon 0.7 porsi",
-          "price": 25000,
-          "category": "Taomlar",
-          "image": "http://localhost:3000/images/upload-1769406384859-456533128.jpg",
-          "id": 1769406414600,
-          "quantity": 2
-        }
-      ],
-      "status": "pending",
-      "printed": false,
-      "timestamp": "2026-02-07T14:38:20.783Z",
-      "itemsTotal": 50000,
-      "servicePercentage": 8,
-      "serviceAmount": 4000,
-      "total": 54000
-    },
-    {
-      "id": 1770475096372,
-      "tableId": 1769765335161,
-      "items": [
-        {
-          "name": "Osh",
-          "price": 35000,
-          "category": "Taomlar",
-          "image": "/images/osh.png",
-          "id": 1,
-          "quantity": 3
-        }
-      ],
-      "status": "pending",
-      "printed": false,
-      "timestamp": "2026-02-07T14:38:16.372Z",
-      "itemsTotal": 105000,
-      "servicePercentage": 8,
-      "serviceAmount": 8400,
-      "total": 113400
-    },
-    {
-      "id": 1770474754072,
-      "tableId": 1769765308513,
-      "items": [
-        {
-          "name": "Osh",
-          "price": 35000,
-          "category": "Taomlar",
-          "image": "/images/osh.png",
-          "id": 1,
-          "quantity": 2
-        }
-      ],
-      "status": "pending",
-      "printed": false,
-      "timestamp": "2026-02-07T14:32:34.072Z",
-      "itemsTotal": 70000,
-      "servicePercentage": 8,
-      "serviceAmount": 5600,
-      "total": 75600
-    },
-    {
-      "id": 1770474571104,
-      "tableId": 1769765296073,
-      "items": [
-        {
-          "name": "Osh",
-          "price": 35000,
-          "category": "Taomlar",
-          "image": "/images/osh.png",
-          "id": 1,
-          "quantity": 2
-        }
-      ],
-      "status": "pending",
-      "printed": false,
-      "timestamp": "2026-02-07T14:29:31.104Z",
-      "itemsTotal": 70000,
-      "servicePercentage": 8,
-      "serviceAmount": 5600,
-      "total": 75600
-    },
-    {
-      "id": 1770474565006,
-      "tableId": 1769765302369,
-      "items": [
-        {
-          "name": "Osh",
-          "price": 35000,
-          "category": "Taomlar",
-          "image": "/images/osh.png",
-          "id": 1,
-          "quantity": 2
-        }
-      ],
-      "status": "pending",
-      "printed": false,
-      "timestamp": "2026-02-07T14:29:25.006Z",
-      "itemsTotal": 70000,
-      "servicePercentage": 8,
-      "serviceAmount": 5600,
-      "total": 75600
-    },
-    {
-      "id": 1770474529845,
-      "tableId": 1769765279561,
-      "items": [
-        {
-          "name": "Osh",
-          "price": 35000,
-          "category": "Taomlar",
-          "image": "/images/osh.png",
-          "id": 1,
-          "quantity": 2
-        }
-      ],
-      "status": "pending",
-      "printed": false,
-      "timestamp": "2026-02-07T14:28:49.845Z",
-      "itemsTotal": 70000,
-      "servicePercentage": 8,
-      "serviceAmount": 5600,
-      "total": 75600
-    },
-    {
-      "id": 1770474264524,
-      "tableId": 1769765279561,
-      "items": [
-        {
-          "name": "Osh",
-          "price": 35000,
-          "category": "Taomlar",
-          "image": "/images/osh.png",
-          "id": 1,
-          "quantity": 2
-        }
-      ],
-      "status": "pending",
-      "printed": false,
-      "timestamp": "2026-02-07T14:24:24.524Z",
-      "itemsTotal": 70000,
-      "servicePercentage": 8,
-      "serviceAmount": 5600,
-      "total": 75600
-    },
-    {
-      "id": 1770473331315,
-      "tableId": 1769765302369,
-      "items": [
-        {
-          "name": "Osh",
-          "price": 35000,
-          "category": "Taomlar",
-          "image": "/images/osh.png",
-          "id": 1,
-          "quantity": 1
-        },
-        {
-          "name": "lagmon 0.7 porsi",
-          "price": 25000,
-          "category": "Taomlar",
-          "image": "http://localhost:3000/images/upload-1769406384859-456533128.jpg",
-          "id": 1769406414600,
-          "quantity": 5
-        },
-        {
-          "name": "Manti",
-          "price": 8000,
-          "category": "Taomlar",
-          "image": "/images/manti.png",
-          "id": 2,
-          "quantity": 1
-        }
-      ],
-      "status": "pending",
-      "printed": false,
-      "timestamp": "2026-02-07T14:08:51.315Z",
-      "itemsTotal": 168000,
-      "servicePercentage": 8,
-      "serviceAmount": 13440,
-      "total": 181440
-    },
-    {
-      "id": 1770472436042,
-      "tableId": 1769765279561,
-      "items": [
-        {
-          "name": "Manti",
-          "price": 8000,
-          "category": "Taomlar",
-          "image": "/images/manti.png",
-          "id": 2,
-          "quantity": 4
-        }
-      ],
-      "status": "pending",
-      "printed": false,
-      "timestamp": "2026-02-07T14:08:09.512Z",
-      "itemsTotal": 32000,
-      "servicePercentage": 8,
-      "serviceAmount": 2560,
-      "total": 34560
-    },
-    {
-      "id": 1770471551089,
-      "tableId": 1769765279561,
-      "items": [],
-      "status": "pending",
-      "printed": false,
-      "timestamp": "2026-02-07T13:53:18.090Z",
-      "itemsTotal": 0,
-      "servicePercentage": 8,
-      "serviceAmount": 0,
-      "total": 0
-    },
-    {
-      "id": 1770471542126,
-      "tableId": 1769765279561,
-      "items": [
-        {
-          "name": "lagmon 0.7 porsi",
-          "price": 25000,
-          "category": "Taomlar",
-          "image": "http://localhost:3000/images/upload-1769406384859-456533128.jpg",
-          "id": 1769406414600,
-          "quantity": 5
-        }
-      ],
-      "status": "pending",
-      "printed": false,
-      "timestamp": "2026-02-07T13:52:05.377Z",
-      "itemsTotal": 125000,
-      "servicePercentage": 8,
-      "serviceAmount": 10000,
-      "total": 135000
-    },
     {
       "id": 1769421930025,
       "tableId": 4,
@@ -939,222 +335,39 @@
   ],
   "history": [
     {
-      "id": 1769595444304,
-      "tableId": 1,
+      "id": 1771220136514,
+      "tableId": 1769765279561,
       "items": [
         {
-          "name": "lagmon 0.7 porsi",
-          "price": 25000,
+          "name": "Osh",
+          "price": 35000,
           "category": "Taomlar",
-          "image": "http://localhost:3000/images/upload-1769406384859-456533128.jpg",
-          "id": 1769406414600,
+          "image": "/images/osh.png",
+          "id": 1,
+          "available": true,
           "quantity": 2
         },
         {
-          "id": 2,
           "name": "Manti",
           "price": 8000,
           "category": "Taomlar",
           "image": "/images/manti.png",
-          "available": true,
-          "quantity": 2
-        },
-        {
-          "id": 1,
-          "name": "Osh",
-          "price": 35000,
-          "category": "Taomlar",
-          "image": "/images/osh.png",
-          "quantity": 1
-        },
-        {
-          "id": 3,
-          "name": "Kebab",
-          "price": 18000,
-          "category": "Kaboblar",
-          "image": "/images/kebab.png",
-          "available": true,
-          "quantity": 1
-        }
-      ],
-      "status": "pending",
-      "printed": true,
-      "timestamp": "2026-01-28T10:17:24.304Z",
-      "total": 119000,
-      "closedAt": "2026-01-28T10:17:45.222Z",
-      "paymentMethod": "Click"
-    },
-    {
-      "id": 1769596853105,
-      "tableId": 2,
-      "items": [
-        {
-          "name": "jiz",
-          "price": 10000000,
-          "category": "Taomlar",
-          "image": "",
-          "id": 1769596836566,
-          "quantity": 1
-        },
-        {
-          "name": "lagmon 0.7 porsi",
-          "price": 25000,
-          "category": "Taomlar",
-          "image": "http://localhost:3000/images/upload-1769406384859-456533128.jpg",
-          "id": 1769406414600,
-          "quantity": 1
-        },
-        {
           "id": 2,
-          "name": "Manti",
-          "price": 8000,
-          "category": "Taomlar",
-          "image": "/images/manti.png",
-          "available": true,
-          "quantity": 1
-        },
-        {
-          "id": 1,
-          "name": "Osh",
-          "price": 35000,
-          "category": "Taomlar",
-          "image": "/images/osh.png",
-          "quantity": 1
-        },
-        {
-          "id": 3,
-          "name": "Kebab",
-          "price": 18000,
-          "category": "Kaboblar",
-          "image": "/images/kebab.png",
-          "available": true,
-          "quantity": 1
-        }
-      ],
-      "status": "pending",
-      "printed": false,
-      "timestamp": "2026-01-28T10:40:53.105Z",
-      "total": 10086000,
-      "closedAt": "2026-01-28T10:41:16.598Z",
-      "paymentMethod": "Click"
-    },
-    {
-      "id": 1769768563183,
-      "tableId": 1769765279561,
-      "items": [],
-      "status": "pending",
-      "printed": true,
-      "timestamp": "2026-01-30T10:22:43.183Z",
-      "total": 0,
-      "note": "Banket: lll (undefined kishi)",
-      "closedAt": "2026-01-30T11:03:42.077Z",
-      "paymentMethod": "Naqd"
-    },
-    {
-      "id": 1769773270528,
-      "tableId": 1769765279561,
-      "items": [
-        {
-          "name": "Osh",
-          "price": 35000,
-          "category": "Taomlar",
-          "image": "/images/osh.png",
-          "id": 1,
-          "quantity": 60
-        },
-        {
-          "name": "Kebab",
-          "price": 18000,
-          "category": "Kaboblar",
-          "image": "/images/kebab.png",
-          "id": 3,
-          "quantity": 120
-        },
-        {
-          "name": "Cola 1.5L",
-          "price": 15000,
-          "category": "Ichimliklar",
-          "image": "/images/cola.png",
-          "id": 4,
-          "quantity": 20
-        },
-        {
-          "name": "Choy",
-          "price": 5000,
-          "category": "Ichimliklar",
-          "image": "/images/tea.png",
-          "id": 5,
-          "quantity": 25
-        },
-        {
-          "name": "Non",
-          "price": 4000,
-          "category": "Non maxsulotlari",
-          "image": "/images/non.png",
-          "id": 6,
-          "quantity": 30
-        },
-        {
-          "name": "jiz",
-          "price": 165000,
-          "category": "Taomlar",
-          "image": "",
-          "id": 1769596836566,
-          "quantity": 10
-        }
-      ],
-      "status": "pending",
-      "printed": false,
-      "timestamp": "2026-01-30T11:41:10.528Z",
-      "total": 6455000,
-      "note": "Banket: alish (undefined kishi)",
-      "closedAt": "2026-01-30T11:45:00.660Z",
-      "paymentMethod": "Naqd"
-    },
-    {
-      "id": 1770471003285,
-      "tableId": 1769765279561,
-      "items": [
-        {
-          "name": "Osh",
-          "price": 35000,
-          "category": "Taomlar",
-          "image": "/images/osh.png",
-          "id": 1,
           "quantity": 2
         }
       ],
       "status": "pending",
       "printed": false,
-      "timestamp": "2026-02-07T13:30:03.285Z",
-      "total": 70000,
-      "closedAt": "2026-02-07T13:30:35.315Z",
-      "paymentMethod": "Naqd"
-    },
-    {
-      "id": 1770473011010,
-      "tableId": 1769765296073,
-      "items": [
-        {
-          "name": "Osh",
-          "price": 35000,
-          "category": "Taomlar",
-          "image": "/images/osh.png",
-          "id": 1,
-          "quantity": 2
-        }
-      ],
-      "status": "pending",
-      "printed": false,
-      "timestamp": "2026-02-07T14:03:31.010Z",
-      "itemsTotal": 70000,
+      "timestamp": "2026-02-16T05:35:36.514Z",
+      "itemsTotal": 86000,
       "servicePercentage": 8,
-      "serviceAmount": 5600,
-      "total": 75600,
-      "closedAt": "2026-02-07T14:06:40.565Z",
+      "serviceAmount": 6880,
+      "total": 92880,
+      "waiterName": "sardor",
+      "closedAt": "2026-02-17T09:51:38.187Z",
       "paymentMethod": "Naqd",
       "discount": 0,
-      "finalPrice": 75600
+      "finalPrice": 92880
     }
   ],
   "archives": [
@@ -1641,10 +854,340 @@
           "paymentMethod": "Click"
         }
       ]
+    },
+    {
+      "id": "1770892835392",
+      "date": "2026-02-12T10:40:35.392Z",
+      "summary": {
+        "total": 17011880,
+        "cash": 6806880,
+        "card": 0,
+        "click": 10205000
+      },
+      "orders": [
+        {
+          "id": 1769595444304,
+          "tableId": 1,
+          "items": [
+            {
+              "name": "lagmon 0.7 porsi",
+              "price": 25000,
+              "category": "Taomlar",
+              "image": "http://localhost:3000/images/upload-1769406384859-456533128.jpg",
+              "id": 1769406414600,
+              "quantity": 2
+            },
+            {
+              "id": 2,
+              "name": "Manti",
+              "price": 8000,
+              "category": "Taomlar",
+              "image": "/images/manti.png",
+              "available": true,
+              "quantity": 2
+            },
+            {
+              "id": 1,
+              "name": "Osh",
+              "price": 35000,
+              "category": "Taomlar",
+              "image": "/images/osh.png",
+              "quantity": 1
+            },
+            {
+              "id": 3,
+              "name": "Kebab",
+              "price": 18000,
+              "category": "Kaboblar",
+              "image": "/images/kebab.png",
+              "available": true,
+              "quantity": 1
+            }
+          ],
+          "status": "pending",
+          "printed": true,
+          "timestamp": "2026-01-28T10:17:24.304Z",
+          "total": 119000,
+          "closedAt": "2026-01-28T10:17:45.222Z",
+          "paymentMethod": "Click"
+        },
+        {
+          "id": 1769596853105,
+          "tableId": 2,
+          "items": [
+            {
+              "name": "jiz",
+              "price": 10000000,
+              "category": "Taomlar",
+              "image": "",
+              "id": 1769596836566,
+              "quantity": 1
+            },
+            {
+              "name": "lagmon 0.7 porsi",
+              "price": 25000,
+              "category": "Taomlar",
+              "image": "http://localhost:3000/images/upload-1769406384859-456533128.jpg",
+              "id": 1769406414600,
+              "quantity": 1
+            },
+            {
+              "id": 2,
+              "name": "Manti",
+              "price": 8000,
+              "category": "Taomlar",
+              "image": "/images/manti.png",
+              "available": true,
+              "quantity": 1
+            },
+            {
+              "id": 1,
+              "name": "Osh",
+              "price": 35000,
+              "category": "Taomlar",
+              "image": "/images/osh.png",
+              "quantity": 1
+            },
+            {
+              "id": 3,
+              "name": "Kebab",
+              "price": 18000,
+              "category": "Kaboblar",
+              "image": "/images/kebab.png",
+              "available": true,
+              "quantity": 1
+            }
+          ],
+          "status": "pending",
+          "printed": false,
+          "timestamp": "2026-01-28T10:40:53.105Z",
+          "total": 10086000,
+          "closedAt": "2026-01-28T10:41:16.598Z",
+          "paymentMethod": "Click"
+        },
+        {
+          "id": 1769768563183,
+          "tableId": 1769765279561,
+          "items": [],
+          "status": "pending",
+          "printed": true,
+          "timestamp": "2026-01-30T10:22:43.183Z",
+          "total": 0,
+          "note": "Banket: lll (undefined kishi)",
+          "closedAt": "2026-01-30T11:03:42.077Z",
+          "paymentMethod": "Naqd"
+        },
+        {
+          "id": 1769773270528,
+          "tableId": 1769765279561,
+          "items": [
+            {
+              "name": "Osh",
+              "price": 35000,
+              "category": "Taomlar",
+              "image": "/images/osh.png",
+              "id": 1,
+              "quantity": 60
+            },
+            {
+              "name": "Kebab",
+              "price": 18000,
+              "category": "Kaboblar",
+              "image": "/images/kebab.png",
+              "id": 3,
+              "quantity": 120
+            },
+            {
+              "name": "Cola 1.5L",
+              "price": 15000,
+              "category": "Ichimliklar",
+              "image": "/images/cola.png",
+              "id": 4,
+              "quantity": 20
+            },
+            {
+              "name": "Choy",
+              "price": 5000,
+              "category": "Ichimliklar",
+              "image": "/images/tea.png",
+              "id": 5,
+              "quantity": 25
+            },
+            {
+              "name": "Non",
+              "price": 4000,
+              "category": "Non maxsulotlari",
+              "image": "/images/non.png",
+              "id": 6,
+              "quantity": 30
+            },
+            {
+              "name": "jiz",
+              "price": 165000,
+              "category": "Taomlar",
+              "image": "",
+              "id": 1769596836566,
+              "quantity": 10
+            }
+          ],
+          "status": "pending",
+          "printed": false,
+          "timestamp": "2026-01-30T11:41:10.528Z",
+          "total": 6455000,
+          "note": "Banket: alish (undefined kishi)",
+          "closedAt": "2026-01-30T11:45:00.660Z",
+          "paymentMethod": "Naqd"
+        },
+        {
+          "id": 1770471003285,
+          "tableId": 1769765279561,
+          "items": [
+            {
+              "name": "Osh",
+              "price": 35000,
+              "category": "Taomlar",
+              "image": "/images/osh.png",
+              "id": 1,
+              "quantity": 2
+            }
+          ],
+          "status": "pending",
+          "printed": false,
+          "timestamp": "2026-02-07T13:30:03.285Z",
+          "total": 70000,
+          "closedAt": "2026-02-07T13:30:35.315Z",
+          "paymentMethod": "Naqd"
+        },
+        {
+          "id": 1770473011010,
+          "tableId": 1769765296073,
+          "items": [
+            {
+              "name": "Osh",
+              "price": 35000,
+              "category": "Taomlar",
+              "image": "/images/osh.png",
+              "id": 1,
+              "quantity": 2
+            }
+          ],
+          "status": "pending",
+          "printed": false,
+          "timestamp": "2026-02-07T14:03:31.010Z",
+          "itemsTotal": 70000,
+          "servicePercentage": 8,
+          "serviceAmount": 5600,
+          "total": 75600,
+          "closedAt": "2026-02-07T14:06:40.565Z",
+          "paymentMethod": "Naqd",
+          "discount": 0,
+          "finalPrice": 75600
+        },
+        {
+          "id": 1770886271268,
+          "tableId": 1769765279561,
+          "items": [
+            {
+              "name": "Osh",
+              "price": 35000,
+              "category": "Taomlar",
+              "image": "/images/osh.png",
+              "id": 1,
+              "quantity": 2
+            }
+          ],
+          "status": "pending",
+          "printed": true,
+          "timestamp": "2026-02-12T08:51:11.268Z",
+          "itemsTotal": 70000,
+          "servicePercentage": 8,
+          "serviceAmount": 5600,
+          "total": 75600,
+          "waiterName": "alish",
+          "closedAt": "2026-02-12T10:40:01.106Z",
+          "paymentMethod": "Naqd",
+          "discount": 0,
+          "finalPrice": 75600
+        },
+        {
+          "id": 1770886280434,
+          "tableId": 1769765279561,
+          "items": [
+            {
+              "name": "Manti",
+              "price": 8000,
+              "category": "Taomlar",
+              "image": "/images/manti.png",
+              "id": 2,
+              "quantity": 2
+            }
+          ],
+          "status": "pending",
+          "printed": true,
+          "timestamp": "2026-02-12T08:51:20.434Z",
+          "itemsTotal": 16000,
+          "servicePercentage": 8,
+          "serviceAmount": 1280,
+          "total": 17280,
+          "waiterName": "sardor",
+          "closedAt": "2026-02-12T10:40:01.106Z",
+          "paymentMethod": "Naqd",
+          "discount": 0,
+          "finalPrice": 17280
+        },
+        {
+          "id": 1770892783083,
+          "tableId": 1769765296073,
+          "items": [
+            {
+              "name": "Osh",
+              "price": 35000,
+              "category": "Taomlar",
+              "image": "/images/osh.png",
+              "id": 1,
+              "available": true,
+              "quantity": 3
+            }
+          ],
+          "status": "pending",
+          "printed": false,
+          "timestamp": "2026-02-12T10:39:43.083Z",
+          "itemsTotal": 105000,
+          "servicePercentage": 8,
+          "serviceAmount": 8400,
+          "total": 113400,
+          "waiterName": "sardor",
+          "closedAt": "2026-02-12T10:40:06.851Z",
+          "paymentMethod": "Naqd",
+          "discount": 0,
+          "finalPrice": 113400
+        }
+      ]
     }
   ],
   "reservations": [],
+  "expenses": [
+    {
+      "category": "go'sht",
+      "amount": 120000,
+      "comment": "",
+      "date": "2026-02-12",
+      "id": 1770892869694
+    }
+  ],
+  "employees": [
+    {
+      "name": "sardor",
+      "role": "Ofitsiant",
+      "phone": "+998907010875",
+      "status": "active",
+      "id": 1770892757444
+    }
+  ],
   "settings": {
-    "servicePercentage": 8
+    "servicePercentage": 8,
+    "phone": "+998 90 123 45 67",
+    "address": "Amudaryo Tumani Mang'it shahri",
+    "hours": "Har kuni: 09:00 - 23:00"
   }
 }

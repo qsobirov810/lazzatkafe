@@ -6,7 +6,8 @@ const DataContext = createContext();
 export const useData = () => useContext(DataContext);
 
 // Connect to Backend
-const socket = io(`http://${window.location.hostname}:3000`); // Connect to backend on the same host
+const API_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3000`;
+const socket = io(API_URL);
 
 export const DataProvider = ({ children }) => {
     // --- STATE ---
@@ -18,35 +19,94 @@ export const DataProvider = ({ children }) => {
     const [reservations, setReservations] = useState([]); // New
     const [settings, setSettings] = useState({ servicePercentage: 0 }); // Settings
     const [archives, setArchives] = useState([]);
+    const [expenses, setExpenses] = useState([]);
+    const [employees, setEmployees] = useState([]);
     const [isConnected, setIsConnected] = useState(socket.connected);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [token, setToken] = useState(null);
+
+    const login = async (password) => {
+        try {
+            const response = await fetch(`${API_URL}/api/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            });
+            const data = await response.json();
+            if (data.success) {
+                // sessionStorage.setItem('adminToken', data.token); // REMOVED: Auto-logout on refresh
+                setToken(data.token);
+                socket.auth = { token: data.token };
+                socket.disconnect().connect();
+                setIsAuthenticated(true);
+                return { success: true };
+            } else {
+                return { success: false, message: data.message };
+            }
+        } catch (error) {
+            return { success: false, message: 'Server bilan bog\'lanishda xato' };
+        }
+    };
+
+    const logout = () => {
+        // sessionStorage.removeItem('adminToken');
+        setToken(null);
+        socket.auth = {};
+        socket.disconnect().connect();
+        setIsAuthenticated(false);
+    };
+
+    // REMOVED: checkAuth useEffect to enforce login on every refresh
 
     useEffect(() => {
+        // Check initial state
+        if (socket.connected) {
+            setIsConnected(true);
+            socket.emit('request_data');
+        }
+
         // Connection Status
-        socket.on('connect', () => setIsConnected(true));
-        socket.on('disconnect', () => setIsConnected(false));
+        socket.on('connect', () => {
+            console.log("SOCKET CONNECTED:", socket.id);
+            setIsConnected(true);
+            socket.emit('request_data'); // Request data immediately on connect
+        });
+        socket.on('connect_error', (err) => {
+            console.error("SOCKET CONNECTION ERROR:", err);
+            setIsConnected(false);
+        });
+        socket.on('disconnect', () => {
+            console.log("SOCKET DISCONNECTED");
+            setIsConnected(false);
+        });
 
         // Data Listeners
         socket.on('init_data', (data) => {
             console.log('Received init_data:', data);
-            setTables(data.tables);
-            setMenu(data.menu);
-            if (data.categories) setCategories(data.categories);
-            setActiveOrders(data.activeOrders);
-            setCompletedOrders(data.history);
+            setTables(data.tables || []);
+            setMenu(data.menu || []);
+            setCategories(data.categories || []);
+            setActiveOrders(data.activeOrders || []);
+            setCompletedOrders(data.history || []);
             setArchives(data.archives || []);
             setReservations(data.reservations || []);
+            setExpenses(data.expenses || []);
+            setEmployees(data.employees || []);
             setSettings(data.settings || { servicePercentage: 0 });
         });
 
         socket.on('data_update', (data) => {
             console.log('Received data_update:', data);
-            setTables(data.tables);
-            setMenu(data.menu);
-            if (data.categories) setCategories(data.categories);
-            setActiveOrders(data.activeOrders);
-            setCompletedOrders(data.history);
+            setTables(data.tables || []);
+            setMenu(data.menu || []);
+            setCategories(data.categories || []);
+            setActiveOrders(data.activeOrders || []);
+            setCompletedOrders(data.history || []);
             setArchives(data.archives || []);
             setReservations(data.reservations || []);
+            setExpenses(data.expenses || []);
+            setEmployees(data.employees || []);
             setSettings(data.settings || { servicePercentage: 0 });
         });
 
@@ -143,13 +203,31 @@ export const DataProvider = ({ children }) => {
         socket.emit('update_settings', newSettings);
     };
 
+    // 10. Expenses
+    const addExpense = (data) => socket.emit('add_expense', data);
+    const deleteExpense = (id) => {
+        if (window.confirm("Xarajatni o'chirasizmi?")) {
+            socket.emit('delete_expense', id);
+        }
+    };
+
+    // 11. Employees
+    const addEmployee = (data) => socket.emit('add_employee', data);
+    const updateEmployee = (data) => socket.emit('update_employee', data);
+    const deleteEmployee = (id) => {
+        if (window.confirm("Xodimni o'chirasizmi?")) {
+            socket.emit('delete_employee', id);
+        }
+    };
+
     return (
         <DataContext.Provider value={{
-            tables, menu, categories, activeOrders, completedOrders, archives, reservations, settings, isConnected,
+            tables, menu, categories, activeOrders, completedOrders, archives, reservations, settings, expenses, employees, isConnected, isAuthenticated, isLoading,
             sendOrder, updateOrder, checkoutTable, markOrderPrinted, addMenuItem, updateMenuItem, deleteMenuItem,
             addCategory, deleteCategory, clearHistory, closeDay, clearKitchenHistory, cancelOrder,
             addTable, deleteTable, addReservation, updateReservation, deleteReservation, activateReservation,
-            updateSettings
+            updateSettings, addExpense, deleteExpense, addEmployee, updateEmployee, deleteEmployee,
+            login, logout
         }}>
             {children}
         </DataContext.Provider>

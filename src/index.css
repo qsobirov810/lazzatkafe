@@ -112,12 +112,19 @@ a {
 }
 
 @media print {
+  @page {
+    margin: 0;
+    size: auto;
+  }
 
   html,
   body {
     height: auto !important;
     overflow: visible !important;
-    background: white;
+    background: white !important;
+    color: black !important;
+    margin: 0;
+    padding: 0;
   }
 
   #root {
@@ -127,8 +134,9 @@ a {
   #print-root {
     display: block !important;
     position: static;
-    width: 100%;
-    margin: 0;
-    padding: 0;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
   }
 }

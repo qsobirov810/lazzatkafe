@@ -13,12 +13,16 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Landing />} />
-          <Route path="/waiter" element={<WaiterApp />} />
           <Route path="/admin" element={<Navigate to="/" replace />} />
           <Route path="/login" element={<Navigate to="/" replace />} />
           <Route path="/system/*" element={(
             <ProtectedRoute>
-              <AdminApp />
+              <Routes>
+                <Route path="waiter" element={<WaiterApp />} />
+                <Route path="admin" element={<AdminApp />} />
+                <Route path="cashier" element={<AdminApp />} />
+                <Route path="*" element={<AdminApp />} />
+              </Routes>
             </ProtectedRoute>
           )} />
           <Route path="/menu/:tableId" element={<QRMenu />} />

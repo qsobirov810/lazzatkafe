@@ -23,7 +23,7 @@ const PrintPortal = ({ children }) => {
 
 // 0. KITCHEN VIEW (New)
 const KitchenView = () => {
-    const { activeOrders, markOrderPrinted, clearKitchenHistory, cancelOrder } = useData();
+    const { tables, activeOrders, markOrderPrinted, clearKitchenHistory, cancelOrder } = useData();
     const [ticketToPrint, setTicketToPrint] = useState(null);
     const [activeTab, setActiveTab] = useState('active'); // 'active' or 'history'
 
@@ -61,7 +61,8 @@ const KitchenView = () => {
     }, [ticketToPrint]);
 
     const handleDelete = (order) => {
-        if (window.confirm(`Haqiqatan ham Stol ${order.tableId} buyurtmasini O'CHIRMOQCHIMISIZ?`)) {
+        const identifier = order.isSaboy ? `Saboy buyurtmasi: ${order.customerName}` : `Stol ${order.tableId}`;
+        if (window.confirm(`Haqiqatan ham ${identifier} buyurtmasini O'CHIRMOQCHIMISIZ?`)) {
             cancelOrder(order.id);
         }
     };
@@ -128,7 +129,12 @@ const KitchenView = () => {
                             </div>
                         )}
                         <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #333', paddingBottom: '0.5rem' }}>
-                            <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>STOL {order.tableId}</span>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: order.isSaboy ? 'var(--accent-color)' : '#fff' }}>
+                                    {order.isSaboy ? `SABOY: ${order.customerName}` : `STOL ${order.tableId}`}
+                                </span>
+                                {order.isSaboy && order.phone && <span style={{ fontSize: '0.9rem', color: '#888' }}>{order.phone}</span>}
+                            </div>
                             {activeTab === 'active' && (
                                 <button
                                     onClick={() => handleDelete(order)}
@@ -142,7 +148,7 @@ const KitchenView = () => {
                         </div>
 
                         <div style={{ fontSize: '0.9rem', color: 'var(--accent-color)', fontWeight: 'bold', marginBottom: '-0.5rem' }}>
-                            Ofitsiant: {order.waiterName || 'Noma\'lum'}
+                            {order.isSaboy ? `Mijoz: ${order.customerName}` : `Ofitsiant: ${order.waiterName || 'Noma\'lum'}`}
                         </div>
 
                         <div style={{ flex: 1 }}>
@@ -151,6 +157,11 @@ const KitchenView = () => {
                                     <span>{item.quantity}x {item.name}</span>
                                 </div>
                             ))}
+                            {order.note && (
+                                <div style={{ marginTop: '0.8rem', padding: '0.8rem', background: '#333', borderRadius: '4px', borderLeft: '4px solid var(--accent-color)', fontSize: '1rem', fontStyle: 'italic' }}>
+                                    Izoh: {order.note}
+                                </div>
+                            )}
                         </div>
 
                         <button
@@ -178,8 +189,9 @@ const KitchenView = () => {
                         <p>Oshxona Cheki</p>
                         <hr />
                         <div className="ticket-header">
-                            <h2>STOL {ticketToPrint.tableId}</h2>
-                            <p>Ofitsiant: {ticketToPrint.waiterName || 'Noma\'lum'}</p>
+                            <h2>{ticketToPrint.isSaboy ? `SABOY: ${ticketToPrint.customerName}` : `STOL ${tables.find(t => t.id === ticketToPrint.tableId)?.name || ticketToPrint.tableId}`}</h2>
+                            {ticketToPrint.isSaboy && ticketToPrint.phone && <p>Tel: {ticketToPrint.phone}</p>}
+                            <p>{ticketToPrint.isSaboy ? `Mijoz: ${ticketToPrint.customerName}` : `Ofitsiant: ${ticketToPrint.waiterName || 'Noma\'lum'}`}</p>
                             <p>{new Date(ticketToPrint.timestamp).toLocaleString()}</p>
                         </div>
                         <hr />
@@ -189,18 +201,15 @@ const KitchenView = () => {
                                     <div className="ticket-row-1">
                                         <span>{item.quantity} x {item.name}</span>
                                     </div>
-                                    {/* Kitchen ticket also shows price? Usually no, but sticking to structure in case user wants. 
-                                        Wait, original code didn't show price in Kitchen Ticket, only Name and Qty. 
-                                        Let's KEEP it straightforward for Kitchen: just Name and Qty line is fine, or maybe Name on one line, Qty on line?
-                                        Actually, User said "1ta no'l yoq", implying PRICE cutoff. Kitchen tickets usually don't have prices. 
-                                        The user complaint was about "hisob chekida" (receipt).
-                                        I will update Kitchen Ticket to match the robust 2-line style anyway for consistency if names are long.
-                                     */}
                                 </div>
                             ))}
+                            {ticketToPrint.note && (
+                                <div style={{ marginTop: '10px', borderTop: '1px solid #000', paddingTop: '5px', fontSize: '18px', fontWeight: '900' }}>
+                                    IZOH: {ticketToPrint.note}
+                                </div>
+                            )}
                         </div>
                         <hr />
-                        <p className="ticket-footer">--- ---------------- ---</p>
                     </div>
                     <style>{`
                             .print-ticket {
@@ -215,11 +224,11 @@ const KitchenView = () => {
                             }
                             .print-ticket h3 { margin: 0 0 5px 0; font-size: 20px; font-weight: 900; text-align: center; }
                             .print-ticket p { margin: 0; font-size: 16px; text-align: center; font-weight: 800; }
-                            .print-ticket hr { border-top: 2px dashed #000; margin: 5px 0; }
+                            .print-ticket hr { border: none; border-top: 1px dashed #000 !important; height: 0; margin: 5px 0; opacity: 1; }
                             .ticket-header h2 { font-size: 18px; margin: 0; font-weight: 900; }
                             .ticket-header p { font-size: 14px; margin: 0; font-weight: 700; }
                             .ticket-body { font-size: 17px; font-weight: 900; }
-                            .ticket-item { margin-bottom: 8px; display: flex; flexDirection: column; border-bottom: 1px dotted #ccc; padding-bottom: 2px; }
+                            .ticket-item { margin-bottom: 8px; display: flex; flexDirection: column; padding-bottom: 2px; }
                             .ticket-row-1 { display: flex; justify-content: flex-start; text-align: left; overflow-wrap: break-word; }
                             .ticket-row-2 { text-align: center; width: 100%; margin-top: 2px; } /* Centered Price/Qty */
                             .ticket-footer { font-size: 14px; margin-top: 5px; text-align: center; font-weight: 700; }
@@ -236,10 +245,10 @@ const getTableTotal = (table) => {
 };
 
 // --- PAYMENT MODAL COMPONENT ---
-const PaymentModalContent = ({ selectedTable, onClose, onCheckout, settings, onError }) => {
+const PaymentModalContent = ({ selectedTable, onClose, onCheckout, settings, onError, initialServiceOff = false }) => {
     const [paymentMethod, setPaymentMethod] = useState('Naqd');
     const [splitValues, setSplitValues] = useState({ cash: 0, card: 0, click: 0 });
-    const [serviceOff, setServiceOff] = useState(false);
+    const [serviceOff, setServiceOff] = useState(initialServiceOff);
     const [discount, setDiscount] = useState(0);
 
     // Helper for display formatting
@@ -304,10 +313,7 @@ const PaymentModalContent = ({ selectedTable, onClose, onCheckout, settings, onE
 
             {/* Totals Breakdown */}
             <div style={{ background: '#333', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: '#aaa' }}>
-                    <span>Taomlar:</span>
-                    <span>{itemsTotal.toLocaleString()}</span>
-                </div>
+                {/* Taomlar summasi olib tashlandi */}
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', alignItems: 'center' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', userSelect: 'none' }}>
@@ -461,6 +467,24 @@ const AdminApp = () => {
         }
     }, [printingBill]);
 
+    // Role-based navigation and back button handling
+    useEffect(() => {
+        const path = window.location.pathname;
+        if (isAuthenticated) {
+            if (path === '/system/admin') {
+                setUserRole('admin');
+                setActiveTab('menu');
+            } else if (path === '/system/cashier') {
+                setUserRole('cashier');
+                setActiveTab('cashier');
+            } else if (path === '/system' || path === '/system/') {
+                // Back to selection screen
+                setUserRole(null);
+                setIsAuthenticated(false);
+            }
+        }
+    }, [window.location.pathname]);
+
     // Generic Confirm Modal State
     const [showGenericConfirm, setShowGenericConfirm] = useState(false);
     const [confirmConfig, setConfirmConfig] = useState({ title: '', msg: '', onConfirm: () => { } });
@@ -507,10 +531,15 @@ const AdminApp = () => {
             setUserRole('cashier');
             setActiveTab('cashier');
             setIsAuthenticated(true);
+            navigate('/system/cashier');
         } else if (loginRole === 'admin' && password === '8888') {
             setUserRole('admin');
             setActiveTab('menu');
             setIsAuthenticated(true);
+            navigate('/system/admin');
+        } else if (loginRole === 'waiter') {
+            // Ofitsiyant directly goes to waiter page
+            navigate('/system/waiter');
         } else {
             setErrorMsg("Parol noto'g'ri!");
             setShowErrorModal(true);
@@ -528,7 +557,7 @@ const AdminApp = () => {
                 )}
 
                 {/* Role Tabs */}
-                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
                     <button
                         onClick={() => { setLoginRole('cashier'); setPassword(''); }}
                         style={{ padding: '0.5rem 1.5rem', borderRadius: '20px', background: loginRole === 'cashier' ? 'var(--accent-color)' : '#333', color: loginRole === 'cashier' ? '#000' : '#888', fontWeight: 'bold' }}
@@ -541,22 +570,35 @@ const AdminApp = () => {
                     >
                         Admin
                     </button>
+                    <button
+                        onClick={() => { setLoginRole('waiter'); setPassword(''); }}
+                        style={{ padding: '0.5rem 1.5rem', borderRadius: '20px', background: loginRole === 'waiter' ? 'var(--accent-color)' : '#333', color: loginRole === 'waiter' ? '#000' : '#888', fontWeight: 'bold' }}
+                    >
+                        Ofitsiyant
+                    </button>
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <input
-                        type="password"
-                        value={password}
-                        onChange={e => setPassword(e.target.value)}
-                        placeholder={loginRole === 'cashier' ? "Parol (1111)" : "Parol (8888)"}
-                        onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-                        style={{ padding: '1rem', borderRadius: 'var(--radius)', border: '1px solid #333', background: '#252525', color: '#fff', outline: 'none' }}
-                    />
+                    {loginRole !== 'waiter' && (
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={e => setPassword(e.target.value)}
+                            placeholder={loginRole === 'cashier' ? "Parol (1111)" : "Parol (8888)"}
+                            onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                            style={{ padding: '1rem', borderRadius: 'var(--radius)', border: '1px solid #333', background: '#252525', color: '#fff', outline: 'none' }}
+                        />
+                    )}
                     <button
                         onClick={handleLogin}
-                        style={{ padding: '0 0.5rem', background: 'var(--accent-color)', borderRadius: 'var(--radius)', fontWeight: 'bold' }}
+                        style={{
+                            padding: loginRole === 'waiter' ? '1rem 3rem' : '0 1.5rem',
+                            background: 'var(--accent-color)',
+                            borderRadius: 'var(--radius)',
+                            fontWeight: 'bold'
+                        }}
                     >
-                        Kirish
+                        {loginRole === 'waiter' ? "Ofitsiyant bo'limiga o'tish" : "Kirish"}
                     </button>
                 </div>
 
@@ -1067,7 +1109,8 @@ const AdminApp = () => {
                                         <hr />
                                         <div className="receipt-header">
                                             <h2>{selectedTable.name}</h2>
-                                            <p>{new Date().toLocaleString()}</p>
+                                            <p style={{ fontSize: '12px' }}>Ochilgan: {selectedTable.orders[0] ? new Date(selectedTable.orders[0].timestamp).toLocaleString() : new Date().toLocaleString()}</p>
+                                            <p style={{ fontSize: '12px' }}>Hisob vaqti: {new Date().toLocaleString()}</p>
                                         </div>
                                         <hr />
                                         <div className="receipt-items">
@@ -1083,44 +1126,41 @@ const AdminApp = () => {
                                             ))}
                                         </div>
                                         <hr />
-                                        <div className="receipt-total">
-                                            <span>JAMI (Taomlar):</span>
-                                            <span>{getTableTotal(selectedTable).toLocaleString()} so'm</span>
-                                        </div>
                                         {/* Show default service charge if enabled in settings? 
                                             We don't know if they will toggle it off, but standard bill shows it.
                                             Let's show it based on settings.
                                         */}
                                         {settings.servicePercentage > 0 && (
-                                            <div className="receipt-total" style={{ fontSize: '16px', fontWeight: 'normal' }}>
+                                            <div className="receipt-total">
                                                 <span>Xizmat ({settings.servicePercentage}%):</span>
                                                 <span>{(getTableTotal(selectedTable) * settings.servicePercentage / 100).toLocaleString()} so'm</span>
                                             </div>
                                         )}
-                                        <div className="receipt-total" style={{ fontSize: '20px', borderTop: '1px solid #000', paddingTop: '5px', marginTop: '5px' }}>
+                                        <div className="receipt-total" style={{ paddingTop: '5px', marginTop: '5px' }}>
                                             <span>JAMI:</span>
                                             <span>{(getTableTotal(selectedTable) * (1 + (settings.servicePercentage || 0) / 100)).toLocaleString()} so'm</span>
                                         </div>
                                         <hr />
                                         <style>{`
                                             .print-receipt {
-                                                width: 44mm;
+                                                width: 50mm;
                                                 margin: 0 auto;
                                                 background: white;
                                                 color: #000000 !important;
                                                 font-family: 'Courier New', monospace;
-                                                padding-bottom: 5mm;
+                                                padding: 0 4mm 2mm 4mm;
+                                                box-sizing: border-box;
                                                 text-align: center;
-                                                font-size: 16px;
-                                                font-weight: 700;
+                                                font-size: 14px;
+                                                font-weight: 900;
                                             }
-                                            .print-receipt h3 { margin: 0; font-size: 20px; font-weight: 900; }
-                                            .print-receipt p { margin: 2px 0; font-size: 16px; font-weight: 800; }
-                                            .receipt-item { display: flex; flex-direction: column; margin-bottom: 8px; border-bottom: 1px dotted #ccc; padding-bottom: 2px; }
-                                            .receipt-row-1 { text-align: left; width: 100%; overflow-wrap: break-word; }
-                                            .receipt-row-2 { text-align: center; width: 100%; margin-top: 2px; font-size: 18px; font-weight: 900; }
-                                            .receipt-total { display: flex; justifyContent: space-between; font-weight: 900; font-size: 18px; margin: 5px 0; }
-                                            hr { border-top: 2px dashed #000; margin: 5px 0; }
+                                            .print-receipt h3 { margin: 0; font-size: 18px; font-weight: 900; color: #000 !important; }
+                                            .print-receipt p { margin: 1px 0; font-size: 14px; font-weight: 900; color: #000 !important; }
+                                            .receipt-item { display: flex; flex-direction: column; margin-bottom: 5px; border-bottom: 1px dashed #000; padding-bottom: 2px; color: #000 !important; }
+                                            .receipt-row-1 { text-align: left; width: 100%; overflow-wrap: break-word; color: #000 !important; }
+                                            .receipt-row-2 { text-align: center; width: 100%; margin-top: 1px; font-size: 16px; font-weight: 900; color: #000 !important; }
+                                            .receipt-total { display: flex; justify-content: space-between; font-weight: 900; font-size: 16px; margin: 3px 0; color: #000 !important; }
+                                            hr { border-top: 1px dashed #000; margin: 5px 0; border-bottom: none; border-left: none; border-right: none; }
                                         `}</style>
                                     </div>
                                 </PrintPortal>
@@ -1403,7 +1443,8 @@ const AdminApp = () => {
                                         <hr />
                                         <div className="receipt-header">
                                             <h2>{selectedTable.name}</h2>
-                                            <p>{new Date().toLocaleString()}</p>
+                                            <p style={{ fontSize: '12px' }}>Ochilgan: {selectedTable.orders[0] ? new Date(selectedTable.orders[0].timestamp).toLocaleString() : new Date().toLocaleString()}</p>
+                                            <p style={{ fontSize: '12px' }}>Yopilgan: {new Date().toLocaleString()}</p>
                                         </div>
                                         <hr />
                                         <div className="receipt-items">
@@ -1418,18 +1459,13 @@ const AdminApp = () => {
                                                 </div>
                                             ))}
                                         </div>
-                                        <hr />
-                                        <div className="receipt-total">
-                                            <span>JAMI (Taomlar):</span>
-                                            <span>{getTableTotal(selectedTable).toLocaleString()} so'm</span>
-                                        </div>
                                         {((selectedTable.orders.reduce((sum, o) => sum + (o.serviceAmount || 0), 0)) > 0) && (
-                                            <div className="receipt-total" style={{ fontSize: '16px', fontWeight: 'normal' }}>
+                                            <div className="receipt-total">
                                                 <span>Xizmat ({settings.servicePercentage}%):</span>
                                                 <span>{selectedTable.orders.reduce((sum, o) => sum + (o.serviceAmount || 0), 0).toLocaleString()} so'm</span>
                                             </div>
                                         )}
-                                        <div className="receipt-total" style={{ fontSize: '20px', borderTop: '1px solid #000', paddingTop: '5px', marginTop: '5px' }}>
+                                        <div className="receipt-total" style={{ paddingTop: '5px', marginTop: '5px' }}>
                                             <span>JAMI TO'LOV:</span>
                                             <span>{selectedTable.orders.reduce((sum, o) => sum + o.total, 0).toLocaleString()} so'm</span>
                                         </div>
@@ -1439,27 +1475,28 @@ const AdminApp = () => {
                                                 ? `Aralash`
                                                 : paymentMethod}
                                         </div>
-                                        <p style={{ textAlign: 'center', marginTop: '10px' }}>Xizmatlaringiz uchun rahmat!</p>
+                                        <p style={{ textAlign: 'center', marginTop: '10px' }}>Xaridingiz uchun rahmat!</p>
                                     </div>
                                     <style>{`
                                         .print-receipt {
-                                            width: 44mm;
+                                            width: 50mm;
                                             margin: 0 auto;
                                             background: white;
                                             color: #000000 !important;
                                             font-family: 'Courier New', monospace;
-                                            padding-bottom: 5mm;
+                                            padding: 0 4mm 2mm 4mm;
+                                            box-sizing: border-box;
                                             text-align: center;
-                                            font-size: 16px;
-                                            font-weight: 700;
+                                            font-size: 14px;
+                                            font-weight: 900;
                                         }
-                                        .print-receipt h3 { margin: 0; font-size: 20px; font-weight: 900; }
-                                        .print-receipt p { margin: 2px 0; font-size: 16px; font-weight: 800; }
-                                        .receipt-item { display: flex; flex-direction: column; margin-bottom: 8px; border-bottom: 1px dotted #ccc; padding-bottom: 2px; }
-                                        .receipt-row-1 { text-align: left; width: 100%; overflow-wrap: break-word; }
-                                        .receipt-row-2 { text-align: center; width: 100%; margin-top: 2px; font-size: 18px; font-weight: 900; } /* Centered Price */
-                                        .receipt-total { display: flex; justifyContent: space-between; font-weight: 900; font-size: 18px; margin: 5px 0; }
-                                        hr { border-top: 2px dashed #000; margin: 5px 0; }
+                                        .print-receipt h3 { margin: 0; font-size: 18px; font-weight: 900; color: #000 !important; }
+                                        .print-receipt p { margin: 1px 0; font-size: 14px; font-weight: 900; color: #000 !important; }
+                                        .receipt-item { display: flex; flex-direction: column; margin-bottom: 5px; padding-bottom: 2px; color: #000 !important; }
+                                        .receipt-row-1 { text-align: left; width: 100%; overflow-wrap: break-word; color: #000 !important; }
+                                        .receipt-row-2 { text-align: center; width: 100%; margin-top: 1px; font-size: 16px; font-weight: 900; color: #000 !important; }
+                                        .receipt-total { display: flex; justify-content: space-between; font-weight: 900; font-size: 16px; margin: 3px 0; color: #000 !important; }
+                                        hr { border: none; border-top: 1px dashed #000 !important; height: 0; margin: 5px 0; opacity: 1; }
                                     `}</style>
                                 </PrintPortal>
                             )
@@ -1496,7 +1533,21 @@ const AdminApp = () => {
                                                     {res.items && res.items.length > 0 && <p style={{ fontSize: '0.8rem', color: '#888', marginTop: '5px' }}>+ {res.items.length} ta taom oldindan</p>}
                                                 </div>
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                                    <button onClick={() => activateReservation(res.id)} style={{ padding: '0.8rem 1.5rem', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold' }}>BOSHLASH</button>
+                                                    <button
+                                                        onClick={() => {
+                                                            const resTables = tables.filter(t => res.tableIds.includes(t.id));
+                                                            const busyTable = resTables.find(t => t.status === 'busy');
+                                                            if (busyTable) {
+                                                                setErrorMsg(`Bron qilingan joyda (${busyTable.name}) mehmonlar bor, avval ular bilan hisoblashing!`);
+                                                                setShowErrorModal(true);
+                                                                return;
+                                                            }
+                                                            activateReservation(res.id);
+                                                        }}
+                                                        style={{ padding: '0.8rem 1.5rem', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold' }}
+                                                    >
+                                                        BOSHLASH
+                                                    </button>
                                                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                                                         <button onClick={() => { setEditingReservation(res); setShowAddResModal(true); }} style={{ flex: 1, padding: '0.5rem', background: '#eab308', color: '#000', border: 'none', borderRadius: '6px' }}><FaEdit /></button>
                                                         <button onClick={() => handlePrintReservation(res)} style={{ flex: 1, padding: '0.5rem', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px' }}><FaPrint /></button>
@@ -2111,18 +2162,27 @@ const AdminApp = () => {
                             <thead>
                                 <tr style={{ borderBottom: '1px solid #555' }}>
                                     <th style={{ padding: '0.5rem' }}>Vaqt</th>
-                                    <th style={{ padding: '0.5rem' }}>Stol</th>
+                                    <th style={{ padding: '0.5rem' }}>Stol / Mijoz</th>
                                     <th style={{ padding: '0.5rem' }}>Summa</th>
                                     <th style={{ padding: '0.5rem' }}>To'lov Turi</th>
+                                    <th style={{ padding: '0.5rem' }}>Izoh</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {completedOrders.map((order, i) => (
                                     <tr key={i} style={{ borderBottom: '1px solid #333' }}>
                                         <td style={{ padding: '0.5rem' }}>{new Date(order.timestamp).toLocaleString()}</td>
-                                        <td style={{ padding: '0.5rem' }}>Stol {order.tableId}</td>
+                                        <td style={{ padding: '0.5rem' }}>
+                                            {order.isSaboy ? (
+                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                    <span style={{ fontWeight: 'bold', color: 'var(--accent-color)' }}>SABOY: {order.customerName}</span>
+                                                    {order.phone && <span style={{ fontSize: '0.8rem', color: '#888' }}>{order.phone}</span>}
+                                                </div>
+                                            ) : `Stol ${order.tableId}`}
+                                        </td>
                                         <td style={{ padding: '0.5rem' }}>{order.total.toLocaleString()}</td>
                                         <td style={{ padding: '0.5rem', color: '#aaa', fontSize: '0.9rem' }}>{order.paymentMethod}</td>
+                                        <td style={{ padding: '0.5rem', color: '#888', fontSize: '0.8rem', fontStyle: 'italic' }}>{order.note || ''}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -2477,87 +2537,462 @@ const AdminApp = () => {
         );
     };
 
+
+    // --- ATTENDANCE CALENDAR COMPONENT ---
+    const AttendanceCalendar = ({ logs }) => {
+        const [viewDate, setViewDate] = useState(new Date());
+
+        const daysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
+        const firstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
+
+        const year = viewDate.getFullYear();
+        const month = viewDate.getMonth();
+        const daysCount = daysInMonth(year, month);
+        const startDay = (firstDayOfMonth(year, month) + 6) % 7; // Adjust for Monday start
+
+        const monthNames = ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentyabr", "Oktyabr", "Noyabr", "Dekabr"];
+
+        const groupedLogs = logs.reduce((acc, log) => {
+            const d = new Date(log.timestamp);
+            const key = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+            if (!acc[key]) acc[key] = { hasCheckIn: false, hasCheckOut: false, earnings: 0 };
+            if (log.type === 'check-in') acc[key].hasCheckIn = true;
+            if (log.type === 'check-out') {
+                acc[key].hasCheckOut = true;
+                acc[key].earnings += log.earnings || 0;
+            }
+            return acc;
+        }, {});
+
+        const navigateMonth = (offset) => {
+            const newDate = new Date(viewDate.setMonth(viewDate.getMonth() + offset));
+            setViewDate(new Date(newDate));
+        };
+
+        const days = [];
+        for (let i = 0; i < startDay; i++) days.push(<div key={`empty-${i}`} style={{ height: '50px' }}></div>);
+        for (let d = 1; d <= daysCount; d++) {
+            const key = `${year}-${month + 1}-${d}`;
+            const data = groupedLogs[key];
+            const isToday = new Date().toDateString() === new Date(year, month, d).toDateString();
+
+            days.push(
+                <div key={d} style={{
+                    height: '55px',
+                    background: isToday ? 'rgba(255, 215, 0, 0.1)' : '#1a1a1a',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    position: 'relative',
+                    border: isToday ? '1px solid var(--accent-color)' : '1px solid #333',
+                    transition: '0.2s',
+                    cursor: data ? 'pointer' : 'default'
+                }}>
+                    <span style={{ fontSize: '0.75rem', color: isToday ? 'var(--accent-color)' : '#888', fontWeight: isToday ? 'bold' : 'normal' }}>{d}</span>
+                    {data && (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', marginTop: '2px' }}>
+                            <div style={{ display: 'flex', gap: '2px' }}>
+                                {data.hasCheckIn && <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#10b981' }}></div>}
+                                {data.hasCheckOut && <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#ef4444' }}></div>}
+                            </div>
+                            {data.earnings > 0 && <span style={{ fontSize: '0.6rem', color: '#10b981', fontWeight: 'bold' }}>{Math.round(data.earnings / 1000)}k</span>}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        return (
+            <div style={{ background: '#222', padding: '1rem', borderRadius: '12px', border: '1px solid #333' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <button onClick={() => navigateMonth(-1)} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer' }}>&lt;</button>
+                    <span style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>{monthNames[month]} {year}</span>
+                    <button onClick={() => navigateMonth(1)} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer' }}>&gt;</button>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '5px', textAlign: 'center', marginBottom: '8px' }}>
+                    {['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh', 'Ya'].map(day => (
+                        <span key={day} style={{ fontSize: '0.65rem', color: '#555', fontWeight: 'bold' }}>{day}</span>
+                    ))}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '5px' }}>
+                    {days}
+                </div>
+            </div>
+        );
+    };
+
     // 5.3 EMPLOYEES VIEW
     const EmployeesView = () => {
-        const { employees, addEmployee, updateEmployee, deleteEmployee } = useData();
+        const { employees, attendance, addEmployee, updateEmployee, deleteEmployee, addAdvance, deleteAdvance, updateEmployeeSalary, logAttendance } = useData();
         const [isAdding, setIsAdding] = useState(false);
         const [editingId, setEditingId] = useState(null);
-        const [formData, setFormData] = useState({ name: '', role: 'Ofitsiant', phone: '', status: 'active' });
+        const [formData, setFormData] = useState({
+            name: '', role: 'Ofitsiant', phone: '', status: 'active',
+            salary: '', dailyHours: 10, startTime: '09:00', endTime: '19:00'
+        });
+        const [selectedEmployee, setSelectedEmployee] = useState(null);
+
+        // Auto-calculate dailyHours when startTime or endTime changes
+        useEffect(() => {
+            if (!isAdding) return;
+            const calculateShiftHours = () => {
+                const [sH, sM] = formData.startTime.split(':').map(Number);
+                const [eH, eM] = formData.endTime.split(':').map(Number);
+                if (isNaN(sH) || isNaN(eH)) return;
+
+                let diff = (eH * 60 + eM) - (sH * 60 + sM);
+                if (diff <= 0) diff += 24 * 60; // Overnight
+                const hours = parseFloat((diff / 60).toFixed(1));
+
+                if (formData.dailyHours !== hours) {
+                    setFormData(prev => ({ ...prev, dailyHours: hours }));
+                }
+            };
+            calculateShiftHours();
+        }, [formData.startTime, formData.endTime, isAdding]);
 
         const handleSubmit = (e) => {
             e.preventDefault();
+            const data = {
+                ...formData,
+                salary: Number(formData.salary),
+                dailyHours: Number(formData.dailyHours)
+            };
             if (editingId) {
-                updateEmployee({ ...formData, id: editingId });
+                updateEmployee({ ...data, id: editingId });
                 setEditingId(null);
             } else {
-                addEmployee(formData);
+                addEmployee(data);
             }
             setIsAdding(false);
-            setFormData({ name: '', role: 'Ofitsiant', phone: '', status: 'active' });
+            setFormData({
+                name: '', role: 'Ofitsiant', phone: '', status: 'active',
+                salary: '', dailyHours: 10, startTime: '09:00', endTime: '19:00'
+            });
+        };
+
+        const DetailModal = ({ employee, onClose }) => {
+            const [advAmount, setAdvAmount] = useState('');
+            const [advNote, setAdvNote] = useState('');
+
+            const totalAdvances = (employee.advances || []).reduce((sum, a) => sum + Number(a.amount), 0);
+            const totalEarnings = employee.totalEarnings || 0;
+            const balance = totalEarnings - totalAdvances;
+
+            const handleAddAdvance = (e) => {
+                e.preventDefault();
+                if (!advAmount) return;
+                addAdvance(employee.id, advAmount, new Date().toISOString(), advNote);
+                setAdvAmount('');
+                setAdvNote('');
+            };
+
+            const empAttendance = attendance.filter(a => a.employeeId === employee.id).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            return (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+                    <div style={{ background: '#1a1a1a', padding: '2rem', borderRadius: '20px', width: '850px', maxWidth: '95%', maxHeight: '90vh', overflowY: 'auto', border: '1px solid #333' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                            <div>
+                                <h2 style={{ margin: 0 }}>{employee.name}</h2>
+                                <span style={{ color: 'var(--accent-color)', fontSize: '0.9rem' }}>{employee.role} | {employee.startTime} - {employee.endTime} ({employee.dailyHours} soat)</span>
+                            </div>
+                            <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer' }}><FaTimes size={24} /></button>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '2rem' }}>
+                            <div style={{ background: '#252525', padding: '1.5rem', borderRadius: '16px', border: '1px solid #333' }}>
+                                <h3 style={{ marginTop: 0, borderBottom: '1px solid #444', paddingBottom: '0.5rem' }}>💰 Moliyaviy Holat</h3>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                                    <div style={{ background: '#1a1a1a', padding: '1rem', borderRadius: '12px', textAlign: 'center' }}>
+                                        <div style={{ color: '#888', fontSize: '0.8rem' }}>Jami Ishlagan</div>
+                                        <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent-color)', marginTop: '0.3rem' }}>{totalEarnings.toLocaleString()}</div>
+                                    </div>
+                                    <div style={{ background: '#1a1a1a', padding: '1rem', borderRadius: '12px', textAlign: 'center' }}>
+                                        <div style={{ color: '#888', fontSize: '0.8rem' }}>Bo'naklar</div>
+                                        <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#ff4444', marginTop: '0.3rem' }}>{totalAdvances.toLocaleString()}</div>
+                                    </div>
+                                </div>
+
+                                <div style={{ background: 'var(--success)', color: '#fff', padding: '1rem', borderRadius: '12px', textAlign: 'center', marginBottom: '1.5rem' }}>
+                                    <div style={{ opacity: 0.8, fontSize: '0.8rem', fontWeight: 'bold' }}>HAQIQIY QOLDIQ</div>
+                                    <div style={{ fontSize: '1.6rem', fontWeight: '900' }}>{balance.toLocaleString()} so'm</div>
+                                </div>
+
+                                <h4 style={{ marginBottom: '0.5rem' }}>+ Bo'nak qo'shish</h4>
+                                <form onSubmit={handleAddAdvance} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    <input type="number" placeholder="Summa" value={advAmount} onChange={e => setAdvAmount(e.target.value)} style={{ padding: '0.6rem', background: '#333', border: '1px solid #444', color: '#fff', borderRadius: '8px' }} />
+                                    <input placeholder="Izoh" value={advNote} onChange={e => setAdvNote(e.target.value)} style={{ padding: '0.6rem', background: '#333', border: '1px solid #444', color: '#fff', borderRadius: '8px' }} />
+                                    <button style={{ background: 'var(--success)', color: '#fff', border: 'none', padding: '0.7rem', borderRadius: '8px', fontWeight: 'bold', marginTop: '0.5rem' }}>SAQLASH</button>
+                                </form>
+
+                                <div style={{ marginTop: '1.5rem', maxHeight: '150px', overflowY: 'auto' }}>
+                                    <div style={{ fontSize: '0.9rem', color: '#888', marginBottom: '0.5rem' }}>Tarix:</div>
+                                    {(employee.advances || []).map(a => (
+                                        <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', background: '#1a1a1a', padding: '0.5rem 0.8rem', borderRadius: '6px', marginBottom: '0.4rem', fontSize: '0.85rem' }}>
+                                            <div>
+                                                <div style={{ fontWeight: 'bold' }}>{Number(a.amount).toLocaleString()}</div>
+                                                <div style={{ fontSize: '0.7rem', color: '#666' }}>{new Date(a.date).toLocaleDateString()} {a.note && `- ${a.note}`}</div>
+                                            </div>
+                                            <button onClick={() => deleteAdvance(employee.id, a.id)} style={{ background: 'rgba(239,68,68,0.1)', border: 'none', color: '#ff4444', cursor: 'pointer', padding: '8px', borderRadius: '8px', display: 'flex', alignItems: 'center' }}>
+                                                <FaTrash size={16} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div style={{ background: '#252525', padding: '1.5rem', borderRadius: '16px', border: '1px solid #333', display: 'flex', flexDirection: 'column' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                    <h3 style={{ margin: 0 }}>📅 Davomat</h3>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: employee.isAtWork ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.05)', color: employee.isAtWork ? 'var(--success)' : '#888', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: employee.isAtWork ? 'var(--success)' : '#888' }}></div>
+                                        {employee.isAtWork ? 'ISHDA' : 'KETGAN'}
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+                                    <button onClick={() => logAttendance(employee.id, 'check-in')} disabled={employee.isAtWork} style={{ flex: 1, padding: '1rem', background: employee.isAtWork ? '#333' : 'var(--success)', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: employee.isAtWork ? 'default' : 'pointer', opacity: employee.isAtWork ? 0.5 : 1 }}>KELISH</button>
+                                    <button onClick={() => logAttendance(employee.id, 'check-out')} disabled={!employee.isAtWork} style={{ flex: 1, padding: '1rem', background: !employee.isAtWork ? '#333' : '#ef4444', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: !employee.isAtWork ? 'default' : 'pointer', opacity: !employee.isAtWork ? 0.5 : 1 }}>KETISH</button>
+                                </div>
+
+                                {/* CALENDAR VIEW */}
+                                <AttendanceCalendar logs={empAttendance} />
+
+                                <div style={{ marginTop: '1.5rem', maxHeight: '200px', overflowY: 'auto', borderTop: '1px solid #333', paddingTop: '1rem' }}>
+                                    <div style={{ fontSize: '0.8rem', color: '#666', marginBottom: '0.5rem' }}>Oxirgi harakatlar:</div>
+                                    {empAttendance.length === 0 ? <p style={{ color: '#666', fontSize: '0.85rem' }}>Ma'lumot mavjud emas</p> : empAttendance.map(log => (
+                                        <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#1a1a1a', padding: '0.6rem 0.8rem', borderRadius: '8px', marginBottom: '0.4rem', borderLeft: `3px solid ${log.type === 'check-in' ? '#10b981' : '#ef4444'}`, fontSize: '0.85rem' }}>
+                                            <div>
+                                                <div style={{ fontWeight: 'bold' }}>{log.type === 'check-in' ? 'Keldi' : 'Ketdi'}</div>
+                                                <div style={{ fontSize: '0.7rem', color: '#666' }}>{new Date(log.timestamp).toLocaleString()}</div>
+                                            </div>
+                                            {log.type === 'check-out' && log.earnings && (
+                                                <div style={{ textAlign: 'right' }}>
+                                                    <div style={{ color: 'var(--success)', fontWeight: 'bold' }}>+{log.earnings.toLocaleString()}</div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
         };
 
         return (
             <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                    <h2>Xodimlar Boshqaruvi</h2>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <h2 style={{ margin: 0 }}>Xodimlar Boshqaruvi</h2>
+                        <p style={{ margin: '5px 0 0 0', color: '#888', fontSize: '0.9rem' }}>Soatbay ish haqi va real vaqtda balans</p>
+                    </div>
                     <button
-                        onClick={() => { setIsAdding(true); setEditingId(null); setFormData({ name: '', role: 'Ofitsiant', phone: '', status: 'active' }); }}
-                        style={{ padding: '0.6rem 1.5rem', background: 'var(--accent-color)', color: '#000', borderRadius: '8px', fontWeight: 'bold', display: 'flex', gap: '0.5rem', alignItems: 'center' }}
+                        onClick={() => { setIsAdding(true); setEditingId(null); setFormData({ name: '', role: 'Ofitsiant', phone: '', status: 'active', salary: '', dailyHours: 10, startTime: '09:00', endTime: '19:00' }); }}
+                        style={{ padding: '0.8rem 1.8rem', background: 'var(--accent-color)', color: '#000', borderRadius: '12px', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}
                     >
                         <FaPlus /> Yangi Xodim
                     </button>
                 </div>
 
                 {isAdding && (
-                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <div style={{ background: '#252525', padding: '2rem', borderRadius: '16px', width: '400px', border: '1px solid #444' }}>
-                            <h3>{editingId ? 'Tahrirlash' : 'Yangi Xodim'}</h3>
-                            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1.5rem' }}>
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ background: '#252525', padding: '2.5rem', borderRadius: '20px', width: '500px', border: '1px solid #444' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                <h3 style={{ margin: 0 }}>{editingId ? 'Tahrirlash' : 'Yangi Xodim'}</h3>
+                                <button onClick={() => setIsAdding(false)} style={{ background: 'transparent', border: 'none', color: '#888', cursor: 'pointer' }}><FaTimes size={20} /></button>
+                            </div>
+                            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                 <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: '#888' }}>F.I.O</label>
-                                    <input autoFocus value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid #444', background: '#333', color: '#fff' }} required />
+                                    <label style={{ display: 'block', marginBottom: '0.4rem', color: '#888', fontSize: '0.85rem' }}>F.I.O</label>
+                                    <input autoFocus value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', border: '1px solid #444', background: '#333', color: '#fff' }} required />
                                 </div>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: '#888' }}>Lavozim</label>
-                                    <select value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid #444', background: '#333', color: '#fff' }}>
-                                        <option>Ofitsiant</option>
-                                        <option>Oshpaz</option>
-                                        <option>Kassir</option>
-                                        <option>Boshqa</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: '#888' }}>Telefon</label>
-                                    <input value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid #444', background: '#333', color: '#fff' }} />
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '0.4rem', color: '#888', fontSize: '0.85rem' }}>Lavozim</label>
+                                        <select value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })} style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', border: '1px solid #444', background: '#333', color: '#fff' }}>
+                                            <option>Ofitsiant</option><option>Oshpaz</option><option>Kassir</option><option>Boshqa</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '0.4rem', color: '#888', fontSize: '0.85rem' }}>Oylik Maosh</label>
+                                        <input type="number" value={formData.salary} onChange={e => setFormData({ ...formData, salary: e.target.value })} style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', border: '1px solid #444', background: '#333', color: '#fff' }} />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '0.4rem', color: '#888', fontSize: '0.85rem' }}>Ish Vaqti (Dan)</label>
+                                        <input type="time" value={formData.startTime} onChange={e => setFormData({ ...formData, startTime: e.target.value })} style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', border: '1px solid #444', background: '#333', color: '#fff' }} />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '0.4rem', color: '#888', fontSize: '0.85rem' }}>Ish Vaqti (Gacha)</label>
+                                        <input type="time" value={formData.endTime} onChange={e => setFormData({ ...formData, endTime: e.target.value })} style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', border: '1px solid #444', background: '#333', color: '#fff' }} />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '0.4rem', color: '#888', fontSize: '0.85rem' }}>Smena Soati (kunlik)</label>
+                                        <input type="number" readOnly value={formData.dailyHours} style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', border: '1px solid #444', background: '#222', color: '#888', cursor: 'not-allowed' }} />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '0.4rem', color: '#888', fontSize: '0.85rem' }}>Telefon</label>
+                                        <input value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', border: '1px solid #444', background: '#333', color: '#fff' }} />
+                                    </div>
                                 </div>
                                 <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                                    <button type="button" onClick={() => setIsAdding(false)} style={{ flex: 1, padding: '0.8rem', background: '#333', color: '#fff', borderRadius: '8px', border: 'none' }}>BEKOR</button>
-                                    <button type="submit" style={{ flex: 2, padding: '0.8rem', background: 'var(--success)', color: '#fff', borderRadius: '8px', border: 'none', fontWeight: 'bold' }}>SAQLASH</button>
+                                    <button type="button" onClick={() => setIsAdding(false)} style={{ flex: 1, padding: '1rem', background: '#333', color: '#fff', borderRadius: '10px', border: 'none', fontWeight: 'bold' }}>BEKOR</button>
+                                    <button type="submit" style={{ flex: 2, padding: '1rem', background: 'var(--success)', color: '#fff', borderRadius: '10px', border: 'none', fontWeight: 'bold' }}>SAQLASH</button>
                                 </div>
                             </form>
                         </div>
                     </div>
                 )}
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1.5rem' }}>
-                    {employees.map(emp => (
-                        <div key={emp.id} style={{ background: '#252525', padding: '1.5rem', borderRadius: '12px', border: '1px solid #333', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ padding: '2px 8px', borderRadius: '4px', background: '#333', fontSize: '0.7rem', color: 'var(--accent-color)' }}>{emp.role}</span>
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                    <button onClick={() => { setEditingId(emp.id); setFormData(emp); setIsAdding(true); }} style={{ background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer' }}><FaEdit /></button>
-                                    <button onClick={() => deleteEmployee(emp.id)} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}><FaTrash /></button>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '2rem' }}>
+                    {employees.map(emp => {
+                        const totalAdvances = (emp.advances || []).reduce((sum, a) => sum + Number(a.amount), 0);
+                        const totalEarnings = emp.totalEarnings || 0;
+                        const balance = totalEarnings - totalAdvances;
+                        return (
+                            <div
+                                key={emp.id}
+                                style={{
+                                    background: 'linear-gradient(145deg, #2a2a2a, #222)',
+                                    padding: '1.8rem',
+                                    borderRadius: '24px',
+                                    border: '1px solid #3a3a3a',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '1.2rem',
+                                    position: 'relative',
+                                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    cursor: 'pointer',
+                                    boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
+                                }}
+                                onMouseEnter={e => {
+                                    e.currentTarget.style.borderColor = 'var(--accent-color)';
+                                    e.currentTarget.style.transform = 'translateY(-5px)';
+                                    e.currentTarget.style.boxShadow = '0 15px 40px rgba(0,0,0,0.4)';
+                                }}
+                                onMouseLeave={e => {
+                                    e.currentTarget.style.borderColor = '#3a3a3a';
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.2)';
+                                }}
+                                onClick={() => setSelectedEmployee(emp)}
+                            >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                        <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
+                                            <span style={{
+                                                background: 'rgba(255, 215, 0, 0.1)',
+                                                color: 'var(--accent-color)',
+                                                padding: '4px 12px',
+                                                borderRadius: '10px',
+                                                fontSize: '0.75rem',
+                                                fontWeight: '900',
+                                                letterSpacing: '0.5px',
+                                                textTransform: 'uppercase'
+                                            }}>{emp.role}</span>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                <div style={{
+                                                    width: '8px',
+                                                    height: '8px',
+                                                    borderRadius: '50%',
+                                                    background: emp.isAtWork ? '#10b981' : '#666',
+                                                    boxShadow: emp.isAtWork ? '0 0 10px #10b981' : 'none'
+                                                }}></div>
+                                                <span style={{ fontSize: '0.75rem', color: emp.isAtWork ? '#10b981' : '#888', fontWeight: 'bold' }}>
+                                                    {emp.isAtWork ? 'ISHDA' : 'KETGAN'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <h2 style={{ margin: '0.3rem 0', fontSize: '1.6rem', fontWeight: '800', color: '#fff' }}>{emp.name}</h2>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#666', fontSize: '0.85rem' }}>
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>🕒 {emp.startTime} - {emp.endTime}</span>
+                                            <span style={{ opacity: 0.3 }}>|</span>
+                                            <span>{emp.dailyHours} soat</span>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '0.8rem' }} onClick={e => e.stopPropagation()}>
+                                        <button
+                                            onClick={() => { setEditingId(emp.id); setFormData(emp); setIsAdding(true); }}
+                                            style={{
+                                                background: 'rgba(255,255,255,0.05)',
+                                                border: '1px solid rgba(255,255,255,0.1)',
+                                                color: '#aaa',
+                                                padding: '12px',
+                                                borderRadius: '12px',
+                                                cursor: 'pointer',
+                                                transition: '0.2s',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center'
+                                            }}
+                                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#fff'; }}
+                                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#aaa'; }}
+                                        >
+                                            <FaEdit size={22} />
+                                        </button>
+                                        <button
+                                            onClick={() => deleteEmployee(emp.id)}
+                                            style={{
+                                                background: 'rgba(239, 68, 68, 0.1)',
+                                                border: '1px solid rgba(239, 68, 68, 0.2)',
+                                                color: '#ef4444',
+                                                padding: '12px',
+                                                borderRadius: '12px',
+                                                cursor: 'pointer',
+                                                transition: '0.2s',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center'
+                                            }}
+                                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'; e.currentTarget.style.transform = 'scale(1.1)'; }}
+                                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                                        >
+                                            <FaTrash size={22} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div style={{
+                                    background: 'rgba(0,0,0,0.3)',
+                                    padding: '1.2rem',
+                                    borderRadius: '20px',
+                                    display: 'grid',
+                                    gridTemplateColumns: '1fr 1fr',
+                                    gap: '1.5rem',
+                                    border: '1px solid rgba(255,255,255,0.05)'
+                                }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                        <div style={{ fontSize: '0.7rem', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>ISHLADI</div>
+                                        <div style={{ fontSize: '1.2rem', fontWeight: '900', color: 'var(--accent-color)' }}>{totalEarnings.toLocaleString()} <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>UZS</span></div>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'right' }}>
+                                        <div style={{ fontSize: '0.7rem', color: '#666', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>BALANS</div>
+                                        <div style={{ fontSize: '1.2rem', fontWeight: '900', color: balance >= 0 ? '#10b981' : '#ef4444' }}>{balance.toLocaleString()} <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>UZS</span></div>
+                                    </div>
+                                </div>
+                                <div style={{
+                                    fontSize: '0.85rem',
+                                    color: '#555',
+                                    textAlign: 'center',
+                                    borderTop: '1px solid rgba(255,255,255,0.05)',
+                                    paddingTop: '0.8rem',
+                                    fontWeight: '500'
+                                }}>
+                                    📞 {emp.phone || 'Noma\'lum'}
                                 </div>
                             </div>
-                            <h3 style={{ margin: '0.5rem 0' }}>{emp.name}</h3>
-                            <div style={{ color: '#888', fontSize: '0.9rem' }}>📞 {emp.phone || 'Noma\'lum'}</div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
+                {selectedEmployee && <DetailModal employee={employees.find(e => e.id === selectedEmployee.id) || selectedEmployee} onClose={() => setSelectedEmployee(null)} />}
             </div>
         );
     };
-
 
     // 6. ARCHIVES VIEW
     const ArchivesView = () => {
@@ -2624,7 +3059,7 @@ const AdminApp = () => {
                                                 <thead>
                                                     <tr style={{ borderBottom: '1px solid #444' }}>
                                                         <th style={{ padding: '0.5rem' }}>Vaqt</th>
-                                                        <th style={{ padding: '0.5rem' }}>Stol</th>
+                                                        <th style={{ padding: '0.5rem' }}>Stol / Mijoz</th>
                                                         <th style={{ padding: '0.5rem' }}>Buyurtma</th>
                                                         <th style={{ padding: '0.5rem' }}>Summa</th>
                                                         <th style={{ padding: '0.5rem' }}>To'lov</th>
@@ -2635,11 +3070,19 @@ const AdminApp = () => {
                                                     {arch.orders.map((order, i) => (
                                                         <tr key={i} style={{ borderBottom: '1px solid #333' }}>
                                                             <td style={{ padding: '0.5rem' }}>{new Date(order.timestamp).toLocaleTimeString()}</td>
-                                                            <td style={{ padding: '0.5rem' }}>Stol {order.tableId}</td>
+                                                            <td style={{ padding: '0.5rem' }}>
+                                                                {order.isSaboy ? (
+                                                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                                        <span style={{ color: 'var(--accent-color)', fontWeight: 'bold' }}>SABOY: {order.customerName}</span>
+                                                                        {order.phone && <span style={{ fontSize: '0.75rem', color: '#888' }}>{order.phone}</span>}
+                                                                    </div>
+                                                                ) : `Stol ${order.tableId}`}
+                                                            </td>
                                                             <td style={{ padding: '0.5rem', fontSize: '0.8rem', color: '#ccc' }}>
                                                                 {order.items.map((item, idx) => (
                                                                     <div key={idx}>{item.quantity} x {item.name}</div>
                                                                 ))}
+                                                                {order.note && <div style={{ color: 'var(--accent-color)', marginTop: '0.2rem', fontStyle: 'italic' }}>Izoh: {order.note}</div>}
                                                             </td>
                                                             <td style={{ padding: '0.5rem' }}>{order.total.toLocaleString()}</td>
                                                             <td style={{ padding: '0.5rem', color: '#aaa', fontSize: '0.8rem' }}>{order.paymentMethod}</td>
@@ -2676,7 +3119,8 @@ const AdminApp = () => {
                             <p>Chek nusxasi (Arxiv)</p>
                             <hr />
                             <div className="receipt-header">
-                                <h2>Stol {receiptOrder.tableId}</h2>
+                                <h2>{receiptOrder.isSaboy ? `SABOY: ${receiptOrder.customerName}` : `Stol ${tables.find(t => t.id === receiptOrder.tableId)?.name || receiptOrder.tableId}`}</h2>
+                                {receiptOrder.isSaboy && receiptOrder.phone && <p style={{ fontSize: '14px' }}>Tel: {receiptOrder.phone}</p>}
                                 <p>{new Date(receiptOrder.timestamp).toLocaleString()}</p>
                             </div>
                             <hr />
@@ -2705,23 +3149,24 @@ const AdminApp = () => {
                         </div>
                         <style>{`
                             .print-archive {
-                                width: 44mm;
+                                width: 50mm;
                                 margin: 0 auto;
                                 background: white;
                                 color: #000000 !important;
                                 font-family: 'Courier New', monospace;
-                                padding-bottom: 5mm;
+                                padding: 0 4mm 2mm 4mm;
+                                box-sizing: border-box;
                                 text-align: center;
-                                font-size: 16px;
-                                font-weight: 700;
+                                font-size: 14px;
+                                font-weight: 900;
                             }
-                            .print-archive h3 { margin: 0; font-size: 20px; font-weight: 900; }
-                            .print-archive p { margin: 2px 0; font-size: 16px; font-weight: 800; }
-                            .receipt-item { display: flex; flex-direction: column; margin-bottom: 8px; border-bottom: 1px dotted #ccc; padding-bottom: 2px; }
-                            .receipt-row-1 { text-align: left; width: 100%; overflow-wrap: break-word; }
-                            .receipt-row-2 { text-align: center; width: 100%; margin-top: 2px; font-size: 18px; font-weight: 900; } /* Centered Price */
-                            .receipt-total { display: flex; justifyContent: space-between; font-weight: 900; font-size: 18px; margin: 5px 0; }
-                            hr { border-top: 2px dashed #000; margin: 5px 0; }
+                            .print-archive h3 { margin: 0; font-size: 18px; font-weight: 900; color: #000 !important; }
+                            .print-archive p { margin: 1px 0; font-size: 14px; font-weight: 900; color: #000 !important; }
+                            .receipt-item { display: flex; flex-direction: column; margin-bottom: 5px; padding-bottom: 2px; color: #000 !important; }
+                            .receipt-row-1 { text-align: left; width: 100%; overflow-wrap: break-word; color: #000 !important; }
+                            .receipt-row-2 { text-align: center; width: 100%; margin-top: 1px; font-size: 16px; font-weight: 900; color: #000 !important; }
+                            .receipt-total { display: flex; justify-content: space-between; font-weight: 900; font-size: 16px; margin: 3px 0; color: #000 !important; }
+                            hr { border: none; border-top: 1px dashed #000 !important; height: 0; margin: 5px 0; opacity: 1; }
                         `}</style>
                     </PrintPortal>
                 )}
@@ -2730,6 +3175,285 @@ const AdminApp = () => {
     };
 
     // 7. SETTINGS VIEW
+    const SaboyView = () => {
+        const { saboyOrders, checkoutSaboyOrder, menu, categories, placeSaboyOrder, settings } = useData();
+        const [showAddModal, setShowAddModal] = useState(false);
+        const [showPaymentModal, setShowPaymentModal] = useState(false);
+        const [showSaboyConfirmModal, setShowSaboyConfirmModal] = useState(false);
+        const [pendingSaboyCheckout, setPendingSaboyCheckout] = useState(null);
+        const [selectedOrder, setSelectedOrder] = useState(null);
+        const [customerName, setCustomerName] = useState('');
+        const [customerPhone, setCustomerPhone] = useState('');
+        const [orderNote, setOrderNote] = useState('');
+        const [cart, setCart] = useState([]);
+        const [search, setSearch] = useState('');
+        const [activeCategory, setActiveCategory] = useState('All');
+
+        const filteredMenu = menu.filter(m =>
+            (activeCategory === 'All' || m.category === activeCategory) &&
+            m.name.toLowerCase().includes(search.toLowerCase())
+        );
+
+        const addToCart = (item) => {
+            setCart(prev => {
+                const existing = prev.find(i => i.id === item.id);
+                if (existing) return prev.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i);
+                return [...prev, { ...item, quantity: 1 }];
+            });
+        };
+
+        const updateQty = (id, delta) => {
+            setCart(prev => prev.map(i => {
+                if (i.id === id) {
+                    const newQty = i.quantity + delta;
+                    return newQty > 0 ? { ...i, quantity: newQty } : i;
+                }
+                return i;
+            }));
+        };
+
+        const removeFromCart = (id) => setCart(prev => prev.filter(i => i.id !== id));
+
+        const handlePlaceOrder = () => {
+            if (cart.length === 0) return alert("Savat bo'sh!");
+            placeSaboyOrder(cart, customerName || 'Alohida mijoz', customerPhone, orderNote);
+            setCart([]);
+            setCustomerName('');
+            setCustomerPhone('');
+            setOrderNote('');
+            setShowAddModal(false);
+        };
+
+        const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+        return (
+            <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <FaUtensils size={30} color="var(--accent-color)" />
+                        <h2 style={{ margin: 0 }}>Saboy (Olib ketish)</h2>
+                    </div>
+                    <button
+                        onClick={() => setShowAddModal(true)}
+                        style={{ padding: '0.8rem 2rem', background: 'var(--success)', color: '#fff', borderRadius: '8px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}
+                    >
+                        <FaPlus /> YANGI BUYURTMA
+                    </button>
+                </div>
+
+                {/* Active Saboy Orders */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+                    {saboyOrders.length === 0 && <p style={{ color: '#666', gridColumn: '1/-1', textAlign: 'center' }}>Hozircha saboy buyurtmalar yo'q.</p>}
+                    {saboyOrders.map(order => (
+                        <div key={order.id} style={{ background: '#222', borderRadius: '12px', border: '1px solid #333', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.8rem', borderTop: '4px solid var(--accent-color)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #333', paddingBottom: '0.5rem' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <span style={{ fontWeight: 'bold', fontSize: '1rem', color: 'var(--accent-color)' }}>{order.customerName}</span>
+                                    {order.phone && <span style={{ fontSize: '0.8rem', color: '#888' }}>{order.phone}</span>}
+                                </div>
+                                <span style={{ color: '#aaa', fontSize: '0.85rem' }}>{new Date(order.timestamp).toLocaleTimeString()}</span>
+                            </div>
+                            <div style={{ flex: 1, fontSize: '0.9rem' }}>
+                                {order.items.map((item, i) => (
+                                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                                        <span>{item.quantity}x {item.name}</span>
+                                        <span style={{ color: '#aaa' }}>{(item.price * item.quantity).toLocaleString()}</span>
+                                    </div>
+                                ))}
+                                {order.note && (
+                                    <div style={{ marginTop: '0.5rem', padding: '0.5rem', background: '#333', borderRadius: '4px', fontSize: '0.8rem', fontStyle: 'italic', borderLeft: '2px solid var(--accent-color)' }}>
+                                        Izoh: {order.note}
+                                    </div>
+                                )}
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #333', paddingTop: '0.5rem', fontWeight: 'bold', fontSize: '1.1rem' }}>
+                                <span>Jami:</span>
+                                <span>{order.total.toLocaleString()}</span>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setSelectedOrder(order);
+                                    setShowPaymentModal(true);
+                                }}
+                                style={{ width: '100%', padding: '0.8rem', background: 'var(--accent-color)', color: '#000', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.9rem' }}
+                            >
+                                YOPISH
+                            </button>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Add Order Modal */}
+                {showAddModal && (
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 300, display: 'flex', padding: '2rem' }}>
+                        <div style={{ flex: 2, background: '#1a1a1a', borderRadius: '16px', border: '1px solid #333', marginRight: '1rem', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                            <div style={{ padding: '1.5rem', borderBottom: '1px solid #333', display: 'flex', gap: '1rem' }}>
+                                <input
+                                    placeholder="Qidirish..."
+                                    value={search} onChange={e => setSearch(e.target.value)}
+                                    style={{ flex: 1, padding: '0.8rem', background: '#222', border: '1px solid #444', color: '#fff', borderRadius: '8px' }}
+                                />
+                                <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '5px' }}>
+                                    <button onClick={() => setActiveCategory('All')} style={{ padding: '0.5rem 1rem', borderRadius: '20px', background: activeCategory === 'All' ? 'var(--accent-color)' : '#333', color: activeCategory === 'All' ? '#000' : '#fff', border: 'none', whiteSpace: 'nowrap' }}>Hammasi</button>
+                                    {categories.map(c => (
+                                        <button key={c.id} onClick={() => setActiveCategory(c.name)} style={{ padding: '0.5rem 1rem', borderRadius: '20px', background: activeCategory === c.name ? 'var(--accent-color)' : '#333', color: activeCategory === c.name ? '#000' : '#fff', border: 'none', whiteSpace: 'nowrap' }}>{c.name}</button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '0.5rem', alignContent: 'start' }}>
+                                {filteredMenu.map(item => (
+                                    <div key={item.id} onClick={() => addToCart(item)} style={{ background: '#252525', borderRadius: '8px', border: '1px solid #333', padding: '0.5rem', cursor: 'pointer', textAlign: 'center', transition: '0.2s', borderLeft: '4px solid var(--accent-color)' }}>
+                                        <div style={{ fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '0.3rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</div>
+                                        <div style={{ color: 'var(--accent-color)', fontSize: '0.8rem', fontWeight: 'bold' }}>{item.price.toLocaleString()}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div style={{ flex: 1, background: '#1a1a1a', borderRadius: '16px', border: '1px solid #333', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                            <div style={{ padding: '1.5rem', borderBottom: '1px solid #333', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                                <h3 style={{ margin: 0 }}>Savat</h3>
+                                <input
+                                    placeholder="Mijoz ismi (ixtiyoriy)"
+                                    value={customerName} onChange={e => setCustomerName(e.target.value)}
+                                    style={{ width: '100%', padding: '0.8rem', background: '#222', border: '1px solid #444', color: '#fff', borderRadius: '8px', fontSize: '0.9rem' }}
+                                />
+                                <input
+                                    placeholder="Telefon raqami (ixtiyoriy)"
+                                    value={customerPhone} onChange={e => setCustomerPhone(e.target.value)}
+                                    style={{ width: '100%', padding: '0.8rem', background: '#222', border: '1px solid #444', color: '#fff', borderRadius: '8px', fontSize: '0.9rem' }}
+                                />
+                                <textarea
+                                    placeholder="Buyurtma izohi (ixtiyoriy)"
+                                    value={orderNote} onChange={e => setOrderNote(e.target.value)}
+                                    style={{ width: '100%', padding: '0.8rem', background: '#222', border: '1px solid #444', color: '#fff', borderRadius: '8px', fontSize: '0.9rem', minHeight: '60px', resize: 'none' }}
+                                />
+                            </div>
+                            <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
+                                {cart.map(item => (
+                                    <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', background: '#222', padding: '0.5rem 0.8rem', borderRadius: '8px' }}>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>{item.name}</div>
+                                            <div style={{ fontSize: '0.8rem', color: '#888' }}>{(item.price * item.quantity).toLocaleString()}</div>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <button onClick={() => updateQty(item.id, -1)} style={{ width: '25px', height: '25px', borderRadius: '50%', background: '#333', border: 'none', color: '#fff', fontSize: '0.8rem' }}>-</button>
+                                            <span style={{ fontSize: '0.9rem' }}>{item.quantity}</span>
+                                            <button onClick={() => updateQty(item.id, 1)} style={{ width: '25px', height: '25px', borderRadius: '50%', background: '#333', border: 'none', color: '#fff', fontSize: '0.8rem' }}>+</button>
+                                            <button onClick={() => removeFromCart(item.id)} style={{ marginLeft: '0.5rem', color: '#ef4444', background: 'none', border: 'none' }}><FaTrash size={12} /></button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div style={{ padding: '1rem', borderTop: '1px solid #333' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.8rem', fontSize: '1.1rem', fontWeight: 'bold' }}>
+                                    <span>Jami:</span>
+                                    <span>{cartTotal.toLocaleString()}</span>
+                                </div>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <button onClick={() => setShowAddModal(false)} style={{ flex: 1, padding: '0.8rem', background: '#333', color: '#fff', borderRadius: '8px', border: 'none', fontSize: '0.9rem' }}>BEKOR</button>
+                                    <button onClick={handlePlaceOrder} style={{ flex: 2, padding: '0.8rem', background: 'var(--success)', color: '#fff', borderRadius: '8px', fontWeight: 'bold', border: 'none', fontSize: '0.9rem' }}>OK</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Payment Modal for Saboy */}
+                {showPaymentModal && selectedOrder && (
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <PaymentModalContent
+                            selectedTable={{
+                                name: `SABOY: ${selectedOrder.customerName}`,
+                                id: selectedOrder.id,
+                                orders: [selectedOrder]
+                            }}
+                            initialServiceOff={true}
+                            onClose={() => setShowPaymentModal(false)}
+                            onCheckout={(method, extras) => {
+                                // 1. Print
+                                window.print();
+
+                                // 2. Confirm then Close
+                                setTimeout(() => {
+                                    setPendingSaboyCheckout({ method, extras });
+                                    setShowSaboyConfirmModal(true);
+                                    setShowPaymentModal(false);
+                                }, 100);
+                            }}
+                            settings={settings}
+                            onError={(msg) => alert(msg)}
+                        />
+                    </div>
+                )}
+
+                {/* Print Portal for Saboy Receipt */}
+                {selectedOrder && (
+                    <PrintPortal>
+                        <div className="print-receipt">
+                            <h3>KAFE EPOS</h3>
+                            <p>SABOY (To'lov)</p>
+                            <hr />
+                            <div className="receipt-header">
+                                <h2>MIJOZ: {selectedOrder.customerName}</h2>
+                                {selectedOrder.phone && <p>Tel: {selectedOrder.phone}</p>}
+                                <p style={{ fontSize: '12px' }}>Ochilgan: {new Date(selectedOrder.timestamp).toLocaleString()}</p>
+                                <p style={{ fontSize: '12px' }}>Yopilgan: {new Date().toLocaleString()}</p>
+                            </div>
+                            <hr />
+                            <div className="receipt-items">
+                                {selectedOrder.items.map((item, i) => (
+                                    <div key={i} className="receipt-item">
+                                        <div className="receipt-row-1">
+                                            {item.quantity} x {item.name}
+                                        </div>
+                                        <div className="receipt-row-2">
+                                            {(item.price * item.quantity).toLocaleString()}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <hr />
+                            <div className="receipt-total" style={{ paddingTop: '5px', marginTop: '5px' }}>
+                                <span>JAMI:</span>
+                                <span>{selectedOrder.total.toLocaleString()} so'm</span>
+                            </div>
+                            <hr />
+                            <p>Xaridingiz uchun rahmat!</p>
+                        </div>
+                    </PrintPortal>
+                )}
+
+                {/* Saboy Confirmation Modal */}
+                {showSaboyConfirmModal && pendingSaboyCheckout && selectedOrder && (
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1500 }}>
+                        <div style={{ background: '#1a1a1a', padding: '2.5rem', borderRadius: '30px', width: '450px', textAlign: 'center', border: '1px solid rgba(var(--success-rgb), 0.3)', boxShadow: '0 25px 50px rgba(0,0,0,0.5)', position: 'relative', overflow: 'hidden' }}>
+                            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '6px', background: 'var(--success)' }} />
+                            <h2 style={{ color: '#fff', fontSize: '1.8rem', marginBottom: '1rem', fontWeight: '900' }}>Tasdiqlash</h2>
+                            <p style={{ color: '#ccc', marginBottom: '2.5rem', fontSize: '1.2rem', lineHeight: '1.6' }}>
+                                Chek chiqarildi.<br />
+                                To'lov qabul qilindimi va buyurtma yopilsinmi?
+                            </p>
+                            <div style={{ display: 'flex', gap: '1.5rem' }}>
+                                <button onClick={() => { setShowSaboyConfirmModal(false); setPendingSaboyCheckout(null); }} style={{ flex: 1, padding: '1.2rem', background: 'transparent', color: '#888', border: '1px solid #333', borderRadius: '15px', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 'bold' }}>QAYTISH</button>
+                                <button
+                                    onClick={() => {
+                                        checkoutSaboyOrder(selectedOrder.id, pendingSaboyCheckout.method, pendingSaboyCheckout.extras);
+                                        setShowSaboyConfirmModal(false);
+                                        setPendingSaboyCheckout(null);
+                                        setSelectedOrder(null);
+                                    }}
+                                    style={{ flex: 1, padding: '1.2rem', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '15px', cursor: 'pointer', fontWeight: '900', fontSize: '1.1rem', boxShadow: '0 10px 20px rgba(var(--success-rgb), 0.3)' }}
+                                >
+                                    HA, YOPILSIN
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
     const SettingsView = () => {
         const [percentage, setPercentage] = useState(settings.servicePercentage || 0);
         const [contact, setContact] = useState({
@@ -2822,15 +3546,26 @@ const AdminApp = () => {
 
                 <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {userRole === 'cashier' && (
-                        <button
-                            onClick={() => setActiveTab('cashier')}
-                            style={{
-                                padding: '1rem', textAlign: 'left', borderRadius: '8px', display: 'flex', gap: '10px', alignItems: 'center',
-                                background: activeTab === 'cashier' ? '#333' : 'transparent', color: '#fff'
-                            }}
-                        >
-                            <FaCashRegister /> Kassa
-                        </button>
+                        <>
+                            <button
+                                onClick={() => setActiveTab('cashier')}
+                                style={{
+                                    padding: '1rem', textAlign: 'left', borderRadius: '8px', display: 'flex', gap: '10px', alignItems: 'center',
+                                    background: activeTab === 'cashier' ? '#333' : 'transparent', color: '#fff'
+                                }}
+                            >
+                                <FaCashRegister /> Kassa
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('saboy')}
+                                style={{
+                                    padding: '1rem', textAlign: 'left', borderRadius: '8px', display: 'flex', gap: '10px', alignItems: 'center',
+                                    background: activeTab === 'saboy' ? '#333' : 'transparent', color: '#fff'
+                                }}
+                            >
+                                <FaUtensils /> Saboy
+                            </button>
+                        </>
                     )}
                     {userRole === 'admin' && (
                         <>
@@ -2948,6 +3683,7 @@ const AdminApp = () => {
             {/* Main Content */}
             <div style={{ flex: 1, padding: '2rem', overflowY: 'auto' }}>
                 {activeTab === 'cashier' && <CashierView />}
+                {activeTab === 'saboy' && <SaboyView />}
                 {activeTab === 'kitchen' && <KitchenView />}
                 {activeTab === 'menu' && <MenuView />}
                 {activeTab === 'categories' && <CategoriesView />}

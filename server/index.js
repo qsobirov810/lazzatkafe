@@ -129,6 +129,8 @@ const defaultData = {
     reservations: [],
     expenses: [],
     employees: [],
+    attendance: [], // New: Store global attendance logs or by date
+    saboyOrders: [],
     settings: {
         servicePercentage: 0,
         phone: '+998 90 123 45 67',
@@ -150,6 +152,8 @@ if (fs.existsSync(DB_FILE)) {
         if (!db.settings) db.settings = { servicePercentage: 0 }; // Ensure settings exist
         if (!db.expenses) db.expenses = [];
         if (!db.employees) db.employees = [];
+        if (!db.attendance) db.attendance = [];
+        if (!db.saboyOrders) db.saboyOrders = [];
 
 
         // --- AUTO-CLEANUP: Remove archives older than 30 days ---
@@ -512,7 +516,7 @@ io.on('connection', (socket) => {
             printed: false,
             timestamp: new Date().toISOString(),
             total: (items || []).reduce((sum, item) => sum + (item.price * item.quantity), 0),
-            note: `Banket: ${reservation.customer} (${reservation.guestCount} kishi)`,
+            note: `Banket: ${reservation.customer} (${reservation.guests} kishi)`,
             relatedTableIds: tableIds // Store all related tables
         };
 
@@ -672,7 +676,16 @@ io.on('connection', (socket) => {
     // 12. Employee Management
     socket.on('add_employee', (employeeData) => {
         if (socket.user?.role !== 'admin') return;
-        const newEmployee = { ...employeeData, id: Date.now() };
+        const newEmployee = {
+            ...employeeData,
+            id: Date.now(),
+            salary: Number(employeeData.salary || 0),
+            dailyHours: Number(employeeData.dailyHours || 10),
+            startTime: employeeData.startTime || '09:00',
+            endTime: employeeData.endTime || '19:00',
+            totalEarnings: 0,
+            advances: []
+        };
         if (!db.employees) db.employees = [];
         db.employees.push(newEmployee);
         saveDb();
@@ -695,6 +708,166 @@ io.on('connection', (socket) => {
             saveDb();
             io.emit('data_update', db);
         }
+    });
+
+    // 12.1 Salary & Advance Management
+    socket.on('add_advance', ({ employeeId, amount, date, note }) => {
+        if (socket.user?.role !== 'admin') return;
+        const index = db.employees.findIndex(e => e.id === employeeId);
+        if (index !== -1) {
+            if (!db.employees[index].advances) db.employees[index].advances = [];
+            db.employees[index].advances.push({
+                id: Date.now(),
+                amount: Number(amount),
+                date: date || new Date().toISOString(),
+                note: note || ''
+            });
+            saveDb();
+            io.emit('data_update', db);
+        }
+    });
+
+    socket.on('delete_advance', ({ employeeId, advanceId }) => {
+        if (socket.user?.role !== 'admin') return;
+        const index = db.employees.findIndex(e => e.id === employeeId);
+        if (index !== -1 && db.employees[index].advances) {
+            db.employees[index].advances = db.employees[index].advances.filter(a => a.id !== advanceId);
+            saveDb();
+            io.emit('data_update', db);
+        }
+    });
+
+    socket.on('update_employee_salary', ({ employeeId, salary }) => {
+        if (socket.user?.role !== 'admin') return;
+        const index = db.employees.findIndex(e => e.id === employeeId);
+        if (index !== -1) {
+            db.employees[index].salary = Number(salary);
+            saveDb();
+            io.emit('data_update', db);
+        }
+    });
+
+    // 12.2 Attendance Tracking & Earnings Calculation
+    socket.on('log_attendance', ({ employeeId, type, timestamp, note }) => {
+        const empIndex = db.employees.findIndex(e => e.id === employeeId);
+        if (empIndex === -1) return;
+
+        const employee = db.employees[empIndex];
+        const logTime = timestamp || new Date().toISOString();
+        let earnings = 0;
+        let durationMinutes = 0;
+
+        if (type === 'check-out') {
+            // Find the most recent check-in for this employee
+            const lastCheckIn = [...(db.attendance || [])]
+                .reverse()
+                .find(a => a.employeeId === employeeId && a.type === 'check-in');
+
+            if (lastCheckIn) {
+                const startTime = new Date(lastCheckIn.timestamp);
+                const endTime = new Date(logTime);
+                durationMinutes = Math.max(0, (endTime - startTime) / (1000 * 60));
+
+                // Calculation: (Salary / 30 / DailyHours / 60) * Minutes
+                const salary = Number(employee.salary || 0);
+                const dailyHours = Number(employee.dailyHours || 10);
+
+                if (salary > 0 && dailyHours > 0) {
+                    const minuteRate = (salary / 30) / (dailyHours * 60);
+                    earnings = Math.round(durationMinutes * minuteRate);
+
+                    // Update employee total earnings
+                    if (!employee.totalEarnings) employee.totalEarnings = 0;
+                    employee.totalEarnings += earnings;
+                }
+            }
+        }
+
+        const newLog = {
+            id: Date.now(),
+            employeeId,
+            employeeName: employee.name,
+            type,
+            timestamp: logTime,
+            note: note || '',
+            durationMinutes: type === 'check-out' ? Math.round(durationMinutes) : undefined,
+            earnings: type === 'check-out' ? earnings : undefined
+        };
+
+        if (!db.attendance) db.attendance = [];
+        db.attendance.push(newLog);
+
+        // Update employee status for real-time view
+        employee.isAtWork = (type === 'check-in');
+        employee.lastAttendance = type;
+
+        saveDb();
+        io.emit('data_update', db);
+    });
+
+    // 13. Saboy (Takeaway) Orders
+    socket.on('place_saboy_order', ({ items, customerName, phone, note }) => {
+        const itemsTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        // Takeaway orders usually don't have service charge, but let's keep it optional
+        const servicePercentage = 0;
+        const serviceAmount = 0;
+        const total = itemsTotal;
+
+        const newOrder = {
+            id: Date.now(),
+            isSaboy: true,
+            items,
+            status: 'pending',
+            printed: false,
+            timestamp: new Date().toISOString(),
+            itemsTotal,
+            servicePercentage,
+            serviceAmount,
+            total,
+            customerName: customerName || 'Alohida mijoz',
+            phone: phone || '',
+            note: note || ''
+        };
+
+        if (!db.saboyOrders) db.saboyOrders = [];
+        db.saboyOrders.unshift(newOrder);
+        db.activeOrders.unshift(newOrder); // For KitchenView
+
+        saveDb();
+        io.emit('data_update', db);
+    });
+
+    socket.on('checkout_saboy_order', ({ orderId, paymentMethod, discount = 0, serviceOff = true }) => {
+        // Relaxing role check for now as cashier login might not have tokens yet
+        // if (socket.user?.role !== 'admin') return;
+
+        const orderIndex = db.saboyOrders.findIndex(o => o.id === orderId);
+        if (orderIndex === -1) return;
+
+        const order = db.saboyOrders[orderIndex];
+
+        // Recalculate if needed (Saboy usually has no service, but we support the modal's logic)
+        const itemsTotal = order.itemsTotal || order.total;
+        const finalServiceAmount = serviceOff ? 0 : (order.serviceAmount || 0);
+        const finalTotal = itemsTotal + finalServiceAmount - discount;
+
+        const closedOrder = {
+            ...order,
+            timestamp: order.timestamp, // Keep original start time
+            closedAt: new Date().toISOString(),
+            paymentMethod: paymentMethod || 'Naqd',
+            discount,
+            serviceAmount: finalServiceAmount,
+            total: finalTotal,
+            isSaboy: true
+        };
+
+        db.history.push(closedOrder);
+        db.saboyOrders.splice(orderIndex, 1);
+        db.activeOrders = db.activeOrders.filter(o => o.id !== orderId);
+
+        saveDb();
+        io.emit('data_update', db);
     });
 
     socket.on('disconnect', () => {

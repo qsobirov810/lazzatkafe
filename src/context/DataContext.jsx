@@ -21,6 +21,8 @@ export const DataProvider = ({ children }) => {
     const [archives, setArchives] = useState([]);
     const [expenses, setExpenses] = useState([]);
     const [employees, setEmployees] = useState([]);
+    const [attendance, setAttendance] = useState([]); // New
+    const [saboyOrders, setSaboyOrders] = useState([]);
     const [isConnected, setIsConnected] = useState(socket.connected);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -93,6 +95,8 @@ export const DataProvider = ({ children }) => {
             setReservations(data.reservations || []);
             setExpenses(data.expenses || []);
             setEmployees(data.employees || []);
+            setAttendance(data.attendance || []);
+            setSaboyOrders(data.saboyOrders || []);
             setSettings(data.settings || { servicePercentage: 0 });
         });
 
@@ -107,6 +111,8 @@ export const DataProvider = ({ children }) => {
             setReservations(data.reservations || []);
             setExpenses(data.expenses || []);
             setEmployees(data.employees || []);
+            setAttendance(data.attendance || []);
+            setSaboyOrders(data.saboyOrders || []);
             setSettings(data.settings || { servicePercentage: 0 });
         });
 
@@ -220,13 +226,44 @@ export const DataProvider = ({ children }) => {
         }
     };
 
+    // 12.1 Salary & Advance
+    const addAdvance = (employeeId, amount, date, note) => {
+        socket.emit('add_advance', { employeeId, amount, date, note });
+    };
+
+    const deleteAdvance = (employeeId, advanceId) => {
+        if (window.confirm("Bo'nakni o'chirasizmi?")) {
+            socket.emit('delete_advance', { employeeId, advanceId });
+        }
+    };
+
+    const updateEmployeeSalary = (employeeId, salary) => {
+        socket.emit('update_employee_salary', { employeeId, salary });
+    };
+
+    // 12.2 Attendance
+    const logAttendance = (employeeId, type, note) => {
+        socket.emit('log_attendance', { employeeId, type, note });
+    };
+
+    // 12. Saboy (Takeaway)
+    const placeSaboyOrder = (items, customerName, phone, note) => {
+        socket.emit('place_saboy_order', { items, customerName, phone, note });
+    };
+
+    const checkoutSaboyOrder = (orderId, paymentMethod, extras = {}) => {
+        socket.emit('checkout_saboy_order', { orderId, paymentMethod, ...extras });
+    };
+
     return (
         <DataContext.Provider value={{
-            tables, menu, categories, activeOrders, completedOrders, archives, reservations, settings, expenses, employees, isConnected, isAuthenticated, isLoading,
+            tables, menu, categories, activeOrders, completedOrders, archives, reservations, settings, expenses, employees, attendance, saboyOrders, isConnected, isAuthenticated, isLoading,
             sendOrder, updateOrder, checkoutTable, markOrderPrinted, addMenuItem, updateMenuItem, deleteMenuItem,
             addCategory, deleteCategory, clearHistory, closeDay, clearKitchenHistory, cancelOrder,
             addTable, deleteTable, addReservation, updateReservation, deleteReservation, activateReservation,
             updateSettings, addExpense, deleteExpense, addEmployee, updateEmployee, deleteEmployee,
+            addAdvance, deleteAdvance, updateEmployeeSalary, logAttendance,
+            placeSaboyOrder, checkoutSaboyOrder,
             login, logout
         }}>
             {children}

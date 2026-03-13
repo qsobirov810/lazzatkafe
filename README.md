@@ -81,3 +81,52 @@ Server `.env` fayli orqali sozlanadi.
 ### Login Sahifasi
 - **Manzil:** `http://localhost:5173/login`
 - **Admin Parol:** `admin123`
+
+---
+
+## 7. Real Serverga Joylashtirish (VPS / Domain)
+
+Loyihani internetda (haqiqiy serverda) ishlatish uchun quyidagi qadamlarni bajaring:
+
+### A. Frontendni tayyorlash (Build)
+1. `.env.production` faylida `VITE_API_URL` ni o'z domeningizga o'zgartiring:
+   ```env
+   VITE_API_URL=https://api.sizningdomeningiz.uz
+   ```
+2. Loyihani build qiling:
+   ```bash
+   npm run build
+   ```
+   *Bu `dist` papkasini yaratadi. Ushbu papkani serveringizning `public_html` yoki tegishli joyiga yuklang.*
+
+### B. Backendni sozlash (PM2)
+Serveringizda backend doimiy ishlashi uchun **PM2** dan foydalaning:
+1. Serverga kiring va `server` papkasiga o'ting.
+2. PM2 orqali ishga tushiring:
+   ```bash
+   npm install -g pm2
+   pm2 start index.js --name "kafe-api"
+   pm2 save
+   ```
+
+### C. Nginx Sozlamalari (SSL va Domen)
+Nginx orqali domenni ulash uchun misol (conf fayli):
+```nginx
+server {
+    server_name api.sizningdomeningiz.uz;
+
+    location / {
+        proxy_pass http://localhost:3000; # Backend porti
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+### D. Muhim eslatmalar
+- **SSL (HTTPS):** `Certbot` orqali bepul SSL oling (`sudo certbot --nginx`).
+- **Xavfsizlik:** `server/db.json` faylini muntazam ravishda zaxira (backup) qilib turing.
+- **Portlar:** Serveringizda 3000 (API) va 80/443 (HTTP/S) portlari ochiq bo'lishi kerak.

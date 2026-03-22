@@ -140,3 +140,51 @@ a {
     height: auto !important;
   }
 }
+
+/* Print Report Styles (Moved from AdminApp) */
+@media print {
+  .print-report {
+    width: 50mm;
+    margin: 0 auto;
+    background: white;
+    color: #000000 !important;
+    font-family: 'Courier New', monospace;
+    padding: 0 4mm 5mm 4mm;
+    text-align: center;
+    box-sizing: border-box;
+  }
+
+  .print-report * {
+    color: #000000 !important;
+  }
+
+  .print-report h3 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 900;
+    line-height: 1.2;
+  }
+
+  .print-report p {
+    margin: 0;
+    line-height: 1.2;
+  }
+
+  .print-report hr {
+    border: none;
+    border-top: 2px dashed #000;
+    height: 0;
+    margin: 5px 0;
+    opacity: 1;
+  }
+
+  .print-report table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+  }
+
+  .print-report td {
+    padding: 2px 0;
+  }
+}

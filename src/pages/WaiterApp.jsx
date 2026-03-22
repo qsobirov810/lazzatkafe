@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useData } from '../context/DataContext';
-import { FaUserTie, FaCheckCircle, FaShoppingBasket, FaArrowLeft, FaTrash, FaSearch, FaCheckDouble, FaTimes } from 'react-icons/fa';
+import { FaUserTie, FaCheckCircle, FaShoppingBasket, FaArrowLeft, FaTrash, FaSearch, FaCheckDouble, FaTimes, FaUtensils } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
 // --- COMPONENTS ---
@@ -106,8 +106,16 @@ const Toast = ({ message, type, onClose }) => (
 // --- MAIN PAGE ---
 
 const WaiterApp = () => {
-    const { tables, menu, categories: ctxCategories, sendOrder, updateOrder, settings } = useData();
+    const { tables, menu, categories: ctxCategories, sendOrder, updateOrder, settings, user, logout } = useData();
     const navigate = useNavigate();
+
+    // Validate direct URL access
+    useEffect(() => {
+        const activeRole = sessionStorage.getItem('activeSessionRole');
+        if (activeRole !== 'waiter') {
+            navigate('/system', { replace: true });
+        }
+    }, [navigate]);
 
     const [selectedTable, setSelectedTable] = useState(null);
     const [activeCategory, setActiveCategory] = useState("Taomlar"); // Will update effect below
@@ -115,11 +123,6 @@ const WaiterApp = () => {
     const [editingOrderId, setEditingOrderId] = useState(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [toast, setToast] = useState(null); // { message, type }
-
-    // Waiter Identification
-    const [waiterName, setWaiterName] = useState(localStorage.getItem('waiterName') || '');
-    const [showNameModal, setShowNameModal] = useState(false); // Default false
-    const [pendingTable, setPendingTable] = useState(null); // Table selected before name entry
 
     // Show Toast Helper
     const showToast = (message, type = 'success') => {
@@ -136,19 +139,31 @@ const WaiterApp = () => {
     }, [ctxCategories]);
 
     // Update active category if current selection is invalid
-    React.useEffect(() => {
+    useEffect(() => {
         if (categories.length > 0 && !categories.includes(activeCategory)) {
             setActiveCategory(categories[0]);
         }
     }, [categories, activeCategory]);
 
+    // Role Check
+    if (!user || (user.role !== 'waiter' && user.role !== 'admin')) {
+        return (
+            <div className="container flex-center" style={{ height: '100vh', flexDirection: 'column', textAlign: 'center', padding: '2rem' }}>
+                <h2 style={{ color: 'var(--danger)' }}>Ruxsat berilmadi!</h2>
+                <p>Ushbu bo'lim faqat ofitsiyantlar uchun.</p>
+                <button onClick={() => navigate('/login')} style={{ marginTop: '1rem', padding: '1rem 2rem', background: 'var(--accent-color)', borderRadius: '8px', border: 'none', fontWeight: 'bold' }}>
+                    Login sahifasiga o'tish
+                </button>
+            </div>
+        );
+    }
+
+    const waiterName = user.name || 'Admin';
+
     // Handle Table Selection
     const handleTableClick = (table) => {
-        setPendingTable(table);
-        setShowNameModal(true);
+        setSelectedTable(table);
     };
-
-    // Filtered Menu
 
     // Filtered Menu
     const filteredMenu = menu.filter(m => {
@@ -156,7 +171,7 @@ const WaiterApp = () => {
         const matchesSearch = m.name.toLowerCase().includes(searchQuery.toLowerCase());
         const isAvailable = m.available !== false;
 
-        if (searchQuery) return matchesSearch && isAvailable; // If searching, ignore category (optional, but better UX)
+        if (searchQuery) return matchesSearch && isAvailable;
         return matchesCategory && isAvailable;
     });
 
@@ -203,7 +218,7 @@ const WaiterApp = () => {
 
     const handleEditOrder = (order) => {
         if (window.confirm("Buyurtmani tahrirlaysizmi? Eskisi o'zgaradi.")) {
-            setCart([...order.items]); // Copy items to cart
+            setCart([...order.items]);
             setEditingOrderId(order.id);
         }
     };
@@ -215,50 +230,27 @@ const WaiterApp = () => {
 
     // --- RENDER ---
 
-    // 1. Table Selection View
     if (!selectedTable) {
         return (
             <div className="container animate-fade-in" style={{ padding: '1rem', paddingBottom: '80px' }}>
                 <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                     <div>
-                        <h2>Stollar</h2>
-                        <p style={{ color: '#aaa', margin: 0, fontSize: '0.9rem' }}>Ofitsiant: <span style={{ color: 'var(--accent-color)' }}>{waiterName}</span></p>
+                        <h2 style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>Stollar</h2>
+                        <p style={{ color: '#aaa', margin: 0, fontSize: '0.9rem' }}>Salom, <span style={{ color: 'var(--accent-color)', fontWeight: 'bold' }}>{waiterName}</span>!</p>
                     </div>
                     <button
-                        onClick={() => {
-                            localStorage.removeItem('waiterName');
-                            setWaiterName('');
-                            setShowNameModal(true);
-                        }}
-                        style={{ background: '#333', color: '#fff', border: '1px solid #555', padding: '0.5rem 1rem', borderRadius: '8px' }}
+                        onClick={logout}
+                        style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '0.6rem 1.2rem', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}
                     >
                         Chiqish
                     </button>
                 </header>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.2rem' }}>
                     {tables.map(table => (
                         <TableCard key={table.id} table={table} onClick={handleTableClick} />
                     ))}
                 </div>
-
-                <WaiterNameModal
-                    isOpen={showNameModal}
-                    onSave={(name) => {
-                        localStorage.setItem('waiterName', name);
-                        setWaiterName(name);
-                        setShowNameModal(false);
-                        // If there was a pending table, select it now
-                        if (pendingTable) {
-                            setSelectedTable(pendingTable);
-                            setPendingTable(null);
-                        }
-                    }}
-                    onCancel={() => {
-                        setShowNameModal(false);
-                        setPendingTable(null);
-                    }}
-                />
             </div>
         );
     }
@@ -269,7 +261,7 @@ const WaiterApp = () => {
     const serviceAmount = cartTotal * (servicePercent / 100);
     const finalTotal = cartTotal + serviceAmount;
 
-    const activeTableOrders = selectedTable.orders.filter(o => o.status === 'pending'); // Assuming 'pending' means active
+    const activeTableOrders = selectedTable.orders.filter(o => o.status === 'pending');
 
     return (
         <div className="container animate-fade-in" style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -300,7 +292,7 @@ const WaiterApp = () => {
                                 key={order.id}
                                 onClick={() => handleEditOrder(order)}
                                 style={{
-                                    background: order.printed ? '#064e3b' : '#333', // Dark Green if printed
+                                    background: order.printed ? '#064e3b' : '#333',
                                     border: order.printed ? '1px solid var(--success)' : '1px solid #555',
                                     borderRadius: '8px', padding: '0.5rem',
                                     minWidth: '120px', textAlign: 'left', cursor: 'pointer',
@@ -355,7 +347,7 @@ const WaiterApp = () => {
                 {filteredMenu.map(item => (
                     <MenuItem key={item.id} item={item} onAdd={addToCart} />
                 ))}
-                <div style={{ height: '100px' }}></div> {/* Spacer for cart */}
+                <div style={{ height: '100px' }}></div>
             </div>
 
             {/* Bottom Cart Bar */}
@@ -409,90 +401,12 @@ const WaiterApp = () => {
                             }}
                         >
                             {editingOrderId
-                                ? `YANGILASH • ${(finalTotal).toLocaleString()} (${cartTotal.toLocaleString()} + ${servicePercent}%)`
-                                : `YUBORISH • ${(finalTotal).toLocaleString()} (${cartTotal.toLocaleString()} + ${servicePercent}%)`}
+                                ? `YANGILASH • ${(finalTotal).toLocaleString()}`
+                                : `YUBORISH • ${(finalTotal).toLocaleString()}`}
                         </button>
                     </div>
                 </div>
             )}
-
-        </div>
-
-    );
-};
-
-const WaiterNameModal = ({ isOpen, onSave, onCancel }) => {
-    const [name, setName] = useState(localStorage.getItem('waiterName') || '');
-
-    useEffect(() => {
-        if (isOpen) {
-            setName(localStorage.getItem('waiterName') || '');
-        }
-    }, [isOpen]);
-
-    if (!isOpen) return null;
-
-    return (
-        <div style={{
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: 3000
-        }}>
-            <div style={{
-                background: '#1e1e1e', padding: '2.5rem', borderRadius: '16px',
-                width: '400px', maxWidth: '90%', textAlign: 'center', border: '1px solid #444',
-                boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
-            }}>
-                <div style={{ marginBottom: '1.5rem', color: 'var(--accent-color)' }}>
-                    <FaUserTie size={50} />
-                </div>
-                <h2 style={{ color: '#fff', marginBottom: '0.5rem' }}>Ofitsiant Ismi</h2>
-                <p style={{ color: '#888', marginBottom: '2rem' }}>Iltimos, ismingizni kiriting:</p>
-
-                <input
-                    type="text"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    placeholder="Ismingiz..."
-                    autoFocus
-                    onKeyDown={(e) => e.key === 'Enter' && name.trim() && onSave(name)}
-                    style={{
-                        width: '100%', padding: '1rem', marginBottom: '1.5rem',
-                        borderRadius: '12px', border: '1px solid #333',
-                        background: '#252525', color: '#fff', fontSize: '1.1rem',
-                        textAlign: 'center', outline: 'none'
-                    }}
-                />
-
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                    <button
-                        onClick={onCancel}
-                        style={{
-                            flex: 1, padding: '1rem',
-                            background: '#333', color: '#fff',
-                            border: '1px solid #555', borderRadius: '12px',
-                            fontSize: '1rem', cursor: 'pointer'
-                        }}
-                    >
-                        BEKOR QILISH
-                    </button>
-                    <button
-                        onClick={() => name.trim() && onSave(name)}
-                        disabled={!name.trim()}
-                        style={{
-                            flex: 1, padding: '1rem',
-                            background: name.trim() ? 'var(--accent-color)' : '#333',
-                            color: name.trim() ? '#000' : '#666',
-                            border: 'none', borderRadius: '12px',
-                            fontWeight: 'bold', fontSize: '1rem',
-                            cursor: name.trim() ? 'pointer' : 'not-allowed',
-                            transition: '0.2s'
-                        }}
-                    >
-                        DAVOM ETISH
-                    </button>
-                </div>
-            </div>
         </div>
     );
 };

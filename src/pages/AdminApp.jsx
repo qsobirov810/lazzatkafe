@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useData } from '../context/DataContext';
-import { FaUsers, FaHistory, FaCheck, FaChartLine, FaPlus, FaTrash, FaEdit, FaPrint, FaUtensils, FaChair, FaSignOutAlt, FaTimes, FaCamera, FaImage, FaSearch, FaWallet, FaQrcode, FaCashRegister } from 'react-icons/fa';
+import { FaUsers, FaHistory, FaCheck, FaChartLine, FaPlus, FaTrash, FaEdit, FaPrint, FaUtensils, FaChair, FaSignOutAlt, FaTimes, FaCamera, FaImage, FaSearch, FaWallet, FaQrcode, FaCashRegister, FaEnvelope, FaLock } from 'react-icons/fa';
 import { QRCodeSVG } from 'qrcode.react';
 import { useNavigate } from 'react-router-dom';
 
@@ -185,7 +185,7 @@ const KitchenView = () => {
             {ticketToPrint && (
                 <PrintPortal>
                     <div className="print-ticket">
-                        <h3>KAFE EPOS</h3>
+                        <h3>LAZZAT KAFE</h3>
                         <p>Oshxona Cheki</p>
                         <hr />
                         <div className="ticket-header">
@@ -431,21 +431,66 @@ const PaymentModalContent = ({ selectedTable, onClose, onCheckout, settings, onE
 };
 
 const AdminApp = () => {
-    const { tables, checkoutTable, updateOrder, completedOrders, archives, menu, categories, addMenuItem, updateMenuItem, deleteMenuItem, addCategory, deleteCategory, clearHistory, closeDay, addTable, deleteTable, reservations, addReservation, updateReservation, deleteReservation, activateReservation, settings, updateSettings, isConnected } = useData();
+    const {
+        tables, checkoutTable, updateOrder, completedOrders, archives, menu, categories, addMenuItem, updateMenuItem, deleteMenuItem, addCategory, deleteCategory, clearHistory, closeDay, addTable, deleteTable, reservations, addReservation, updateReservation, deleteReservation, activateReservation, settings, updateSettings, isConnected, messages, deleteMessage, activeOrders, saboyOrders,
+        waiterApplications, approveWaiter, deleteWaiterApplication, user, isAuthenticated, logout
+    } = useData();
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState('cashier'); // cashier, menu, categories, history, settings
+    const [activeTab, setActiveTab] = useState(localStorage.getItem('adminActiveTab') || 'cashier'); // cashier, menu, categories, history, settings
     const [selectedTable, setSelectedTable] = useState(null);
     const [printingBill, setPrintingBill] = useState(false);
 
-    // MISSING STATES RESTORED
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [userRole, setUserRole] = useState(null); // 'admin' or 'cashier'
-    const [loginRole, setLoginRole] = useState('cashier');
-    const [password, setPassword] = useState('');
+    // If navigating to the cashier route, force the UI into cashier mode even if the user is an admin.
+    const isCashierRoute = window.location.pathname.startsWith('/system/cashier');
+    const userRole = isCashierRoute ? 'cashier' : (user?.role || 'cashier');
+    
+    // Validate direct URL access
+    useEffect(() => {
+        const activeRole = sessionStorage.getItem('activeSessionRole');
+        const currentPath = window.location.pathname;
+        if (currentPath.startsWith('/system/admin') && activeRole !== 'admin') {
+            navigate('/system', { replace: true });
+        } else if (currentPath.startsWith('/system/cashier') && activeRole !== 'cashier') {
+            navigate('/system', { replace: true });
+        }
+    }, [navigate]);
+
     const [errorMsg, setErrorMsg] = useState('');
     const [showErrorModal, setShowErrorModal] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [pendingCheckout, setPendingCheckout] = useState(null);
+
+    // NEW ORDER NOTIFICATION STATES
+    const [prevUnprintedIds, setPrevUnprintedIds] = useState([]);
+    const [showNewOrderNotification, setShowNewOrderNotification] = useState(false);
+    const isFirstLoad = React.useRef(true);
+
+    useEffect(() => {
+        if (!activeOrders) return;
+        const currentUnprintedIds = activeOrders.filter(o => !o.printed).map(o => o.id);
+
+        if (isFirstLoad.current) {
+            setPrevUnprintedIds(currentUnprintedIds);
+            isFirstLoad.current = false;
+            return;
+        }
+
+        const newIds = currentUnprintedIds.filter(id => !prevUnprintedIds.includes(id));
+
+        if (newIds.length > 0) {
+            // New order arrived!
+            if (isAuthenticated && activeTab !== 'kitchen' && activeTab !== 'saboy') {
+                setShowNewOrderNotification(true);
+                // Try to play sound (optional, might be blocked by browser policy without interaction)
+                try {
+                    const audio = new Audio('/notification.mp3');
+                    audio.play().catch(e => console.log('Audio autoplay prevented'));
+                } catch (e) { }
+            }
+        }
+
+        setPrevUnprintedIds(currentUnprintedIds);
+    }, [activeOrders, activeTab, isAuthenticated]);
 
     // CASHIER VIEW STATES (Moved up to prevent re-mount loss)
     const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -455,6 +500,37 @@ const AdminApp = () => {
     const [showAddResModal, setShowAddResModal] = useState(false);
     const [editingReservation, setEditingReservation] = useState(null);
     const [reservationToPrint, setReservationToPrint] = useState(null);
+
+    // Z-REPORT STATES (Main level for stability)
+    const [showDailyReport, setShowDailyReport] = useState(false);
+    const [dailyStats, setDailyStats] = useState({ total: 0, cash: 0, card: 0, click: 0 });
+
+    const calculateDailyStats = () => {
+        let cash = 0, card = 0, click = 0;
+        completedOrders.forEach(order => {
+            // Robust parsing: handle potential string totals with spaces or commas
+            const totalStr = String(order.total).replace(/[\s,]/g, '');
+            const total = Number(totalStr) || 0;
+            const method = order.paymentMethod || 'Naqd';
+
+            if (method === 'Naqd') cash += total;
+            else if (method === 'Karta') card += total;
+            else if (method === 'Click') click += total;
+            else if (method.startsWith('Aralash')) {
+                // Parse "Aralash (Naqd: 10,000, Karta: 5,000, Click: 0)"
+                const clean = method.replace(/[\s,]/g, '');
+                const match = clean.match(/Naqd:(\d+).*Karta:(\d+).*Click:(\d+)/i);
+                if (match) {
+                    cash += Number(match[1]) || 0;
+                    card += Number(match[2]) || 0;
+                    click += Number(match[3]) || 0;
+                } else {
+                    cash += total;
+                }
+            }
+        });
+        return { total: cash + card + click, cash, card, click };
+    };
 
     // Auto-print effect
     useEffect(() => {
@@ -472,18 +548,30 @@ const AdminApp = () => {
         const path = window.location.pathname;
         if (isAuthenticated) {
             if (path === '/system/admin') {
-                setUserRole('admin');
-                setActiveTab('menu');
+                // Remove setUserRole('admin') here since it should be derived from the user token? 
+                // Wait, AdminApp actually doesn't have a setUserRole state defined! Let's check below.
+                // It's defined as `const userRole = user?.role || 'cashier';` so it's not a state.
+                // Actually, the existing code:
+                if (activeTab === 'cashier') setActiveTab('menu');
             } else if (path === '/system/cashier') {
-                setUserRole('cashier');
-                setActiveTab('cashier');
+                if (!['cashier', 'saboy', 'history', 'kitchen'].includes(activeTab)) setActiveTab('cashier');
             } else if (path === '/system' || path === '/system/') {
-                // Back to selection screen
-                setUserRole(null);
-                setIsAuthenticated(false);
+                // Redirect user to the proper sub-route based on their role
+                if (user?.role === 'admin') {
+                    navigate('/system/admin', { replace: true });
+                } else if (user?.role === 'waiter') {
+                    navigate('/system/waiter', { replace: true });
+                } else {
+                    navigate('/system/cashier', { replace: true });
+                }
             }
         }
-    }, [window.location.pathname]);
+    }, [window.location.pathname, isAuthenticated, user, navigate]);
+
+    // Persist Tab
+    useEffect(() => {
+        localStorage.setItem('adminActiveTab', activeTab);
+    }, [activeTab]);
 
     // Generic Confirm Modal State
     const [showGenericConfirm, setShowGenericConfirm] = useState(false);
@@ -526,118 +614,9 @@ const AdminApp = () => {
         }
     }, [tables, selectedTable?.id]); // Depend on tables and current ID
 
-    const handleLogin = () => {
-        if (loginRole === 'cashier' && password === '1111') {
-            setUserRole('cashier');
-            setActiveTab('cashier');
-            setIsAuthenticated(true);
-            navigate('/system/cashier');
-        } else if (loginRole === 'admin' && password === '8888') {
-            setUserRole('admin');
-            setActiveTab('menu');
-            setIsAuthenticated(true);
-            navigate('/system/admin');
-        } else if (loginRole === 'waiter') {
-            // Ofitsiyant directly goes to waiter page
-            navigate('/system/waiter');
-        } else {
-            setErrorMsg("Parol noto'g'ri!");
-            setShowErrorModal(true);
-        }
-    };
 
-    if (!isAuthenticated) {
-        return (
-            <div className="container flex-center" style={{ height: '100vh', flexDirection: 'column', gap: '1rem' }}>
-                <h1 style={{ color: 'var(--accent-color)' }}>Admin Tizim</h1>
-                {!isConnected && (
-                    <div style={{ background: 'red', color: 'white', padding: '0.5rem', borderRadius: '4px', fontWeight: 'bold' }}>
-                        SERVER BILAN ALOQA YO'Q! (OFFLINE)
-                    </div>
-                )}
 
-                {/* Role Tabs */}
-                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-                    <button
-                        onClick={() => { setLoginRole('cashier'); setPassword(''); }}
-                        style={{ padding: '0.5rem 1.5rem', borderRadius: '20px', background: loginRole === 'cashier' ? 'var(--accent-color)' : '#333', color: loginRole === 'cashier' ? '#000' : '#888', fontWeight: 'bold' }}
-                    >
-                        Kassir
-                    </button>
-                    <button
-                        onClick={() => { setLoginRole('admin'); setPassword(''); }}
-                        style={{ padding: '0.5rem 1.5rem', borderRadius: '20px', background: loginRole === 'admin' ? 'var(--accent-color)' : '#333', color: loginRole === 'admin' ? '#000' : '#888', fontWeight: 'bold' }}
-                    >
-                        Admin
-                    </button>
-                    <button
-                        onClick={() => { setLoginRole('waiter'); setPassword(''); }}
-                        style={{ padding: '0.5rem 1.5rem', borderRadius: '20px', background: loginRole === 'waiter' ? 'var(--accent-color)' : '#333', color: loginRole === 'waiter' ? '#000' : '#888', fontWeight: 'bold' }}
-                    >
-                        Ofitsiyant
-                    </button>
-                </div>
 
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    {loginRole !== 'waiter' && (
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={e => setPassword(e.target.value)}
-                            placeholder={loginRole === 'cashier' ? "Parol (1111)" : "Parol (8888)"}
-                            onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-                            style={{ padding: '1rem', borderRadius: 'var(--radius)', border: '1px solid #333', background: '#252525', color: '#fff', outline: 'none' }}
-                        />
-                    )}
-                    <button
-                        onClick={handleLogin}
-                        style={{
-                            padding: loginRole === 'waiter' ? '1rem 3rem' : '0 1.5rem',
-                            background: 'var(--accent-color)',
-                            borderRadius: 'var(--radius)',
-                            fontWeight: 'bold'
-                        }}
-                    >
-                        {loginRole === 'waiter' ? "Ofitsiyant bo'limiga o'tish" : "Kirish"}
-                    </button>
-                </div>
-
-                {/* CUSTOM ERROR MODAL LOGIN */}
-                {showErrorModal && (
-                    <div style={{
-                        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                        background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        zIndex: 2200
-                    }}>
-                        <div style={{
-                            background: '#1e1e1e', padding: '2rem', borderRadius: '12px',
-                            width: '350px', textAlign: 'center', border: '1px solid #ff4444',
-                            boxShadow: '0 10px 25px rgba(255, 68, 68, 0.2)'
-                        }}>
-                            <div style={{ color: '#ff4444', marginBottom: '1rem' }}>
-                                <FaTimes size={40} />
-                            </div>
-                            <h2 style={{ color: '#ff4444', marginBottom: '1rem' }}>Xatolik</h2>
-                            <p style={{ color: '#ccc', marginBottom: '2rem', fontSize: '1.2rem' }}>
-                                {errorMsg}
-                            </p>
-                            <button
-                                onClick={() => setShowErrorModal(false)}
-                                style={{
-                                    padding: '0.8rem 2rem',
-                                    background: '#333', color: '#fff',
-                                    border: '1px solid #555', borderRadius: '8px',
-                                    cursor: 'pointer', fontSize: '1rem', width: '100%'
-                                }}
-                            >
-                                OK
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </div>
-        );
-    }
 
 
 
@@ -995,6 +974,10 @@ const AdminApp = () => {
                                 ) : (
                                     selectedTable.orders.map((order, idx) => (
                                         <div key={order.id} style={{ marginBottom: '1rem', borderBottom: '1px dashed #333', paddingBottom: '0.5rem' }}>
+                                            <div style={{ textAlign: 'center', marginBottom: '1rem', borderBottom: '1px solid #000', paddingBottom: '0.5rem' }}>
+                                                <h2>LAZZAT KAFE</h2>
+                                                <p style={{ fontSize: '0.9rem' }}>{settings.phone || '+998 90 123 45 67'}</p>
+                                            </div>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#aaa', marginBottom: '0.2rem' }}>
                                                 <span>Buyurtma #{idx + 1} - {new Date(order.timestamp).toLocaleTimeString()}</span>
                                                 <span style={{ color: 'var(--accent-color)' }}>Ofitsiant: {order.waiterName || "Noma'lum"}</span>
@@ -1104,7 +1087,7 @@ const AdminApp = () => {
                             {printingBill && (
                                 <PrintPortal>
                                     <div className="print-receipt">
-                                        <h3>KAFE EPOS</h3>
+                                        <h3>LAZZAT KAFE</h3>
                                         <p>Hisob-kitob (To'lanmagan)</p>
                                         <hr />
                                         <div className="receipt-header">
@@ -1315,130 +1298,13 @@ const AdminApp = () => {
                                 </div>
                             )}
 
-                            {/* CUSTOM ERROR MODAL */}
-                            {showErrorModal && (
-                                <div style={{
-                                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                                    background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    zIndex: 4000
-                                }}>
-                                    <div style={{
-                                        background: '#1a1a1a', padding: '2.5rem', borderRadius: '30px',
-                                        width: '400px', textAlign: 'center', border: '1px solid rgba(255, 68, 68, 0.4)',
-                                        boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
-                                        position: 'relative', overflow: 'hidden'
-                                    }}>
-                                        {/* Accent bar */}
-                                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '6px', background: 'linear-gradient(90deg, #ff4444, #ff8833)' }} />
-
-                                        <div style={{
-                                            background: 'rgba(255, 68, 68, 0.15)',
-                                            color: '#ff4444', width: '70px', height: '70px',
-                                            borderRadius: '50%', display: 'flex', alignItems: 'center',
-                                            justifyContent: 'center', margin: '0 auto 1.5rem auto'
-                                        }}>
-                                            <FaTimes size={32} />
-                                        </div>
-
-                                        <h2 style={{ color: '#fff', fontSize: '1.6rem', marginBottom: '1rem', fontWeight: '900' }}>Xatolik!</h2>
-                                        <p style={{ color: '#ccc', marginBottom: '2.5rem', fontSize: '1.2rem', lineHeight: '1.6' }}>
-                                            {errorMsg}
-                                        </p>
-
-                                        <button onClick={() => setShowErrorModal(false)} style={{ padding: '1.2rem', background: 'linear-gradient(135deg, #ff4444, #cc3333)', color: '#fff', border: 'none', borderRadius: '15px', cursor: 'pointer', fontSize: '1.2rem', width: '100%', fontWeight: '900', boxShadow: '0 10px 20px rgba(255, 68, 68, 0.3)' }}>TUSHUNARLI</button>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* CUSTOM SUCCESS MODAL */}
-                            {showSuccessModal && (
-                                <div style={{
-                                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                                    background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    zIndex: 4000
-                                }}>
-                                    <div style={{
-                                        background: '#1a1a1a', padding: '2.5rem', borderRadius: '30px',
-                                        width: '400px', textAlign: 'center', border: '1px solid rgba(var(--success-rgb), 0.4)',
-                                        boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
-                                        position: 'relative', overflow: 'hidden'
-                                    }}>
-                                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '6px', background: 'var(--success)' }} />
-                                        <div style={{ background: 'rgba(var(--success-rgb), 0.15)', color: 'var(--success)', width: '70px', height: '70px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem auto' }}><FaCheck size={32} /></div>
-                                        <h2 style={{ color: '#fff', fontSize: '1.6rem', marginBottom: '1rem', fontWeight: '900' }}>Muvaffaqiyatli!</h2>
-                                        <p style={{ color: '#ccc', marginBottom: '2.5rem', fontSize: '1.2rem', lineHeight: '1.6' }}>{successMsg}</p>
-                                        <button onClick={() => setShowSuccessModal(false)} style={{ padding: '1.2rem', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '15px', cursor: 'pointer', fontSize: '1.2rem', width: '100%', fontWeight: '900', boxShadow: '0 10px 20px rgba(var(--success-rgb), 0.3)' }}>AJOYIB</button>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* PASSWORD PROMPT MODAL */}
-                            {showPasswordModal && (
-                                <div style={{
-                                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                                    background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    zIndex: 4500
-                                }}>
-                                    <div style={{
-                                        background: '#1a1a1a', padding: '2.5rem', borderRadius: '30px',
-                                        width: '400px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.1)',
-                                        boxShadow: '0 25px 50px rgba(0,0,0,0.5)'
-                                    }}>
-                                        <h2 style={{ color: '#fff', fontSize: '1.6rem', marginBottom: '1rem', fontWeight: '900' }}>Admin Paroli</h2>
-                                        <p style={{ color: '#888', marginBottom: '2rem' }}>Kassani yopish uchun admin parolini kiriting</p>
-                                        <input
-                                            type="password"
-                                            value={passwordInput}
-                                            onChange={(e) => setPasswordInput(e.target.value)}
-                                            autoFocus
-                                            placeholder="****"
-                                            style={{
-                                                width: '100%', padding: '1.2rem', borderRadius: '15px',
-                                                background: '#222', border: '1px solid #444',
-                                                color: '#fff', fontSize: '1.5rem', textAlign: 'center',
-                                                letterSpacing: '10px', marginBottom: '2rem'
-                                            }}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter') {
-                                                    if (passwordInput === '8888') {
-                                                        onPasswordSuccess();
-                                                        setShowPasswordModal(false);
-                                                    } else {
-                                                        setErrorMsg("Parol noto'g'ri!");
-                                                        setShowErrorModal(true);
-                                                    }
-                                                }
-                                            }}
-                                        />
-                                        <div style={{ display: 'flex', gap: '1rem' }}>
-                                            <button onClick={() => setShowPasswordModal(false)} style={{ flex: 1, padding: '1rem', background: '#333', color: '#fff', borderRadius: '12px', border: 'none', cursor: 'pointer' }}>BEKOR QILISH</button>
-                                            <button
-                                                onClick={() => {
-                                                    if (passwordInput === '8888') {
-                                                        onPasswordSuccess();
-                                                        setShowPasswordModal(false);
-                                                    } else {
-                                                        setErrorMsg("Parol noto'g'ri!");
-                                                        setShowErrorModal(true);
-                                                    }
-                                                }}
-                                                style={{ flex: 1, padding: '1rem', background: 'var(--accent-color)', color: '#000', borderRadius: '12px', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}
-                                            >
-                                                TASDIQLASH
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
+                            {/* CUSTOMER RECEIPT PORTAL (Removed Duplicate Modals) */}
 
                             {/* CUSTOMER RECEIPT PORTAL */}
                             {showPaymentModal && (
                                 <PrintPortal>
                                     <div className="print-receipt">
-                                        <h3>KAFE EPOS</h3>
+                                        <h3>LAZZAT KAFE</h3>
                                         <p>Mijoz Cheki</p>
                                         <hr />
                                         <div className="receipt-header">
@@ -1571,7 +1437,7 @@ const AdminApp = () => {
                     reservationToPrint && (
                         <PrintPortal>
                             <div className="print-res">
-                                <h3>KAFE EPOS</h3>
+                                <h3>LAZZAT KAFE</h3>
                                 <p>Banket Cheki</p>
                                 <hr />
                                 <div style={{ textAlign: 'left', margin: '10px 0' }}>
@@ -2062,7 +1928,7 @@ const AdminApp = () => {
                         {/* Hidden print area */}
                         <PrintPortal>
                             <div className="print-qr-code">
-                                <h2>AFRUZA KAFE</h2>
+                                <h2>LAZZAT KAFE</h2>
                                 <h1 style={{ fontSize: '40px', margin: '10px 0' }}>{qrTable.name}</h1>
                                 <div style={{ background: '#fff', padding: '10px', display: 'inline-block' }}>
                                     <QRCodeSVG
@@ -2093,43 +1959,23 @@ const AdminApp = () => {
 
     // 4. HISTORY VIEW
     const HistoryView = () => {
-        const [showDailyReport, setShowDailyReport] = useState(false);
-        const [dailyStats, setDailyStats] = useState({ total: 0, cash: 0, card: 0, click: 0 });
-
-        const calculateStats = () => {
-            let cash = 0, card = 0, click = 0;
-            completedOrders.forEach(order => {
-                const method = order.paymentMethod || 'Naqd';
-                const total = order.total;
-
-                if (method === 'Naqd') cash += total;
-                else if (method === 'Karta') card += total;
-                else if (method === 'Click') click += total;
-                else if (method.startsWith('Aralash')) {
-                    // Parse "Aralash (Naqd: 10,000, Karta: 5,000, Click: 0)"
-                    // Remove commas to parse numbers
-                    const clean = method.replace(/,/g, '');
-                    const match = clean.match(/Naqd: (\d+).*Karta: (\d+).*Click: (\d+)/);
-                    if (match) {
-                        cash += Number(match[1]);
-                        card += Number(match[2]);
-                        click += Number(match[3]);
-                    } else {
-                        // Fallback if parsing fails (shouldn't happen)
-                        cash += total;
-                    }
-                }
-            });
-            return { total: cash + card + click, cash, card, click };
-        };
-
         const handleCloseDay = () => {
+            const hasBusyTables = tables.some(t => t.orders && t.orders.length > 0);
+            const hasActiveSaboy = saboyOrders && saboyOrders.length > 0;
+
+            if (hasBusyTables || hasActiveSaboy) {
+                setErrorMsg("Diqqat! Hozirda yopilmagan (hisoblanmagan) stollar yoki Saboy buyurtmalari mavjud! Iltimos, avval barcha faol buyurtmalarni yopib, so'ngra kassani yakunlang.");
+                setShowErrorModal(true);
+                return;
+            }
+
             openPasswordPrompt(() => {
-                const stats = calculateStats();
+                const stats = calculateDailyStats();
                 setDailyStats(stats);
                 setShowDailyReport(true);
 
                 setTimeout(() => {
+                    // Force a small delay to ensure React has rendered the portal
                     window.print();
                     openConfirm(
                         "Kunni yakunlash",
@@ -2139,7 +1985,7 @@ const AdminApp = () => {
                             setShowDailyReport(false);
                         }
                     );
-                }, 500);
+                }, 1500);
             });
         };
 
@@ -2189,60 +2035,6 @@ const AdminApp = () => {
                         </table>
                     )}
                 </div>
-
-                {/* DAILY REPORT PORTAL */}
-                {showDailyReport && (
-                    <PrintPortal>
-                        <div className="print-report">
-                            <h3>KAFE EPOS</h3>
-                            <p style={{ fontWeight: 'bold' }}>KUNLIK HISOBOT (Z-REPORT)</p>
-                            <p>{new Date().toLocaleDateString()}</p>
-                            <hr />
-                            <div className="receipt-total">
-                                <span>JAMI TUSHUM:</span>
-                                <span>{dailyStats.total.toLocaleString()} so'm</span>
-                            </div>
-                            <hr />
-                            <div style={{ textAlign: 'left', margin: '1rem 0', fontSize: '13px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <span>Naqd:</span>
-                                    <span>{dailyStats.cash.toLocaleString()}</span>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <span>Karta:</span>
-                                    <span>{dailyStats.card.toLocaleString()}</span>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <span>Click:</span>
-                                    <span>{dailyStats.click.toLocaleString()}</span>
-                                </div>
-                            </div>
-                            <hr />
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '13px' }}>
-                                <span>Cheklar soni:</span>
-                                <span>{completedOrders.length} ta</span>
-                            </div>
-                            <p style={{ textAlign: 'center', marginTop: '20px' }}>Kassa yopildi.</p>
-                        </div>
-                        <style>{`
-                            .print-report {
-                                width: 48mm;
-                                margin: 0 auto;
-                                background: white;
-                                color: #000000 !important;
-                                font-family: 'Courier New', monospace;
-                                padding-bottom: 5mm;
-                                text-align: center;
-                                font-size: 16px;
-                                font-weight: 700;
-                            }
-                            .print-report h3 { margin: 0 0 5px 0; font-size: 20px; font-weight: 900; }
-                            .print-report p { margin: 0; font-size: 16px; font-weight: 800; }
-                            .receipt-total { font-size: 18px; font-weight: 900; display: flex; justifyContent: space-between; margin: 5px 0; }
-                            hr { border-top: 2px dashed #000; margin: 5px 0; }
-                        `}</style>
-                    </PrintPortal>
-                )}
             </div>
         );
     };
@@ -2448,6 +2240,21 @@ const AdminApp = () => {
         const { expenses, addExpense, deleteExpense } = useData();
         const [newExpense, setNewExpense] = useState({ category: '', amount: '', comment: '', date: new Date().toISOString().split('T')[0] });
 
+        // Filter states
+        const [monthFilter, setMonthFilter] = useState(new Date().toISOString().slice(0, 7)); // Default: Current Month
+        const [categoryFilter, setCategoryFilter] = useState('Barchasi');
+
+        const categories = ['Barchasi', ...new Set(expenses.map(e => e.category))];
+
+        const filteredExpenses = expenses.filter(exp => {
+            const expMonth = new Date(exp.date).toISOString().slice(0, 7);
+            const matchesMonth = monthFilter === '' || expMonth === monthFilter;
+            const matchesCategory = categoryFilter === 'Barchasi' || exp.category === categoryFilter;
+            return matchesMonth && matchesCategory;
+        });
+
+        const filteredTotal = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
+
         const handleSubmit = (e) => {
             e.preventDefault();
             if (!newExpense.category || !newExpense.amount) {
@@ -2509,6 +2316,23 @@ const AdminApp = () => {
                     </form>
                 </div>
 
+                <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', background: '#1a1a1a', padding: '1.2rem', borderRadius: '12px', border: '1px solid #333', marginBottom: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                        <label style={{ color: '#888', fontSize: '0.9rem', whiteSpace: 'nowrap' }}>Sana (Oy):</label>
+                        <input type="month" value={monthFilter} onChange={e => setMonthFilter(e.target.value)} style={{ padding: '0.6rem', borderRadius: '8px', border: '1px solid #444', background: '#333', color: '#fff', colorScheme: 'dark' }} />
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                        <label style={{ color: '#888', fontSize: '0.9rem', whiteSpace: 'nowrap' }}>Kategoriya:</label>
+                        <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} style={{ padding: '0.6rem', borderRadius: '8px', border: '1px solid #444', background: '#333', color: '#fff' }}>
+                            {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                    </div>
+                    <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
+                        <div style={{ color: '#888', fontSize: '0.8rem', marginBottom: '0.2rem' }}>Filtr bo'yicha jami:</div>
+                        <div style={{ color: '#ef4444', fontSize: '1.2rem', fontWeight: 'bold' }}>-{filteredTotal.toLocaleString()} UZS</div>
+                    </div>
+                </div>
+
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                     <thead>
                         <tr style={{ borderBottom: '1px solid #555', color: '#888' }}>
@@ -2520,7 +2344,7 @@ const AdminApp = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {expenses.slice().reverse().map(exp => (
+                        {filteredExpenses.slice().reverse().map(exp => (
                             <tr key={exp.id} style={{ borderBottom: '1px solid #333' }}>
                                 <td style={{ padding: '1rem' }}>{new Date(exp.date).toLocaleDateString()}</td>
                                 <td style={{ padding: '1rem' }}>{exp.category}</td>
@@ -2630,7 +2454,7 @@ const AdminApp = () => {
         const [editingId, setEditingId] = useState(null);
         const [formData, setFormData] = useState({
             name: '', role: 'Ofitsiant', phone: '', status: 'active',
-            salary: '', dailyHours: 10, startTime: '09:00', endTime: '19:00'
+            salary: '', salaryType: 'soatbay', dailyHours: 10, startTime: '09:00', endTime: '19:00'
         });
         const [selectedEmployee, setSelectedEmployee] = useState(null);
 
@@ -2669,7 +2493,7 @@ const AdminApp = () => {
             setIsAdding(false);
             setFormData({
                 name: '', role: 'Ofitsiant', phone: '', status: 'active',
-                salary: '', dailyHours: 10, startTime: '09:00', endTime: '19:00'
+                salary: '', salaryType: 'soatbay', dailyHours: 10, startTime: '09:00', endTime: '19:00'
             });
         };
 
@@ -2712,7 +2536,7 @@ const AdminApp = () => {
                                         <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent-color)', marginTop: '0.3rem' }}>{totalEarnings.toLocaleString()}</div>
                                     </div>
                                     <div style={{ background: '#1a1a1a', padding: '1rem', borderRadius: '12px', textAlign: 'center' }}>
-                                        <div style={{ color: '#888', fontSize: '0.8rem' }}>Bo'naklar</div>
+                                        <div style={{ color: '#888', fontSize: '0.8rem' }}>Rasxod</div>
                                         <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#ff4444', marginTop: '0.3rem' }}>{totalAdvances.toLocaleString()}</div>
                                     </div>
                                 </div>
@@ -2722,7 +2546,7 @@ const AdminApp = () => {
                                     <div style={{ fontSize: '1.6rem', fontWeight: '900' }}>{balance.toLocaleString()} so'm</div>
                                 </div>
 
-                                <h4 style={{ marginBottom: '0.5rem' }}>+ Bo'nak qo'shish</h4>
+                                <h4 style={{ marginBottom: '0.5rem' }}>+ Rasxod qo'shish</h4>
                                 <form onSubmit={handleAddAdvance} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                     <input type="number" placeholder="Summa" value={advAmount} onChange={e => setAdvAmount(e.target.value)} style={{ padding: '0.6rem', background: '#333', border: '1px solid #444', color: '#fff', borderRadius: '8px' }} />
                                     <input placeholder="Izoh" value={advNote} onChange={e => setAdvNote(e.target.value)} style={{ padding: '0.6rem', background: '#333', border: '1px solid #444', color: '#fff', borderRadius: '8px' }} />
@@ -2750,13 +2574,13 @@ const AdminApp = () => {
                                     <h3 style={{ margin: 0 }}>📅 Davomat</h3>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: employee.isAtWork ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.05)', color: employee.isAtWork ? 'var(--success)' : '#888', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>
                                         <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: employee.isAtWork ? 'var(--success)' : '#888' }}></div>
-                                        {employee.isAtWork ? 'ISHDA' : 'KETGAN'}
+                                        {employee.isAtWork ? 'ISHDA' : 'ISHDA EMAS'}
                                     </div>
                                 </div>
 
                                 <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
-                                    <button onClick={() => logAttendance(employee.id, 'check-in')} disabled={employee.isAtWork} style={{ flex: 1, padding: '1rem', background: employee.isAtWork ? '#333' : 'var(--success)', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: employee.isAtWork ? 'default' : 'pointer', opacity: employee.isAtWork ? 0.5 : 1 }}>KELISH</button>
-                                    <button onClick={() => logAttendance(employee.id, 'check-out')} disabled={!employee.isAtWork} style={{ flex: 1, padding: '1rem', background: !employee.isAtWork ? '#333' : '#ef4444', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: !employee.isAtWork ? 'default' : 'pointer', opacity: !employee.isAtWork ? 0.5 : 1 }}>KETISH</button>
+                                    <button onClick={() => logAttendance(employee.id, 'check-in')} disabled={employee.isAtWork} style={{ flex: 1, padding: '1rem', background: employee.isAtWork ? '#333' : 'var(--success)', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: employee.isAtWork ? 'default' : 'pointer', opacity: employee.isAtWork ? 0.5 : 1 }}>ISHDA</button>
+                                    <button onClick={() => logAttendance(employee.id, 'check-out')} disabled={!employee.isAtWork} style={{ flex: 1, padding: '1rem', background: !employee.isAtWork ? '#333' : '#ef4444', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: !employee.isAtWork ? 'default' : 'pointer', opacity: !employee.isAtWork ? 0.5 : 1 }}>ISHDA EMAS</button>
                                 </div>
 
                                 {/* CALENDAR VIEW */}
@@ -2767,7 +2591,7 @@ const AdminApp = () => {
                                     {empAttendance.length === 0 ? <p style={{ color: '#666', fontSize: '0.85rem' }}>Ma'lumot mavjud emas</p> : empAttendance.map(log => (
                                         <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#1a1a1a', padding: '0.6rem 0.8rem', borderRadius: '8px', marginBottom: '0.4rem', borderLeft: `3px solid ${log.type === 'check-in' ? '#10b981' : '#ef4444'}`, fontSize: '0.85rem' }}>
                                             <div>
-                                                <div style={{ fontWeight: 'bold' }}>{log.type === 'check-in' ? 'Keldi' : 'Ketdi'}</div>
+                                                <div style={{ fontWeight: 'bold' }}>{log.type === 'check-in' ? 'Ishda' : 'Ishda emas'}</div>
                                                 <div style={{ fontSize: '0.7rem', color: '#666' }}>{new Date(log.timestamp).toLocaleString()}</div>
                                             </div>
                                             {log.type === 'check-out' && log.earnings && (
@@ -2793,7 +2617,7 @@ const AdminApp = () => {
                         <p style={{ margin: '5px 0 0 0', color: '#888', fontSize: '0.9rem' }}>Soatbay ish haqi va real vaqtda balans</p>
                     </div>
                     <button
-                        onClick={() => { setIsAdding(true); setEditingId(null); setFormData({ name: '', role: 'Ofitsiant', phone: '', status: 'active', salary: '', dailyHours: 10, startTime: '09:00', endTime: '19:00' }); }}
+                        onClick={() => { setIsAdding(true); setEditingId(null); setFormData({ name: '', role: 'Ofitsiant', phone: '', status: 'active', salary: '', salaryType: 'soatbay', dailyHours: 10, startTime: '09:00', endTime: '19:00' }); }}
                         style={{ padding: '0.8rem 1.8rem', background: 'var(--accent-color)', color: '#000', borderRadius: '12px', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}
                     >
                         <FaPlus /> Yangi Xodim
@@ -2820,7 +2644,7 @@ const AdminApp = () => {
                                         </select>
                                     </div>
                                     <div>
-                                        <label style={{ display: 'block', marginBottom: '0.4rem', color: '#888', fontSize: '0.85rem' }}>Oylik Maosh</label>
+                                        <label style={{ display: 'block', marginBottom: '0.4rem', color: '#888', fontSize: '0.85rem' }}>{formData.salaryType === 'kunbay' ? 'Kunlik Ish Haqi' : 'Oylik Maosh'}</label>
                                         <input type="number" value={formData.salary} onChange={e => setFormData({ ...formData, salary: e.target.value })} style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', border: '1px solid #444', background: '#333', color: '#fff' }} />
                                     </div>
                                     <div>
@@ -2834,6 +2658,13 @@ const AdminApp = () => {
                                     <div>
                                         <label style={{ display: 'block', marginBottom: '0.4rem', color: '#888', fontSize: '0.85rem' }}>Smena Soati (kunlik)</label>
                                         <input type="number" readOnly value={formData.dailyHours} style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', border: '1px solid #444', background: '#222', color: '#888', cursor: 'not-allowed' }} />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '0.4rem', color: '#888', fontSize: '0.85rem' }}>Maosh Turi</label>
+                                        <select value={formData.salaryType} onChange={e => setFormData({ ...formData, salaryType: e.target.value })} style={{ width: '100%', padding: '0.8rem', borderRadius: '10px', border: '1px solid #444', background: '#333', color: '#fff' }}>
+                                            <option value="soatbay">Soatbay</option>
+                                            <option value="kunbay">Kunbay (Fixed)</option>
+                                        </select>
                                     </div>
                                     <div>
                                         <label style={{ display: 'block', marginBottom: '0.4rem', color: '#888', fontSize: '0.85rem' }}>Telefon</label>
@@ -2904,7 +2735,7 @@ const AdminApp = () => {
                                                     boxShadow: emp.isAtWork ? '0 0 10px #10b981' : 'none'
                                                 }}></div>
                                                 <span style={{ fontSize: '0.75rem', color: emp.isAtWork ? '#10b981' : '#888', fontWeight: 'bold' }}>
-                                                    {emp.isAtWork ? 'ISHDA' : 'KETGAN'}
+                                                    {emp.isAtWork ? 'ISHDA' : 'ISHDA EMAS'}
                                                 </span>
                                             </div>
                                         </div>
@@ -2975,12 +2806,45 @@ const AdminApp = () => {
                                         <div style={{ fontSize: '1.2rem', fontWeight: '900', color: balance >= 0 ? '#10b981' : '#ef4444' }}>{balance.toLocaleString()} <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>UZS</span></div>
                                     </div>
                                 </div>
+                                
+                                {emp.waiterAuth && (
+                                    <div style={{
+                                        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(6, 78, 59, 0.2))',
+                                        padding: '1rem',
+                                        borderRadius: '12px',
+                                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                                        marginTop: '0.5rem'
+                                    }} onClick={e => e.stopPropagation()}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                            <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <FaLock size={12} /> Ofitsiant Ruxsati
+                                            </span>
+                                            <button 
+                                                onClick={(e) => { 
+                                                    e.stopPropagation(); 
+                                                    if(window.confirm('Ushbu ofitsiantning tizimga kirish huquqini bekor qilasizmi?')) {
+                                                        updateEmployee({ ...emp, waiterAuth: null });
+                                                    }
+                                                }}
+                                                style={{ background: 'transparent', border: 'none', color: '#ef4444', fontSize: '0.75rem', cursor: 'pointer', textDecoration: 'underline', fontWeight: 'bold', padding: 0 }}
+                                            >
+                                                Bekor qilish
+                                            </button>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', fontSize: '0.85rem', background: 'rgba(0,0,0,0.3)', padding: '0.5rem 0.8rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.5)' }}>
+                                            <span>Login: <b style={{ color: '#fff' }}>{emp.waiterAuth.username}</b></span>
+                                            <span>Parol: <b style={{ color: '#fff' }}>{emp.waiterAuth.password}</b></span>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div style={{
                                     fontSize: '0.85rem',
                                     color: '#555',
                                     textAlign: 'center',
                                     borderTop: '1px solid rgba(255,255,255,0.05)',
                                     paddingTop: '0.8rem',
+                                    marginTop: '1rem',
                                     fontWeight: '500'
                                 }}>
                                     📞 {emp.phone || 'Noma\'lum'}
@@ -2990,6 +2854,186 @@ const AdminApp = () => {
                     })}
                 </div>
                 {selectedEmployee && <DetailModal employee={employees.find(e => e.id === selectedEmployee.id) || selectedEmployee} onClose={() => setSelectedEmployee(null)} />}
+            </div>
+        );
+    };
+
+    // 5.4 SETTLEMENT VIEW (Oylik Hisob-Kitob)
+    const SettlementView = () => {
+        const { employees, settleEmployee } = useData();
+        const [settleEmp, setSettleEmp] = useState(null);
+        const [bonus, setBonus] = useState('');
+        const [penalty, setPenalty] = useState('');
+        const [amountPaid, setAmountPaid] = useState('');
+        const [note, setNote] = useState('');
+
+        // Reset inputs when selected employee changes
+        useEffect(() => {
+            if (settleEmp) {
+                setBonus('');
+                setPenalty('');
+                setNote('');
+                const totalAdvances = (settleEmp.advances || []).reduce((sum, a) => sum + Number(a.amount), 0);
+                const totalEarnings = settleEmp.totalEarnings || 0;
+                setAmountPaid((totalEarnings - totalAdvances).toString());
+            }
+        }, [settleEmp]);
+
+        // Reactive update for payment amount
+        useEffect(() => {
+            if (settleEmp) {
+                const totalAdvances = (settleEmp.advances || []).reduce((sum, a) => sum + Number(a.amount), 0);
+                const totalEarnings = settleEmp.totalEarnings || 0;
+                const base = totalEarnings - totalAdvances;
+                const calcTotal = base + (Number(bonus) || 0) - (Number(penalty) || 0);
+                setAmountPaid(calcTotal.toString());
+            }
+        }, [bonus, penalty]);
+
+        const handleFinalSettle = () => {
+            if (!settleEmp) return;
+            settleEmployee(settleEmp.id, {
+                bonus: Number(bonus) || 0,
+                penalty: Number(penalty) || 0,
+                amountPaid: Number(amountPaid),
+                note
+            });
+            setSettleEmp(null);
+        };
+
+        return (
+            <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+                    <FaWallet size={30} color="var(--accent-color)" />
+                    <h2 style={{ margin: 0 }}>Oylik Hisob-Kitob</h2>
+                </div>
+
+                <div style={{ background: '#222', borderRadius: '16px', border: '1px solid #333', overflow: 'hidden' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                        <thead>
+                            <tr style={{ background: '#1a1a1a', borderBottom: '1px solid #333' }}>
+                                <th style={{ padding: '1.2rem', color: '#888' }}>Xodim</th>
+                                <th style={{ padding: '1.2rem', color: '#888' }}>Lavozim</th>
+                                <th style={{ padding: '1.2rem', color: '#888' }}>Ishladi</th>
+                                <th style={{ padding: '1.2rem', color: '#888' }}>Rasxod (Bo'nak)</th>
+                                <th style={{ padding: '1.2rem', color: '#888' }}>Balans</th>
+                                <th style={{ padding: '1.2rem', color: '#888', textAlign: 'right' }}>Amal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {employees.map(emp => {
+                                const totalAdvances = (emp.advances || []).reduce((sum, a) => sum + Number(a.amount), 0);
+                                const totalEarnings = emp.totalEarnings || 0;
+                                const balance = totalEarnings - totalAdvances;
+
+                                return (
+                                    <tr key={emp.id} style={{ borderBottom: '1px solid #2a2a2a', transition: '0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#252525'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                                        <td style={{ padding: '1.2rem', fontWeight: 'bold' }}>{emp.name}</td>
+                                        <td style={{ padding: '1.2rem', color: '#ccc' }}>{emp.role}</td>
+                                        <td style={{ padding: '1.2rem', color: 'var(--accent-color)', fontWeight: 'bold' }}>{totalEarnings.toLocaleString()}</td>
+                                        <td style={{ padding: '1.2rem', color: '#ff4444' }}>{totalAdvances.toLocaleString()}</td>
+                                        <td style={{ padding: '1.1rem' }}>
+                                            <span style={{
+                                                padding: '4px 12px',
+                                                borderRadius: '20px',
+                                                background: balance >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                                color: balance >= 0 ? '#10b981' : '#ef4444',
+                                                fontWeight: 'bold'
+                                            }}>
+                                                {balance.toLocaleString()} so'm
+                                            </span>
+                                        </td>
+                                        <td style={{ padding: '1.2rem', textAlign: 'right' }}>
+                                            <button
+                                                onClick={() => setSettleEmp(emp)}
+                                                style={{
+                                                    padding: '0.6rem 1.2rem',
+                                                    background: 'var(--success)',
+                                                    color: '#fff',
+                                                    border: 'none',
+                                                    borderRadius: '8px',
+                                                    fontWeight: 'bold',
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                HISOB-KITOB QILISH
+                                            </button>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* SETTLEMENT MODAL */}
+                {settleEmp && (() => {
+                    const totalAdvances = (settleEmp.advances || []).reduce((sum, a) => sum + Number(a.amount), 0);
+                    const totalEarnings = settleEmp.totalEarnings || 0;
+                    const baseBalance = totalEarnings - totalAdvances;
+                    const finalPayment = baseBalance + (Number(bonus) || 0) - (Number(penalty) || 0);
+
+                    return (
+                        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+                            <div style={{ background: '#1a1a1a', padding: '2.5rem', borderRadius: '24px', width: '500px', border: '1px solid #333', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                                    <h2 style={{ margin: 0 }}>Hisob-Kitob: {settleEmp.name}</h2>
+                                    <button onClick={() => setSettleEmp(null)} style={{ background: 'transparent', border: 'none', color: '#888', cursor: 'pointer' }}><FaTimes size={24} /></button>
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                                    <div style={{ background: '#252525', padding: '1rem', borderRadius: '12px', border: '1px solid #333' }}>
+                                        <div style={{ color: '#888', fontSize: '0.8rem' }}>Ishladi</div>
+                                        <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--accent-color)' }}>{totalEarnings.toLocaleString()}</div>
+                                    </div>
+                                    <div style={{ background: '#252525', padding: '1rem', borderRadius: '12px', border: '1px solid #333' }}>
+                                        <div style={{ color: '#888', fontSize: '0.8rem' }}>Rasxod</div>
+                                        <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#ff4444' }}>{totalAdvances.toLocaleString()}</div>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '0.4rem', color: '#aaa', fontSize: '0.85rem' }}>Bonus (+)</label>
+                                        <input type="number" placeholder="Summa" value={bonus} onChange={e => setBonus(e.target.value)} style={{ width: '100%', padding: '0.8rem', background: '#222', border: '1px solid #444', color: '#10b981', borderRadius: '10px', fontSize: '1.1rem', fontWeight: 'bold' }} />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '0.4rem', color: '#aaa', fontSize: '0.85rem' }}>Shtraf (-)</label>
+                                        <input type="number" placeholder="Summa" value={penalty} onChange={e => setPenalty(e.target.value)} style={{ width: '100%', padding: '0.8rem', background: '#222', border: '1px solid #444', color: '#ef4444', borderRadius: '10px', fontSize: '1.1rem', fontWeight: 'bold' }} />
+                                    </div>
+                                </div>
+
+                                <div style={{ marginBottom: '2rem' }}>
+                                    <label style={{ display: 'block', marginBottom: '0.4rem', color: '#aaa', fontSize: '0.85rem' }}>Izoh</label>
+                                    <input placeholder="Ixtiyoriy yozuv..." value={note} onChange={e => setNote(e.target.value)} style={{ width: '100%', padding: '0.8rem', background: '#222', border: '1px solid #444', color: '#fff', borderRadius: '10px' }} />
+                                </div>
+
+                                <div style={{ background: 'var(--success)', padding: '1rem', borderRadius: '16px', textAlign: 'center', marginBottom: '1.5rem', boxShadow: '0 8px 20px rgba(16, 185, 129, 0.1)' }}>
+                                    <div style={{ opacity: 0.8, fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '0.2rem' }}>Mavjud Mablag' (max)</div>
+                                    <div style={{ fontSize: '1.6rem', fontWeight: '900' }}>{finalPayment.toLocaleString()} so'm</div>
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '0.4rem', color: 'var(--accent-color)', fontSize: '0.85rem', fontWeight: 'bold' }}>To'lanadigan Summa</label>
+                                        <input type="number" value={amountPaid} onChange={e => setAmountPaid(e.target.value)} style={{ width: '100%', padding: '1rem', background: '#333', border: '2px solid var(--accent-color)', color: '#fff', borderRadius: '12px', fontSize: '1.3rem', fontWeight: '900' }} />
+                                    </div>
+                                    <div style={{ background: '#222', padding: '0.8rem', borderRadius: '12px', border: '1px solid #333', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                        <div style={{ color: '#666', fontSize: '0.75rem', fontWeight: 'bold' }}>Qoladigan Qoldiq</div>
+                                        <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: (finalPayment - Number(amountPaid)) > 0 ? 'var(--accent-color)' : '#888' }}>
+                                            {(finalPayment - Number(amountPaid)).toLocaleString()} so'm
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '1rem' }}>
+                                    <button onClick={() => setSettleEmp(null)} style={{ flex: 1, padding: '1.2rem', background: '#333', color: '#fff', borderRadius: '12px', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}>BEKOR</button>
+                                    <button onClick={handleFinalSettle} disabled={!amountPaid || Number(amountPaid) < 0} style={{ flex: 2, padding: '1.2rem', background: 'var(--success)', color: '#fff', borderRadius: '12px', border: 'none', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', opacity: (!amountPaid || Number(amountPaid) < 0) ? 0.5 : 1 }}>HISOB-KITOBNI YAKUNLASH</button>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })()}
             </div>
         );
     };
@@ -3115,7 +3159,7 @@ const AdminApp = () => {
                 {receiptOrder && (
                     <PrintPortal>
                         <div className="print-archive">
-                            <h3>KAFE EPOS</h3>
+                            <h3>LAZZAT KAFE</h3>
                             <p>Chek nusxasi (Arxiv)</p>
                             <hr />
                             <div className="receipt-header">
@@ -3216,7 +3260,7 @@ const AdminApp = () => {
 
         const handlePlaceOrder = () => {
             if (cart.length === 0) return alert("Savat bo'sh!");
-            placeSaboyOrder(cart, customerName || 'Alohida mijoz', customerPhone, orderNote);
+            placeSaboyOrder(cart, customerName || 'Saboy', customerPhone, orderNote);
             setCart([]);
             setCustomerName('');
             setCustomerPhone('');
@@ -3390,7 +3434,7 @@ const AdminApp = () => {
                 {selectedOrder && (
                     <PrintPortal>
                         <div className="print-receipt">
-                            <h3>KAFE EPOS</h3>
+                            <h3>LAZZAT KAFE</h3>
                             <p>SABOY (To'lov)</p>
                             <hr />
                             <div className="receipt-header">
@@ -3446,6 +3490,167 @@ const AdminApp = () => {
                                 >
                                     HA, YOPILSIN
                                 </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    // 6.5 MESSAGES VIEW
+    const MessagesView = () => {
+        return (
+            <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+                    <FaEnvelope size={30} color="var(--accent-color)" />
+                    <h2 style={{ margin: 0 }}>Mijozlar Xabarlari</h2>
+                </div>
+
+                {(!messages || messages.length === 0) ? (
+                    <p style={{ color: '#666', textAlign: 'center', marginTop: '3rem' }}>Hozircha xabarlar yo'q.</p>
+                ) : (
+                    <div style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))' }}>
+                        {messages.map(msg => (
+                            <div key={msg.id} style={{
+                                background: '#222', borderRadius: '12px', border: '1px solid #333',
+                                padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem',
+                                borderLeft: '4px solid var(--accent-color)'
+                            }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #333', paddingBottom: '0.8rem' }}>
+                                    <h3 style={{ margin: 0, color: '#fff', fontSize: '1.2rem' }}>{msg.name}</h3>
+                                    <span style={{ color: '#888', fontSize: '0.85rem' }}>{new Date(msg.timestamp).toLocaleString()}</span>
+                                </div>
+                                {msg.phone && (
+                                    <div style={{ color: 'var(--accent-color)', fontWeight: 'bold', fontSize: '1rem' }}>
+                                        📞 {msg.phone}
+                                    </div>
+                                )}
+                                <div style={{ color: '#ccc', lineHeight: '1.6', fontSize: '0.95rem', background: '#1a1a1a', padding: '1rem', borderRadius: '8px' }}>
+                                    "{msg.message}"
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'auto', paddingTop: '1rem' }}>
+                                    <button
+                                        onClick={() => deleteMessage(msg.id)}
+                                        style={{
+                                            background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)',
+                                            padding: '0.6rem 1.2rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold',
+                                            display: 'flex', alignItems: 'center', gap: '8px', transition: '0.2s'
+                                        }}
+                                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'; }}
+                                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; }}
+                                    >
+                                        <FaTrash /> O'chirish
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    // 6.6 WAITER APPLICATIONS VIEW
+    const WaiterApplicationsView = () => {
+        const { waiterApplications, approveWaiter, deleteWaiterApplication, openSuccess } = useData();
+        const [showApproveModal, setShowApproveModal] = useState(false);
+        const [selectedApp, setSelectedApp] = useState(null);
+        const [authData, setAuthData] = useState({ username: '', password: '' });
+
+        const handleApprove = (app) => {
+            setSelectedApp(app);
+            const suggestedUsername = app.name.toLowerCase().replace(/\s+/g, '') + Math.floor(Math.random() * 100);
+            setAuthData({ username: suggestedUsername, password: '123' });
+            setShowApproveModal(true);
+        };
+
+        const submitApproval = () => {
+            if (!authData.username || !authData.password) return;
+            approveWaiter({
+                applicationId: selectedApp.id,
+                username: authData.username,
+                password: authData.password
+            });
+            setShowApproveModal(false);
+            openSuccess("Ofitsiyant muvaffaqiyatli tasdiqlandi!");
+        };
+
+        return (
+            <div style={{ padding: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+                    <FaUsers size={30} color="var(--accent-color)" />
+                    <h2 style={{ margin: 0 }}>Ofitsiyant Talabnomalari</h2>
+                </div>
+
+                {(!waiterApplications || waiterApplications.length === 0) ? (
+                    <div style={{ textAlign: 'center', marginTop: '4rem', color: '#666' }}>
+                        <FaUsers size={60} style={{ opacity: 0.2, marginBottom: '1rem' }} />
+                        <p>Hozircha yangi arizalar yo'q.</p>
+                    </div>
+                ) : (
+                    <div style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))' }}>
+                        {waiterApplications.map(app => (
+                            <div key={app.id} style={{
+                                background: '#222', borderRadius: '15px', border: '1px solid #333',
+                                padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem',
+                                borderLeft: '5px solid var(--accent-color)', boxShadow: '0 10px 20px rgba(0,0,0,0.2)'
+                            }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <h3 style={{ margin: 0, color: '#fff', fontSize: '1.3rem' }}>{app.name}</h3>
+                                    <span style={{ color: '#666', fontSize: '0.8rem' }}>{new Date(app.timestamp).toLocaleDateString()}</span>
+                                </div>
+                                <div style={{ color: 'var(--accent-color)', fontWeight: '900', fontSize: '1.2rem', background: 'rgba(255,215,0,0.05)', padding: '0.8rem', borderRadius: '8px', textAlign: 'center' }}>
+                                    📞 {app.phone}
+                                </div>
+                                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                                    <button
+                                        onClick={() => handleApprove(app)}
+                                        style={{ flex: 1, padding: '1rem', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem' }}
+                                    >
+                                        TASDIQLASH
+                                    </button>
+                                    <button
+                                        onClick={() => deleteWaiterApplication(app.id)}
+                                        style={{ flex: 0.5, padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' }}
+                                    >
+                                        RAD ETISH
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {showApproveModal && (
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(5px)' }}>
+                        <div style={{ background: '#1a1a1a', padding: '2.5rem', borderRadius: '24px', width: '450px', border: '1px solid rgba(255,215,0,0.3)', boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }}>
+                            <h2 style={{ marginBottom: '0.5rem', color: '#fff' }}>Tasdiqlash</h2>
+                            <p style={{ color: '#888', marginBottom: '2rem' }}>{selectedApp?.name} uchun kirish ma'lumotlarini yarating:</p>
+
+                            <div style={{ display: 'grid', gap: '1.5rem' }}>
+                                <div>
+                                    <label style={{ color: '#aaa', fontSize: '0.85rem', display: 'block', marginBottom: '0.5rem' }}>Login (foydalanuvchi nomi)</label>
+                                    <input
+                                        value={authData.username}
+                                        onChange={e => setAuthData({ ...authData, username: e.target.value })}
+                                        style={{ width: '100%', padding: '1rem', background: '#252525', border: '1px solid #444', color: '#fff', borderRadius: '12px', fontSize: '1rem' }}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ color: '#aaa', fontSize: '0.85rem', display: 'block', marginBottom: '0.5rem' }}>Parol</label>
+                                    <input
+                                        type="text"
+                                        value={authData.password}
+                                        onChange={e => setAuthData({ ...authData, password: e.target.value })}
+                                        style={{ width: '100%', padding: '1rem', background: '#252525', border: '1px solid #444', color: '#fff', borderRadius: '12px', fontSize: '1rem' }}
+                                    />
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '1rem', marginTop: '2.5rem' }}>
+                                <button onClick={() => setShowApproveModal(false)} style={{ flex: 1, padding: '1rem', background: 'transparent', border: '1px solid #333', color: '#888', borderRadius: '12px' }}>BEKOR</button>
+                                <button onClick={submitApproval} style={{ flex: 1, padding: '1rem', background: 'var(--accent-color)', border: 'none', color: '#000', fontWeight: '900', borderRadius: '12px' }}>TASDIQLASH</button>
                             </div>
                         </div>
                     </div>
@@ -3542,7 +3747,7 @@ const AdminApp = () => {
 
             {/* Sidebar */}
             <div style={{ width: '250px', background: '#18181b', borderRight: '1px solid #333', padding: '1rem', display: 'flex', flexDirection: 'column' }}>
-                <h1 style={{ color: 'var(--accent-color)', marginBottom: '2rem' }}>KAFE EPOS</h1>
+                <h1 style={{ color: 'var(--accent-color)', marginBottom: '2rem' }}>LAZZAT KAFE</h1>
 
                 <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {userRole === 'cashier' && (
@@ -3623,18 +3828,49 @@ const AdminApp = () => {
                             >
                                 <FaUsers /> Xodimlar
                             </button>
+                            <button
+                                onClick={() => setActiveTab('settlements')}
+                                style={{
+                                    padding: '1rem', textAlign: 'left', borderRadius: '8px', display: 'flex', gap: '10px', alignItems: 'center',
+                                    background: activeTab === 'settlements' ? '#333' : 'transparent', color: '#fff'
+                                }}
+                            >
+                                <FaWallet /> Oylik Hisob-Kitob
+                            </button>
                         </>
                     )}
                     {userRole === 'admin' && ( // Admin Only
-                        <button
-                            onClick={() => setActiveTab('archives')}
-                            style={{
-                                padding: '1rem', textAlign: 'left', borderRadius: '8px', display: 'flex', gap: '10px', alignItems: 'center',
-                                background: activeTab === 'archives' ? '#333' : 'transparent', color: '#fff'
-                            }}
-                        >
-                            <FaHistory /> Arxiv (Z-Reports)
-                        </button>
+                        <>
+                            <button
+                                onClick={() => setActiveTab('archives')}
+                                style={{
+                                    padding: '1rem', textAlign: 'left', borderRadius: '8px', display: 'flex', gap: '10px', alignItems: 'center',
+                                    background: activeTab === 'archives' ? '#333' : 'transparent', color: '#fff'
+                                }}
+                            >
+                                <FaHistory /> Arxiv (Z-Reports)
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('messages')}
+                                style={{
+                                    padding: '1rem', textAlign: 'left', borderRadius: '8px', display: 'flex', gap: '10px', alignItems: 'center',
+                                    background: activeTab === 'messages' ? '#333' : 'transparent', color: '#fff'
+                                }}
+                            >
+                                <FaEnvelope /> Xabarlar
+                                {messages && messages.length > 0 && <span style={{ marginLeft: 'auto', background: 'var(--accent-color)', color: '#000', padding: '2px 6px', borderRadius: '50%', fontSize: '0.7rem' }}>{messages.length}</span>}
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('waiter_apps')}
+                                style={{
+                                    padding: '1rem', textAlign: 'left', borderRadius: '8px', display: 'flex', gap: '10px', alignItems: 'center',
+                                    background: activeTab === 'waiter_apps' ? '#333' : 'transparent', color: '#fff'
+                                }}
+                            >
+                                <FaUsers /> Talabnomalar
+                                {waiterApplications && waiterApplications.length > 0 && <span style={{ marginLeft: 'auto', background: '#ef4444', color: '#fff', padding: '2px 6px', borderRadius: '50%', fontSize: '0.7rem' }}>{waiterApplications.length}</span>}
+                            </button>
+                        </>
                     )}
                     {userRole === 'admin' && (
                         <button
@@ -3673,7 +3909,7 @@ const AdminApp = () => {
                 </nav>
 
                 <button
-                    onClick={() => { setIsAuthenticated(false); setPassword(''); }}
+                    onClick={logout}
                     style={{ marginTop: 'auto', padding: '1rem', background: '#333', color: '#fff', borderRadius: '8px', display: 'flex', gap: '10px', alignItems: 'center' }}
                 >
                     <FaSignOutAlt /> Chiqish
@@ -3693,9 +3929,170 @@ const AdminApp = () => {
                 {activeTab === 'employees' && <EmployeesView />}
                 {activeTab === 'history' && <HistoryView />}
                 {activeTab === 'archives' && <ArchivesView />}
+                {activeTab === 'settlements' && <SettlementView />}
+                {activeTab === 'messages' && <MessagesView />}
+                {activeTab === 'waiter_apps' && <WaiterApplicationsView />}
                 {activeTab === 'settings' && <SettingsView />}
             </div>
 
+            {/* NEW ORDER NOTIFICATION MODAL (CENTERED & MODERN) */}
+            {showNewOrderNotification && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'fadeIn 0.3s ease' }}>
+                    <div style={{ background: 'linear-gradient(135deg, #1f2937 0%, #111827 100%)', padding: '3rem', borderRadius: '24px', width: '450px', maxWidth: '95%', textAlign: 'center', border: '1px solid rgba(255, 215, 0, 0.3)', boxShadow: '0 25px 50px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', animation: 'slideUpFade 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)' }}>
+                        <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255, 215, 0, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-color)' }}>
+                            <FaUtensils size={40} />
+                        </div>
+                        <div>
+                            <h2 style={{ color: '#fff', fontSize: '1.8rem', margin: '0 0 0.5rem 0', fontWeight: '900' }}>Yangi Buyurtma!</h2>
+                            <p style={{ color: '#ccc', fontSize: '1.1rem', margin: 0, lineHeight: 1.5 }}>
+                                Ofitsiant tomonidan yangi buyurtma yuborildi.<br />
+                                Iltimos, tasdiqlash uchun Oshxona bo'limiga o'ting.
+                            </p>
+                        </div>
+                        <div style={{ display: 'flex', gap: '1rem', width: '100%', marginTop: '1rem' }}>
+                            <button onClick={() => setShowNewOrderNotification(false)} style={{ flex: 1, padding: '1rem', background: '#374151', color: '#fff', border: 'none', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem', transition: '0.2s' }}>
+                                YOPISH
+                            </button>
+                            <button onClick={() => { setShowNewOrderNotification(false); setActiveTab('kitchen'); }} style={{ flex: 2, padding: '1rem', background: 'var(--accent-color)', color: '#000', border: 'none', borderRadius: '12px', cursor: 'pointer', fontWeight: '900', fontSize: '1.1rem', boxShadow: '0 4px 15px rgba(255, 215, 0, 0.3)', transition: '0.2s' }}>
+                                OSHXONAGA O'TISH
+                            </button>
+                        </div>
+                    </div>
+                    <style>{`
+                        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                        @keyframes slideUpFade { from { opacity: 0; transform: translateY(30px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+                    `}</style>
+                </div>
+            )}
+
+            {/* GLOBAL ERROR MODAL */}
+            {isAuthenticated && showErrorModal && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 4500 }}>
+                    <div style={{ background: '#1e1e1e', padding: '2rem', borderRadius: '12px', width: '350px', textAlign: 'center', border: '1px solid #ff4444', boxShadow: '0 10px 25px rgba(255, 68, 68, 0.2)' }}>
+                        <div style={{ color: '#ff4444', marginBottom: '1rem' }}><FaTimes size={40} /></div>
+                        <h2 style={{ color: '#ff4444', marginBottom: '1rem' }}>Xatolik</h2>
+                        <p style={{ color: '#ccc', marginBottom: '2rem', fontSize: '1.2rem' }}>{errorMsg}</p>
+                        <button onClick={() => setShowErrorModal(false)} style={{ padding: '0.8rem 2rem', background: '#333', color: '#fff', border: '1px solid #555', borderRadius: '8px', cursor: 'pointer', fontSize: '1rem', width: '100%' }}>OK</button>
+                    </div>
+                </div>
+            )}
+
+            {/* GLOBAL SUCCESS MODAL */}
+            {showSuccessModal && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 4500 }}>
+                    <div style={{ background: '#1e1e1e', padding: '2rem', borderRadius: '12px', width: '350px', textAlign: 'center', border: '1px solid var(--success)', boxShadow: '0 10px 25px rgba(16, 185, 129, 0.2)' }}>
+                        <div style={{ color: 'var(--success)', marginBottom: '1rem' }}><FaCheck size={40} /></div>
+                        <h2 style={{ color: 'var(--success)', marginBottom: '1rem' }}>Muvaffaqiyatli</h2>
+                        <p style={{ color: '#ccc', marginBottom: '2rem', fontSize: '1.2rem' }}>{successMsg}</p>
+                        <button onClick={() => setShowSuccessModal(false)} style={{ padding: '0.8rem 2rem', background: '#333', color: '#fff', border: '1px solid #555', borderRadius: '8px', cursor: 'pointer', fontSize: '1rem', width: '100%' }}>OK</button>
+                    </div>
+                </div>
+            )}
+
+            {/* GENERIC CONFIRM MODAL */}
+            {showGenericConfirm && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 4500 }}>
+                    <div style={{ background: '#1e1e1e', padding: '2rem', borderRadius: '12px', width: '400px', textAlign: 'center', border: '1px solid var(--accent-color)' }}>
+                        <h2 style={{ color: '#fff', marginBottom: '1rem' }}>{confirmConfig.title}</h2>
+                        <p style={{ color: '#ccc', marginBottom: '2rem', fontSize: '1.1rem' }}>{confirmConfig.msg}</p>
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <button onClick={() => setShowGenericConfirm(false)} style={{ flex: 1, padding: '1rem', background: '#333', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>BEKOR</button>
+                            <button onClick={() => { setShowGenericConfirm(false); confirmConfig.onConfirm(); }} style={{ flex: 1, padding: '1rem', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>HA, TASDIQLASH</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* PASSWORD PROMPT MODAL (Z-REPORT) */}
+            {showPasswordModal && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 4500 }}>
+                    <div style={{ background: '#1e1e1e', padding: '2.5rem', borderRadius: '16px', width: '400px', textAlign: 'center', border: '1px solid #333', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+                        <h2 style={{ color: '#fff', marginBottom: '1rem' }}>Tasdiqlash paroli</h2>
+                        <p style={{ color: '#aaa', marginBottom: '2rem' }}>Kassani yopish uchun administrator parolini kiriting (8888)</p>
+                        <input
+                            autoFocus
+                            type="password"
+                            value={passwordInput}
+                            onChange={e => setPasswordInput(e.target.value)}
+                            placeholder="****"
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    if (passwordInput === '8888') {
+                                        setShowPasswordModal(false);
+                                        if (onPasswordSuccess) onPasswordSuccess();
+                                    } else {
+                                        alert("Parol noto'g'ri!");
+                                    }
+                                }
+                            }}
+                            style={{ width: '100%', padding: '1rem', borderRadius: '8px', border: '1px solid #444', background: '#2a2a2a', color: '#fff', fontSize: '1.5rem', textAlign: 'center', letterSpacing: '5px', marginBottom: '1.5rem', outline: 'transparent' }}
+                        />
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <button onClick={() => setShowPasswordModal(false)} style={{ flex: 1, padding: '1rem', background: '#333', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>BEKOR</button>
+                            <button onClick={() => {
+                                if (passwordInput === '8888') {
+                                    setShowPasswordModal(false);
+                                    if (onPasswordSuccess) onPasswordSuccess();
+                                } else {
+                                    alert("Parol noto'g'ri!");
+                                }
+                            }} style={{ flex: 1, padding: '1rem', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>TASDIQLASH</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* DAILY REPORT PORTAL (Global for reliable printing) */}
+            {showDailyReport && (
+                <PrintPortal>
+                    <div className="print-report" style={{ opacity: 1, visibility: 'visible', background: 'white', color: 'black' }}>
+                        <h3>LAZZAT KAFE</h3>
+                        <p style={{ fontWeight: '900', fontSize: '18px', margin: '5px 0' }}>Z-REPORT (YAKUN)</p>
+                        <p style={{ fontSize: '14px', marginBottom: '10px' }}>{new Date().toLocaleString()}</p>
+                        <hr style={{ borderTop: '2px dashed #000' }} />
+
+                        <table style={{ width: '100%', fontSize: '16px', fontWeight: '900', borderCollapse: 'collapse', textAlign: 'left', margin: '10px 0' }}>
+                            <tbody>
+                                <tr>
+                                    <td style={{ padding: '3px 0' }}>JAMI TUSHUM:</td>
+                                    <td style={{ textAlign: 'right', padding: '3px 0' }}>{dailyStats.total.toLocaleString()} s.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <hr style={{ borderTop: '2px dashed #000' }} />
+
+                        <div style={{ fontWeight: '900', fontSize: '16px', margin: '10px 0', textAlign: 'left' }}>TULOV TURLARI BO'YICHA:</div>
+                        <table style={{ width: '100%', fontSize: '15px', fontWeight: '800', borderCollapse: 'collapse', textAlign: 'left' }}>
+                            <tbody>
+                                <tr>
+                                    <td style={{ padding: '2px 0' }}>NAQD:</td>
+                                    <td style={{ textAlign: 'right', padding: '2px 0' }}>{dailyStats.cash.toLocaleString()}</td>
+                                </tr>
+                                <tr>
+                                    <td style={{ padding: '2px 0' }}>KARTA:</td>
+                                    <td style={{ textAlign: 'right', padding: '2px 0' }}>{dailyStats.card.toLocaleString()}</td>
+                                </tr>
+                                <tr>
+                                    <td style={{ padding: '2px 0' }}>CLICK:</td>
+                                    <td style={{ textAlign: 'right', padding: '2px 0' }}>{dailyStats.click.toLocaleString()}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <hr style={{ borderTop: '2px dashed #000', marginTop: '10px' }} />
+
+                        <table style={{ width: '100%', fontSize: '14px', fontWeight: 'bold', borderCollapse: 'collapse', textAlign: 'left', marginTop: '5px' }}>
+                            <tbody>
+                                <tr>
+                                    <td style={{ padding: '2px 0' }}>Cheklar soni:</td>
+                                    <td style={{ textAlign: 'right', padding: '2px 0' }}>{completedOrders.length} ta</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '14px', fontWeight: 'bold' }}>KASSA YOPILDI</p>
+                    </div>
+                </PrintPortal>
+            )}
         </div>
     );
 };

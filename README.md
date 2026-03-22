@@ -4,9 +4,10 @@ Ushbu loyiha zamonaviy Kafe avtomatlashtirish tizimi (React + Node.js).
 Boshqa kompyuterga ko'chirganda yoki qayta o'rnatganda ushbu ko'rsatmalardan foydalaning.
 
 ## 1. Talablar (Prerequisites)
-Kompyuteringizda **Node.js** o'rnatilgan bo'lishi shart.
-- Tekshirish uchun terminalda: `node -v`
-
+Yangi kompyuterda loyihani ishga tushirish uchun quyidagilar o'rnatilgan bo'lishi shart:
+1. **Node.js** (v18 yoki undan yuqori versiya tavsiya etiladi). Tekshirish uchun: `node -v`
+2. **Git** (Dasturni GitHubdan ko'chirib olish uchun).
+3. **Ngrok** (Ixtiyoriy - loyihani vaqtinchalik internetga chiqarish, mijozga ko'rsatish uchun).
 ## 2. GitHubdan Yuklab Olish (Loyihani ko'chirish)
 Yangi kompyuterda loyihani ishga tushirish uchun avval uni ko'chirib olish kerak:
 1. Terminalni oching (xohlagan papkada).
@@ -56,12 +57,16 @@ Brauzerni ochib kiring:
 - **Kassir:** `1111` (Faqat to'lov va tarix)
 - **Admin:** `8888` (Menyu va to'liq nazorat)
 
-### 📱 Telefonda (Ofitsiant):
-1. Telefon va Kompyuter **bitta Wi-Fi** ga ulangan bo'lishi shart.
-2. Kompyuterda terminalda `Network: http://192.168.x.x:5173` degan yozuvni qidiring.
-3. Telefonda o'sha manzilni yozing va oxiriga `/waiter` qo'shing.
+### 📱 Telefonda (Ofitsiant) tarmog'iga ulanish:
+1. Telefon va Asosiy Kompyuter (Kassa) **bitta Wi-Fi tarmog'iga** ulangan bo'lishi shart.
+2. Hozirgi kompyuteringizning IP manzili **192.168.1.2** ekanligini hisobga olsak, telefoningizdagi brauzerga (Chrome, Safari va h.k.) quyidagi manzilni yozib kiring:
+   👉 **http://192.168.1.2:5173**
 
-Misol: `http://192.168.1.38:5173/waiter`
+*(Eslatma: Agar internet yoki router o'zgarsa, IP ham o'zgarishi mumkin. Buni bilish uchun terminalda `npm start` qilingan payti `Network: http://192.168.x.x:5173/` degan yozuvga qaraysiz).*
+
+3. Xuddi kompyuterdagidek Login ekrani ochiladi.
+4. Admin panelidagi **"Xodimlar"** bo'limida yaratilgan, tasdiqlangan **Ofitsiant** login va parolini tering.
+5. Tizim sizni avtomatik ravishda Ofitsiant paneliga olib kiradi (Bu orqali bemalol stollar atrofida yurib buyurtma olishingiz mumkin).
 
 ### 👨‍🍳 Oshxona Ekrani:
 👉 **[http://localhost:5173/kitchen](http://localhost:5173/kitchen)**
@@ -130,3 +135,30 @@ server {
 - **SSL (HTTPS):** `Certbot` orqali bepul SSL oling (`sudo certbot --nginx`).
 - **Xavfsizlik:** `server/db.json` faylini muntazam ravishda zaxira (backup) qilib turing.
 - **Portlar:** Serveringizda 3000 (API) va 80/443 (HTTP/S) portlari ochiq bo'lishi kerak.
+
+---
+
+## 8. Mijozga Ko'rsatish (Ngrok orqali Vaqtinchalik Onlayn Qilish)
+
+Agar tizimni haqiqiy hostingga qo'ymasdan turib, boshqa joydagi (masalan, mijozning) telefonida ko'rsatmoqchi bo'lsangiz:
+
+1. **Dasturni tayyorlang:**
+   Bir marta kompyuter terminalida quyidagi buyruqni bering, u saytingizni ishlab chiqarish versiyasini siqib tayyorlaydi:
+   ```bash
+   npm run build
+   ```
+
+2. **Dasturni ishga tushiring:**
+   Birinchi terminalda odatdagidek serverni yoqing:
+   ```bash
+   npm start
+   ```
+
+3. **Ngrok ulanishini oching:**
+   Yangi ikkinchi terminalni (CMD) ochib quyidagini yozing:
+   ```bash
+   ngrok http 3000
+   ```
+   *Ekranda tayyor yashil link chiqadi (Masalan: `https://abcd-1234.ngrok-free.app`).*
+
+4. **Tayyor!** Shu linkni telefonda ochasiz va tizim 100% onlayn dunyo yuzida ishlaydi (Telefon mobil internetda bo'lsa ham ishlayveradi). Kompyuterni o'chirsangiz, link ishlashdan to'xtaydi.

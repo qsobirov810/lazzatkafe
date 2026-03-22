@@ -83,9 +83,9 @@ const QRMenu = () => {
             {/* Header */}
             <header className="qr-header">
                 <div className="container header-content">
-                    <div>
-                        <h1>Afruza Kafe</h1>
-                        <p>{table.name}</p>
+                    <div className="header-info">
+                        <h1>Lazzat Kafe</h1>
+                        <p className="welcome-text">Menyuga xush kelibsiz</p>
                     </div>
                     {!isConnected && <span className="offline-badge">Offline</span>}
                 </div>

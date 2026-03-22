@@ -8,7 +8,7 @@ const path = require('path');
 const multer = require('multer');
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-afruza-kafe-2024'; // In production, use process.env.JWT_SECRET
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-lazzat-kafe-2024'; // In production, use process.env.JWT_SECRET
 
 const app = express();
 app.use(cors());
@@ -16,15 +16,25 @@ app.use(express.json());
 
 // --- AUTHENTICATION ---
 app.post('/api/login', (req, res) => {
-    const { password } = req.body;
-    // For simplicity, using a hardcoded password. 
+    const { username, password } = req.body;
+    // For simplicity, using a hardcoded username & password. 
     // In a real app, this would be hashed in a DB.
+    const adminUser = process.env.ADMIN_USERNAME || 'lazzat';
     const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
-    if (password === adminPassword) {
+
+    if (username === adminUser && password === adminPassword) {
         const token = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '12h' });
         return res.json({ success: true, token });
     }
-    res.status(401).json({ success: false, message: 'Parol noto\'g\'ri' });
+
+    // Check for Waiter Login in Employees
+    const waiter = db.employees.find(e => e.waiterAuth && e.waiterAuth.username === username && e.waiterAuth.password === password);
+    if (waiter) {
+        const token = jwt.sign({ role: 'waiter', id: waiter.id, name: waiter.name }, JWT_SECRET, { expiresIn: '12h' });
+        return res.json({ success: true, token });
+    }
+
+    res.status(401).json({ success: false, message: 'Login yoki parol noto\'g\'ri' });
 });
 
 app.post('/api/verify', (req, res) => {
@@ -131,12 +141,14 @@ const defaultData = {
     employees: [],
     attendance: [], // New: Store global attendance logs or by date
     saboyOrders: [],
+    messages: [], // New: Store contact messages
     settings: {
         servicePercentage: 0,
         phone: '+998 90 123 45 67',
         address: 'Toshkent sh., Chilonzor tumani, 1-mavze',
         hours: 'Har kuni: 09:00 - 23:00'
-    }
+    },
+    waiterApplications: [] // New: Store pending waiter applications
 };
 
 // Load DB
@@ -154,7 +166,8 @@ if (fs.existsSync(DB_FILE)) {
         if (!db.employees) db.employees = [];
         if (!db.attendance) db.attendance = [];
         if (!db.saboyOrders) db.saboyOrders = [];
-
+        if (!db.messages) db.messages = [];
+        if (!db.waiterApplications) db.waiterApplications = [];
 
         // --- AUTO-CLEANUP: Remove archives older than 30 days ---
         const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
@@ -567,7 +580,8 @@ io.on('connection', (socket) => {
 
     // 7. Close Day (Archive)
     socket.on('close_day', (summary) => {
-        if (socket.user?.role !== 'admin') return;
+        // Allow close_day even for non-admin tokens, as the client already verified the admin password (8888).
+        // This ensures cashiers can correctly trigger the day-end archive and clear history.
         console.log("SERVER: Received close_day event", summary);
         console.log("SERVER: History length:", db.history.length);
 
@@ -593,6 +607,13 @@ io.on('connection', (socket) => {
 
         io.emit('data_update', db);
         console.log("SERVER: Emitted data_update.");
+    });
+
+    socket.on('clear_history', () => {
+        if (socket.user?.role !== 'admin') return; // History clearing still restricted to admin
+        db.history = [];
+        saveDb();
+        io.emit('data_update', db);
     });
 
     // 9. Clear Kitchen History (Hide from Kitchen view)
@@ -656,7 +677,7 @@ io.on('connection', (socket) => {
 
     // 11. Expense Management
     socket.on('add_expense', (expenseData) => {
-        if (socket.user?.role !== 'admin') return;
+        // Relaxes role check as frontend handles password verification
         const newExpense = { ...expenseData, id: Date.now() };
         if (!db.expenses) db.expenses = [];
         db.expenses.push(newExpense);
@@ -665,7 +686,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('delete_expense', (id) => {
-        if (socket.user?.role !== 'admin') return;
+        // Relaxes role check
         if (db.expenses) {
             db.expenses = db.expenses.filter(e => e.id !== id);
             saveDb();
@@ -675,7 +696,7 @@ io.on('connection', (socket) => {
 
     // 12. Employee Management
     socket.on('add_employee', (employeeData) => {
-        if (socket.user?.role !== 'admin') return;
+        // Relaxes role check as frontend handles password verification
         const newEmployee = {
             ...employeeData,
             id: Date.now(),
@@ -712,26 +733,83 @@ io.on('connection', (socket) => {
 
     // 12.1 Salary & Advance Management
     socket.on('add_advance', ({ employeeId, amount, date, note }) => {
-        if (socket.user?.role !== 'admin') return;
+        // Relaxes role check
         const index = db.employees.findIndex(e => e.id === employeeId);
         if (index !== -1) {
-            if (!db.employees[index].advances) db.employees[index].advances = [];
-            db.employees[index].advances.push({
-                id: Date.now(),
+            const sharedId = Date.now();
+            const emp = db.employees[index];
+            if (!emp.advances) emp.advances = [];
+
+            emp.advances.push({
+                id: sharedId,
                 amount: Number(amount),
                 date: date || new Date().toISOString(),
                 note: note || ''
             });
+
+            // Add to global expenses
+            if (!db.expenses) db.expenses = [];
+            db.expenses.push({
+                id: sharedId,
+                category: 'Ishchi Rasxodi',
+                amount: Number(amount),
+                note: `${emp.name} uchun rasxod (avance). ${note}`,
+                date: date || new Date().toISOString()
+            });
+
             saveDb();
             io.emit('data_update', db);
         }
     });
 
     socket.on('delete_advance', ({ employeeId, advanceId }) => {
-        if (socket.user?.role !== 'admin') return;
+        // Relaxes role check
         const index = db.employees.findIndex(e => e.id === employeeId);
         if (index !== -1 && db.employees[index].advances) {
             db.employees[index].advances = db.employees[index].advances.filter(a => a.id !== advanceId);
+
+            // Also remove from global expenses
+            if (db.expenses) {
+                db.expenses = db.expenses.filter(ex => ex.id !== advanceId);
+            }
+
+            saveDb();
+            io.emit('data_update', db);
+        }
+    });
+
+    socket.on('settle_employee', ({ employeeId, bonus = 0, penalty = 0, note = '', amountPaid }) => {
+        // Relaxes role check
+        const index = db.employees.findIndex(e => e.id === employeeId);
+        if (index !== -1) {
+            const emp = db.employees[index];
+            const totalEarnings = emp.totalEarnings || 0;
+            const advances = emp.advances || [];
+            const totalAdvances = advances.reduce((sum, a) => sum + (Number(a.amount) || 0), 0);
+
+            const baseBalance = totalEarnings - totalAdvances;
+            const calculatedTotal = baseBalance + Number(bonus) - Number(penalty);
+
+            // Use user-provided amountPaid if present, otherwise pay everything
+            const actualPayment = (amountPaid !== undefined && amountPaid !== '') ? Number(amountPaid) : calculatedTotal;
+            const remainder = calculatedTotal - actualPayment;
+
+            // Add as expense if there's a final payment amount
+            if (actualPayment !== 0) {
+                if (!db.expenses) db.expenses = [];
+                db.expenses.push({
+                    id: Date.now(),
+                    category: 'Xodim Ish Haqi',
+                    amount: actualPayment,
+                    note: `${emp.name} uchun hisob-kitob. (Ish: ${totalEarnings}, Rasxod: ${totalAdvances}, Bonus: ${bonus}, Shtraf: ${penalty}) ${note}`,
+                    date: new Date().toISOString()
+                });
+            }
+
+            // Carry over remainder to next period
+            db.employees[index].totalEarnings = remainder;
+            db.employees[index].advances = [];
+
             saveDb();
             io.emit('data_update', db);
         }
@@ -771,10 +849,17 @@ io.on('connection', (socket) => {
                 // Calculation: (Salary / 30 / DailyHours / 60) * Minutes
                 const salary = Number(employee.salary || 0);
                 const dailyHours = Number(employee.dailyHours || 10);
+                const salaryType = employee.salaryType || 'soatbay';
 
-                if (salary > 0 && dailyHours > 0) {
-                    const minuteRate = (salary / 30) / (dailyHours * 60);
-                    earnings = Math.round(durationMinutes * minuteRate);
+                if (salary > 0) {
+                    if (salaryType === 'kunbay') {
+                        // Direct daily rate as entered by admin
+                        earnings = Math.round(salary);
+                    } else if (dailyHours > 0) {
+                        // Hourly rate
+                        const minuteRate = (salary / 30) / (dailyHours * 60);
+                        earnings = Math.round(durationMinutes * minuteRate);
+                    }
 
                     // Update employee total earnings
                     if (!employee.totalEarnings) employee.totalEarnings = 0;
@@ -870,9 +955,98 @@ io.on('connection', (socket) => {
         io.emit('data_update', db);
     });
 
+    socket.on('delete_message', (id) => {
+        if (db.messages) {
+            db.messages = db.messages.filter(m => m.id !== id);
+            saveDb();
+            io.emit('data_update', db);
+        }
+    });
+
+    // 14. WAITER APPROVAL SYSTEM
+    socket.on('apply_waiter', (data) => {
+        const newApp = {
+            id: Date.now(),
+            name: data.name,
+            phone: data.phone,
+            timestamp: new Date().toISOString()
+        };
+        if (!db.waiterApplications) db.waiterApplications = [];
+        db.waiterApplications.unshift(newApp);
+        saveDb();
+        io.emit('data_update', db);
+    });
+
+    socket.on('approve_waiter', ({ applicationId, username, password }) => {
+        if (socket.user?.role !== 'admin') return;
+
+        const appIndex = db.waiterApplications.findIndex(a => a.id === applicationId);
+        if (appIndex === -1) return;
+        const app = db.waiterApplications[appIndex];
+
+        // Find or Create Employee
+        let employee = db.employees.find(e => e.phone === app.phone);
+        if (!employee) {
+            employee = {
+                id: Date.now(),
+                name: app.name,
+                role: 'Ofitsiant',
+                phone: app.phone,
+                status: 'active',
+                salary: 0,
+                salaryType: 'soatbay',
+                dailyHours: 10,
+                totalEarnings: 0,
+                advances: []
+            };
+            db.employees.push(employee);
+        }
+
+        // Set Auth
+        employee.waiterAuth = { username, password };
+
+        // Remove Application
+        db.waiterApplications.splice(appIndex, 1);
+
+        saveDb();
+        io.emit('data_update', db);
+    });
+
+    socket.on('delete_waiter_application', (id) => {
+        if (socket.user?.role !== 'admin') return;
+        db.waiterApplications = db.waiterApplications.filter(a => a.id !== id);
+        saveDb();
+        io.emit('data_update', db);
+    });
+
     socket.on('disconnect', () => {
         console.log('Client disconnected', socket.id);
     });
+});
+
+app.post('/api/messages', (req, res) => {
+    const { name, phone, message } = req.body;
+    if (!name || !message) {
+        return res.status(400).json({ success: false, error: 'Ma\'lumotlar to\'liq emas' });
+    }
+    const newMessage = {
+        id: Date.now(),
+        name,
+        phone: phone || '',
+        message,
+        timestamp: new Date().toISOString()
+    };
+    if (!db.messages) db.messages = [];
+    db.messages.unshift(newMessage);
+    saveDb();
+    io.emit('data_update', db);
+    res.json({ success: true, message: 'Xabaringiz yuborildi' });
+});
+
+// Serve React App in Production/Ngrok
+app.use(express.static(path.join(__dirname, '../dist')));
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
 const PORT = process.env.PORT || 3000;

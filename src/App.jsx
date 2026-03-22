@@ -5,6 +5,7 @@ import AdminApp from './pages/AdminApp';
 import Login from './pages/Login';
 import QRMenu from './pages/QRMenu';
 import ProtectedRoute from './components/ProtectedRoute';
+import SystemSelector from './pages/SystemSelector';
 import { DataProvider } from './context/DataContext';
 
 function App() {
@@ -13,11 +14,12 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Landing />} />
-          <Route path="/admin" element={<Navigate to="/" replace />} />
-          <Route path="/login" element={<Navigate to="/" replace />} />
+          <Route path="/admin" element={<Navigate to="/system/admin" replace />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/system/*" element={(
             <ProtectedRoute>
               <Routes>
+                <Route path="" element={<SystemSelector />} />
                 <Route path="waiter" element={<WaiterApp />} />
                 <Route path="admin" element={<AdminApp />} />
                 <Route path="cashier" element={<AdminApp />} />

@@ -6,7 +6,8 @@ const DataContext = createContext();
 export const useData = () => useContext(DataContext);
 
 // Connect to Backend
-const API_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3000`;
+const isDev = window.location.port === '5173';
+const API_URL = import.meta.env.VITE_API_URL || (isDev ? `http://${window.location.hostname}:3000` : window.location.origin);
 const socket = io(API_URL);
 
 export const DataProvider = ({ children }) => {
@@ -23,21 +24,47 @@ export const DataProvider = ({ children }) => {
     const [employees, setEmployees] = useState([]);
     const [attendance, setAttendance] = useState([]); // New
     const [saboyOrders, setSaboyOrders] = useState([]);
-    const [isConnected, setIsConnected] = useState(socket.connected);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [token, setToken] = useState(null);
+    const [messages, setMessages] = useState([]); // New
+    const [waiterApplications, setWaiterApplications] = useState([]); // New
 
-    const login = async (password) => {
+    const [isConnected, setIsConnected] = useState(socket.connected);
+    const [token, setToken] = useState(localStorage.getItem('adminToken'));
+    const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('adminToken'));
+    const [user, setUser] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    // Simple JWT decode helper
+    const decodeToken = (t) => {
+        try {
+            return JSON.parse(atob(t.split('.')[1]));
+        } catch (e) {
+            return null;
+        }
+    };
+
+    // Set initial user if token exists
+    useEffect(() => {
+        if (token) {
+            const decoded = decodeToken(token);
+            setUser(decoded);
+        }
+    }, [token]);
+
+    // Initial socket auth if token exists
+    if (token && !socket.auth) {
+        socket.auth = { token };
+    }
+
+    const login = async (username, password) => {
         try {
             const response = await fetch(`${API_URL}/api/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ password })
+                body: JSON.stringify({ username, password })
             });
             const data = await response.json();
             if (data.success) {
-                // sessionStorage.setItem('adminToken', data.token); // REMOVED: Auto-logout on refresh
+                localStorage.setItem('adminToken', data.token);
                 setToken(data.token);
                 socket.auth = { token: data.token };
                 socket.disconnect().connect();
@@ -52,8 +79,10 @@ export const DataProvider = ({ children }) => {
     };
 
     const logout = () => {
-        // sessionStorage.removeItem('adminToken');
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminActiveTab');
         setToken(null);
+        setUser(null);
         socket.auth = {};
         socket.disconnect().connect();
         setIsAuthenticated(false);
@@ -97,7 +126,10 @@ export const DataProvider = ({ children }) => {
             setEmployees(data.employees || []);
             setAttendance(data.attendance || []);
             setSaboyOrders(data.saboyOrders || []);
+            setMessages(data.messages || []);
+            setWaiterApplications(data.waiterApplications || []);
             setSettings(data.settings || { servicePercentage: 0 });
+            setIsLoading(false);
         });
 
         socket.on('data_update', (data) => {
@@ -113,6 +145,8 @@ export const DataProvider = ({ children }) => {
             setEmployees(data.employees || []);
             setAttendance(data.attendance || []);
             setSaboyOrders(data.saboyOrders || []);
+            setMessages(data.messages || []);
+            setWaiterApplications(data.waiterApplications || []);
             setSettings(data.settings || { servicePercentage: 0 });
         });
 
@@ -232,9 +266,14 @@ export const DataProvider = ({ children }) => {
     };
 
     const deleteAdvance = (employeeId, advanceId) => {
-        if (window.confirm("Bo'nakni o'chirasizmi?")) {
+        if (window.confirm("Rasxodni o'chirasizmi?")) {
             socket.emit('delete_advance', { employeeId, advanceId });
         }
+    };
+
+    const settleEmployee = (employeeId, extras = {}) => {
+        // Now handled by a custom modal in AdminApp for better UI
+        socket.emit('settle_employee', { employeeId, ...extras });
     };
 
     const updateEmployeeSalary = (employeeId, salary) => {
@@ -255,15 +294,31 @@ export const DataProvider = ({ children }) => {
         socket.emit('checkout_saboy_order', { orderId, paymentMethod, ...extras });
     };
 
+    // 13. Messages
+    const deleteMessage = (id) => {
+        if (window.confirm("Xabarni o'chirmoqchimisiz?")) {
+            socket.emit('delete_message', id);
+        }
+    };
+
+    const applyForWaiter = async (data) => {
+        socket.emit('apply_waiter', data);
+        return { success: true };
+    };
+    const approveWaiter = (data) => socket.emit('approve_waiter', data);
+    const deleteWaiterApplication = (id) => socket.emit('delete_waiter_application', id);
+
     return (
         <DataContext.Provider value={{
-            tables, menu, categories, activeOrders, completedOrders, archives, reservations, settings, expenses, employees, attendance, saboyOrders, isConnected, isAuthenticated, isLoading,
+            tables, menu, categories, activeOrders, completedOrders, archives, reservations, settings, expenses, employees, attendance, saboyOrders, messages, waiterApplications,
+            isConnected, isAuthenticated, user, isLoading,
             sendOrder, updateOrder, checkoutTable, markOrderPrinted, addMenuItem, updateMenuItem, deleteMenuItem,
             addCategory, deleteCategory, clearHistory, closeDay, clearKitchenHistory, cancelOrder,
             addTable, deleteTable, addReservation, updateReservation, deleteReservation, activateReservation,
             updateSettings, addExpense, deleteExpense, addEmployee, updateEmployee, deleteEmployee,
-            addAdvance, deleteAdvance, updateEmployeeSalary, logAttendance,
-            placeSaboyOrder, checkoutSaboyOrder,
+            addAdvance, deleteAdvance, updateEmployeeSalary, logAttendance, settleEmployee,
+            placeSaboyOrder, checkoutSaboyOrder, deleteMessage,
+            applyForWaiter, approveWaiter, deleteWaiterApplication,
             login, logout
         }}>
             {children}

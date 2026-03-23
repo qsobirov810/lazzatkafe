@@ -61,7 +61,7 @@ const KitchenView = () => {
     }, [ticketToPrint]);
 
     const handleDelete = (order) => {
-        const identifier = order.isSaboy ? `Saboy buyurtmasi: ${order.customerName}` : `Stol ${order.tableId}`;
+        const identifier = order.isSaboy ? `Saboy buyurtmasi: ${order.customerName}` : (tables?.find(t => t.id === order.tableId)?.name || `Stol ${order.tableId}`);
         if (window.confirm(`Haqiqatan ham ${identifier} buyurtmasini O'CHIRMOQCHIMISIZ?`)) {
             cancelOrder(order.id);
         }
@@ -131,7 +131,7 @@ const KitchenView = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #333', paddingBottom: '0.5rem' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: order.isSaboy ? 'var(--accent-color)' : '#fff' }}>
-                                    {order.isSaboy ? `SABOY: ${order.customerName}` : `STOL ${order.tableId}`}
+                                    {order.isSaboy ? `SABOY: ${order.customerName}` : (tables?.find(t => t.id === order.tableId)?.name || `STOL ${order.tableId}`)}
                                 </span>
                                 {order.isSaboy && order.phone && <span style={{ fontSize: '0.9rem', color: '#888' }}>{order.phone}</span>}
                             </div>
@@ -432,7 +432,7 @@ const PaymentModalContent = ({ selectedTable, onClose, onCheckout, settings, onE
 
 const AdminApp = () => {
     const {
-        tables, checkoutTable, updateOrder, completedOrders, archives, menu, categories, addMenuItem, updateMenuItem, deleteMenuItem, addCategory, deleteCategory, clearHistory, closeDay, addTable, deleteTable, reservations, addReservation, updateReservation, deleteReservation, activateReservation, settings, updateSettings, isConnected, messages, deleteMessage, activeOrders, saboyOrders,
+        tables, checkoutTable, updateOrder, completedOrders, archives, menu, categories, addMenuItem, updateMenuItem, deleteMenuItem, addCategory, deleteCategory, clearHistory, closeDay, addTable, deleteTable, reservations, addReservation, updateReservation, deleteReservation, activateReservation, settings, updateSettings, isConnected, messages, deleteMessage, activeOrders, saboyOrders, clearArchives, deleteArchive,
         waiterApplications, approveWaiter, deleteWaiterApplication, user, isAuthenticated, logout
     } = useData();
     const navigate = useNavigate();
@@ -1553,14 +1553,15 @@ const AdminApp = () => {
             try {
                 // Using fetch to upload to our backend endpoint
                 // Note: Port 3000 is backend. Frontend is 5173. We need absolute URL or proxy.
-                // Assuming backend is at http://localhost:3000 based on socket config.
-                const res = await fetch('http://localhost:3000/upload', {
+                // Using relative path so it works over ngrok
+                const res = await fetch('/upload', {
                     method: 'POST',
+                    headers: { 'ngrok-skip-browser-warning': 'true' },
                     body: uploadData,
                 });
                 const data = await res.json();
                 if (data.filePath) {
-                    setFormData(prev => ({ ...prev, image: 'http://localhost:3000' + data.filePath })); // Store full URL or use proxy
+                    setFormData(prev => ({ ...prev, image: data.filePath })); // Store relative URL
                 }
             } catch (err) {
                 console.error("Upload failed", err);
@@ -1639,7 +1640,7 @@ const AdminApp = () => {
                                         <div style={{ position: 'relative', width: '120px', height: '120px', borderRadius: '50%', overflow: 'hidden', background: '#333', border: '2px dashed #555' }}>
                                             {formData.image ? (
                                                 <img
-                                                    src={formData.image.startsWith('http') || formData.image.startsWith('/') ? formData.image : `http://localhost:3000${formData.image}`}
+                                                    src={formData.image.startsWith('http') ? formData.image : formData.image.startsWith('/') ? formData.image : `/${formData.image}`}
                                                     alt="Preview"
                                                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                                 />
@@ -1731,7 +1732,7 @@ const AdminApp = () => {
                                 {item.image && (
                                     <div style={{ width: '50px', height: '50px', borderRadius: '4px', overflow: 'hidden', filter: item.available === false ? 'grayscale(100%)' : 'none' }}>
                                         <img
-                                            src={item.image.startsWith('http') || item.image.startsWith('/') ? item.image : `http://localhost:3000${item.image}`} // Simple heuristic
+                                            src={item.image.startsWith('http') ? item.image : item.image.startsWith('/') ? item.image : `/${item.image}`} // Simple heuristic
                                             alt={item.name}
                                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                             onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; }}
@@ -2024,7 +2025,7 @@ const AdminApp = () => {
                                                     <span style={{ fontWeight: 'bold', color: 'var(--accent-color)' }}>SABOY: {order.customerName}</span>
                                                     {order.phone && <span style={{ fontSize: '0.8rem', color: '#888' }}>{order.phone}</span>}
                                                 </div>
-                                            ) : `Stol ${order.tableId}`}
+                                            ) : (tables?.find(t => t.id === order.tableId)?.name || `Stol ${order.tableId}`)}
                                         </td>
                                         <td style={{ padding: '0.5rem' }}>{order.total.toLocaleString()}</td>
                                         <td style={{ padding: '0.5rem', color: '#aaa', fontSize: '0.9rem' }}>{order.paymentMethod}</td>
@@ -3056,7 +3057,21 @@ const AdminApp = () => {
 
         return (
             <div>
-                <h2>Eski Z-Reportlar (Arxiv)</h2>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h2>Eski Z-Reportlar (Arxiv)</h2>
+                    {archives.length > 0 && (
+                        <button
+                            onClick={() => {
+                                if (window.confirm("Barcha arxivlarni butunlay o'chirib yubormoqchimisiz? Bu amalni ortga qaytarib bo'lmaydi!")) {
+                                    clearArchives();
+                                }
+                            }}
+                            style={{ background: '#ef4444', color: '#fff', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}
+                        >
+                            Barcha arxivlarni tozalash
+                        </button>
+                    )}
+                </div>
                 <div style={{ marginTop: '1rem' }}>
                     {archives.length === 0 ? <p style={{ color: '#666' }}>Arxiv bo'sh</p> : (
                         <div style={{ display: 'grid', gap: '1rem' }}>
@@ -3067,7 +3082,7 @@ const AdminApp = () => {
                                         <span style={{ fontSize: '0.8rem', color: '#888' }}>{new Date(arch.date).toLocaleTimeString()}</span>
                                     </div>
 
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', padding: '0.5rem 0', borderTop: '1px dashed #444', borderBottom: '1px dashed #444' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem', padding: '0.5rem 0', borderTop: '1px dashed #444', borderBottom: '1px dashed #444' }}>
                                         <div>
                                             <span style={{ display: 'block', fontSize: '0.8rem', color: '#888' }}>Jami</span>
                                             <span style={{ fontWeight: 'bold' }}>{arch.summary?.total?.toLocaleString()}</span>
@@ -3083,6 +3098,18 @@ const AdminApp = () => {
                                         <div>
                                             <span style={{ display: 'block', fontSize: '0.8rem', color: '#888' }}>Click</span>
                                             <span>{arch.summary?.click?.toLocaleString()}</span>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <button
+                                                onClick={() => {
+                                                    if (window.confirm("Ushbu arxivni o'chirishni tasdiqlaysizmi?")) {
+                                                        deleteArchive(arch.id);
+                                                    }
+                                                }}
+                                                style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '0.3rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9rem' }}
+                                            >
+                                                O'chirish
+                                            </button>
                                         </div>
                                     </div>
 
@@ -3120,7 +3147,7 @@ const AdminApp = () => {
                                                                         <span style={{ color: 'var(--accent-color)', fontWeight: 'bold' }}>SABOY: {order.customerName}</span>
                                                                         {order.phone && <span style={{ fontSize: '0.75rem', color: '#888' }}>{order.phone}</span>}
                                                                     </div>
-                                                                ) : `Stol ${order.tableId}`}
+                                                                ) : (tables?.find(t => t.id === order.tableId)?.name || `Stol ${order.tableId}`)}
                                                             </td>
                                                             <td style={{ padding: '0.5rem', fontSize: '0.8rem', color: '#ccc' }}>
                                                                 {order.items.map((item, idx) => (
@@ -3163,7 +3190,7 @@ const AdminApp = () => {
                             <p>Chek nusxasi (Arxiv)</p>
                             <hr />
                             <div className="receipt-header">
-                                <h2>{receiptOrder.isSaboy ? `SABOY: ${receiptOrder.customerName}` : `Stol ${tables.find(t => t.id === receiptOrder.tableId)?.name || receiptOrder.tableId}`}</h2>
+                                <h2>{receiptOrder.isSaboy ? `SABOY: ${receiptOrder.customerName}` : (tables?.find(t => t.id === receiptOrder.tableId)?.name || `Stol ${receiptOrder.tableId}`)}</h2>
                                 {receiptOrder.isSaboy && receiptOrder.phone && <p style={{ fontSize: '14px' }}>Tel: {receiptOrder.phone}</p>}
                                 <p>{new Date(receiptOrder.timestamp).toLocaleString()}</p>
                             </div>

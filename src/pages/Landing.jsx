@@ -10,8 +10,6 @@ const Landing = () => {
     const [msgData, setMsgData] = useState({ name: '', phone: '', message: '' });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [notification, setNotification] = useState({ show: false, message: '', type: 'success' });
-    const isDev = window.location.port === '5173';
-    const API_URL = import.meta.env.VITE_API_URL || (isDev ? `http://${window.location.hostname}:3000` : window.location.origin);
     // Default contact values
     const contactInfo = {
         phone: settings.phone || '+998 90 123 45 67',
@@ -38,9 +36,12 @@ const Landing = () => {
         }
         setIsSubmitting(true);
         try {
-            const res = await fetch(`${API_URL}/api/messages`, {
+            const res = await fetch(`/api/messages`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'ngrok-skip-browser-warning': 'true'
+                },
                 body: JSON.stringify(msgData)
             });
             const data = await res.json();
@@ -147,7 +148,7 @@ const Landing = () => {
                             menuHighlights.map(item => (
                                 <div key={item.id} className="menu-card">
                                     <img
-                                        src={item.image.startsWith('http') ? item.image : `${API_URL}${item.image}`}
+                                        src={item.image.startsWith('http') ? item.image : item.image.startsWith('/') ? item.image : `/${item.image}`}
                                         alt={item.name}
                                         className="menu-img"
                                         onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80'; }}

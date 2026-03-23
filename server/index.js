@@ -616,6 +616,22 @@ io.on('connection', (socket) => {
         io.emit('data_update', db);
     });
 
+    socket.on('clear_all_archives', () => {
+        if (socket.user?.role !== 'admin') return;
+        db.archives = [];
+        saveDb();
+        io.emit('data_update', db);
+    });
+
+    socket.on('delete_archive', (id) => {
+        if (socket.user?.role !== 'admin') return;
+        if (db.archives) {
+            db.archives = db.archives.filter(a => a.id !== id);
+            saveDb();
+            io.emit('data_update', db);
+        }
+    });
+
     // 9. Clear Kitchen History (Hide from Kitchen view)
     socket.on('clear_kitchen_history', (orderIds) => {
         console.log("SERVER: clear_kitchen_history command received for", orderIds.length, "items.");
@@ -1045,7 +1061,7 @@ app.post('/api/messages', (req, res) => {
 
 // Serve React App in Production/Ngrok
 app.use(express.static(path.join(__dirname, '../dist')));
-app.get('*', (req, res) => {
+app.use((req, res) => {
     res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 

@@ -3,9 +3,41 @@
     {
       "id": 1769765279561,
       "name": "KABINA-1",
-      "status": "free",
-      "total": 0,
-      "orders": []
+      "status": "busy",
+      "total": 110160,
+      "orders": [
+        {
+          "id": 1774186763627,
+          "tableId": 1769765279561,
+          "items": [
+            {
+              "name": "Osh",
+              "price": 35000,
+              "category": "Taomlar",
+              "image": "/images/osh.png",
+              "id": 1,
+              "available": true,
+              "quantity": 2
+            },
+            {
+              "name": "Manti",
+              "price": 8000,
+              "category": "Taomlar",
+              "image": "/images/manti.png",
+              "id": 2,
+              "quantity": 4
+            }
+          ],
+          "status": "pending",
+          "printed": true,
+          "timestamp": "2026-03-22T14:17:21.046Z",
+          "itemsTotal": 102000,
+          "servicePercentage": 8,
+          "serviceAmount": 8160,
+          "total": 110160,
+          "waiterName": "Sardor"
+        }
+      ]
     },
     {
       "id": 1769765296073,
@@ -97,6 +129,13 @@
       "status": "free",
       "total": 0,
       "orders": []
+    },
+    {
+      "id": 1774193958430,
+      "name": "st3",
+      "status": "free",
+      "total": 0,
+      "orders": []
     }
   ],
   "menu": [
@@ -181,6 +220,50 @@
     }
   ],
   "activeOrders": [
+    {
+      "id": 1774186763627,
+      "tableId": 1769765279561,
+      "items": [
+        {
+          "name": "Osh",
+          "price": 35000,
+          "category": "Taomlar",
+          "image": "/images/osh.png",
+          "id": 1,
+          "available": true,
+          "quantity": 2
+        },
+        {
+          "name": "Manti",
+          "price": 8000,
+          "category": "Taomlar",
+          "image": "/images/manti.png",
+          "id": 2,
+          "quantity": 4
+        }
+      ],
+      "status": "pending",
+      "printed": true,
+      "timestamp": "2026-03-22T14:17:21.046Z",
+      "itemsTotal": 102000,
+      "servicePercentage": 8,
+      "serviceAmount": 8160,
+      "total": 110160,
+      "waiterName": "Sardor"
+    },
+    {
+      "id": 1774185481975,
+      "tableId": 1769765279561,
+      "items": [],
+      "status": "pending",
+      "printed": true,
+      "timestamp": "2026-03-22T13:19:45.314Z",
+      "itemsTotal": 0,
+      "servicePercentage": 8,
+      "serviceAmount": 0,
+      "total": 0,
+      "waiterName": "Admin"
+    },
     {
       "id": 1774166869144,
       "tableId": 1769765302369,
@@ -348,29 +431,29 @@
   ],
   "history": [
     {
-      "id": 1774177534031,
+      "id": 1774189110258,
       "isSaboy": true,
       "items": [
         {
-          "name": "Manti",
-          "price": 8000,
-          "category": "Taomlar",
-          "image": "/images/manti.png",
-          "id": 2,
+          "name": "Non",
+          "price": 4000,
+          "category": "Non maxsulotlari",
+          "image": "/images/non.png",
+          "id": 6,
           "quantity": 1
         }
       ],
       "status": "pending",
       "printed": false,
-      "timestamp": "2026-03-22T11:05:34.031Z",
-      "itemsTotal": 8000,
+      "timestamp": "2026-03-22T14:18:30.258Z",
+      "itemsTotal": 4000,
       "servicePercentage": 0,
       "serviceAmount": 0,
-      "total": 8000,
+      "total": 4000,
       "customerName": "Saboy",
       "phone": "",
       "note": "",
-      "closedAt": "2026-03-22T11:05:42.464Z",
+      "closedAt": "2026-03-22T15:15:28.994Z",
       "paymentMethod": "Naqd",
       "discount": 0
     }
@@ -937,6 +1020,45 @@
           "discount": 0
         }
       ]
+    },
+    {
+      "id": "1774185473083",
+      "date": "2026-03-22T13:17:53.083Z",
+      "summary": {
+        "total": 8000,
+        "cash": 8000,
+        "card": 0,
+        "click": 0
+      },
+      "orders": [
+        {
+          "id": 1774177534031,
+          "isSaboy": true,
+          "items": [
+            {
+              "name": "Manti",
+              "price": 8000,
+              "category": "Taomlar",
+              "image": "/images/manti.png",
+              "id": 2,
+              "quantity": 1
+            }
+          ],
+          "status": "pending",
+          "printed": false,
+          "timestamp": "2026-03-22T11:05:34.031Z",
+          "itemsTotal": 8000,
+          "servicePercentage": 0,
+          "serviceAmount": 0,
+          "total": 8000,
+          "customerName": "Saboy",
+          "phone": "",
+          "note": "",
+          "closedAt": "2026-03-22T11:05:42.464Z",
+          "paymentMethod": "Naqd",
+          "discount": 0
+        }
+      ]
     }
   ],
   "reservations": [
@@ -1037,6 +1159,13 @@
       "comment": "",
       "date": "2026-03-22",
       "id": 1774172537819
+    },
+    {
+      "id": 1774188858031,
+      "category": "Xodim Ish Haqi",
+      "amount": 982110,
+      "note": "Sardor uchun hisob-kitob. (Ish: 982110, Rasxod: 0, Bonus: 0, Shtraf: 0) ",
+      "date": "2026-03-22T14:14:18.031Z"
     }
   ],
   "employees": [
@@ -1050,10 +1179,10 @@
       "startTime": "09:00",
       "endTime": "23:00",
       "id": 1771654865090,
-      "totalEarnings": -3000,
+      "totalEarnings": 0,
       "advances": [],
-      "isAtWork": true,
-      "lastAttendance": "check-in",
+      "isAtWork": false,
+      "lastAttendance": "check-out",
       "salaryType": "soatbay",
       "waiterAuth": {
         "username": "akbar68",
@@ -1234,6 +1363,16 @@
       "type": "check-in",
       "timestamp": "2026-03-22T09:38:08.444Z",
       "note": ""
+    },
+    {
+      "id": 1774188838287,
+      "employeeId": 1771654865090,
+      "employeeName": "Sardor",
+      "type": "check-out",
+      "timestamp": "2026-03-22T14:13:58.287Z",
+      "note": "",
+      "durationMinutes": 276,
+      "earnings": 985110
     }
   ],
   "saboyOrders": [],
@@ -1244,12 +1383,5 @@
     "address": "Amudaryo Tumani Mang'it shahri",
     "hours": "Har kuni: 09:00 - 23:00"
   },
-  "waiterApplications": [
-    {
-      "id": 1774176353484,
-      "name": "Akbar",
-      "phone": "+998907010875",
-      "timestamp": "2026-03-22T10:45:53.484Z"
-    }
-  ]
+  "waiterApplications": []
 }

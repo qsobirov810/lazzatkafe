@@ -6,9 +6,11 @@ const DataContext = createContext();
 export const useData = () => useContext(DataContext);
 
 // Connect to Backend
-const isDev = window.location.port === '5173';
-const API_URL = import.meta.env.VITE_API_URL || (isDev ? `http://${window.location.hostname}:3000` : window.location.origin);
-const socket = io(API_URL);
+const socket = io('/', {
+    extraHeaders: {
+        'ngrok-skip-browser-warning': 'true'
+    }
+});
 
 export const DataProvider = ({ children }) => {
     // --- STATE ---
@@ -57,9 +59,12 @@ export const DataProvider = ({ children }) => {
 
     const login = async (username, password) => {
         try {
-            const response = await fetch(`${API_URL}/api/login`, {
+            const response = await fetch(`/api/login`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'ngrok-skip-browser-warning': 'true'
+                },
                 body: JSON.stringify({ username, password })
             });
             const data = await response.json();
@@ -207,6 +212,8 @@ export const DataProvider = ({ children }) => {
     const clearHistory = () => {
         socket.emit('clear_history');
     };
+    const clearArchives = () => socket.emit('clear_all_archives');
+    const deleteArchive = (id) => socket.emit('delete_archive', id);
 
     const clearKitchenHistory = (orderIds) => {
         socket.emit('clear_kitchen_history', orderIds);
@@ -313,7 +320,7 @@ export const DataProvider = ({ children }) => {
             tables, menu, categories, activeOrders, completedOrders, archives, reservations, settings, expenses, employees, attendance, saboyOrders, messages, waiterApplications,
             isConnected, isAuthenticated, user, isLoading,
             sendOrder, updateOrder, checkoutTable, markOrderPrinted, addMenuItem, updateMenuItem, deleteMenuItem,
-            addCategory, deleteCategory, clearHistory, closeDay, clearKitchenHistory, cancelOrder,
+            addCategory, deleteCategory, clearHistory, closeDay, clearKitchenHistory, cancelOrder, clearArchives, deleteArchive,
             addTable, deleteTable, addReservation, updateReservation, deleteReservation, activateReservation,
             updateSettings, addExpense, deleteExpense, addEmployee, updateEmployee, deleteEmployee,
             addAdvance, deleteAdvance, updateEmployeeSalary, logAttendance, settleEmployee,

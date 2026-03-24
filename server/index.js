@@ -238,7 +238,7 @@ io.on('connection', (socket) => {
 
     // 2. Place Order
     socket.on('place_order', ({ tableId, items, waiterName }) => {
-        const tableIndex = db.tables.findIndex(t => t.id === tableId);
+        const tableIndex = db.tables.findIndex(t => String(t.id) === String(tableId));
         if (tableIndex === -1) return;
 
         const itemsTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -309,7 +309,7 @@ io.on('connection', (socket) => {
         };
 
         // Update Order inside Table
-        const tableIndex = db.tables.findIndex(t => t.id === oldOrder.tableId);
+        const tableIndex = db.tables.findIndex(t => String(t.id) === String(oldOrder.tableId));
         if (tableIndex !== -1) {
             const tOrderIndex = db.tables[tableIndex].orders.findIndex(o => o.id === orderId);
             if (tOrderIndex !== -1) {
@@ -344,7 +344,7 @@ io.on('connection', (socket) => {
     // 4. Checkout Table
     socket.on('checkout_table', ({ tableId, paymentMethod, discount = 0, serviceOff = false }) => {
         if (socket.user?.role !== 'admin') return;
-        const tableIndex = db.tables.findIndex(t => t.id === tableId);
+        const tableIndex = db.tables.findIndex(t => String(t.id) === String(tableId));
         if (tableIndex === -1) return;
 
         const table = db.tables[tableIndex];
@@ -422,8 +422,8 @@ io.on('connection', (socket) => {
 
         // Reset Related Tables
         relatedTables.forEach(tId => {
-            if (tId !== tableId) {
-                const tIdx = db.tables.findIndex(t => t.id === tId);
+            if (String(tId) !== String(tableId)) {
+                const tIdx = db.tables.findIndex(t => String(t.id) === String(tId));
                 if (tIdx !== -1) {
                     db.tables[tIdx] = {
                         ...db.tables[tIdx],
@@ -436,7 +436,7 @@ io.on('connection', (socket) => {
         });
 
         // Cleanup: Remove these orders from Active Orders list
-        db.activeOrders = db.activeOrders.filter(o => o.tableId !== tableId);
+        db.activeOrders = db.activeOrders.filter(o => String(o.tableId) !== String(tableId));
 
         saveDb();
 
@@ -534,7 +534,7 @@ io.on('connection', (socket) => {
         // 1. Mark tables as busy
         let primaryTableId = tableIds[0];
         tableIds.forEach(tId => {
-            const tIndex = db.tables.findIndex(t => t.id === tId);
+            const tIndex = db.tables.findIndex(t => String(t.id) === String(tId));
             if (tIndex !== -1) {
                 db.tables[tIndex].status = 'busy';
                 // If it's a secondary table, maybe link it? For now, we just mark busy.
@@ -557,7 +557,7 @@ io.on('connection', (socket) => {
         db.activeOrders.unshift(newOrder);
 
         // Update Primary Table Total/Orders
-        const tIndex = db.tables.findIndex(t => t.id === primaryTableId);
+        const tIndex = db.tables.findIndex(t => String(t.id) === String(primaryTableId));
         if (tIndex !== -1) {
             db.tables[tIndex].orders.push(newOrder);
             db.tables[tIndex].total += newOrder.total;
@@ -586,7 +586,7 @@ io.on('connection', (socket) => {
 
     socket.on('delete_table', (tableId) => {
         // Prevent deleting busy tables? Maybe. For now, strict allow.
-        db.tables = db.tables.filter(t => t.id !== tableId);
+        db.tables = db.tables.filter(t => String(t.id) !== String(tableId));
         saveDb();
         io.emit('data_update', db);
     });

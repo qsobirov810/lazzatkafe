@@ -145,7 +145,6 @@ a {
 /* Print Report Styles (Moved from AdminApp) */
 @media print {
   .print-report {
-    width: 50mm;
     margin: 0 auto;
     background: white;
     color: #000000 !important;

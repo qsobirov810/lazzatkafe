@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useData } from '../context/DataContext';
 import { FaUsers, FaHistory, FaCheck, FaChartLine, FaPlus, FaTrash, FaEdit, FaPrint, FaUtensils, FaChair, FaSignOutAlt, FaTimes, FaCamera, FaImage, FaSearch, FaWallet, FaQrcode, FaCashRegister, FaEnvelope, FaLock } from 'react-icons/fa';
@@ -23,7 +23,7 @@ const PrintPortal = ({ children }) => {
 
 // 0. KITCHEN VIEW (New)
 const KitchenView = () => {
-    const { tables, activeOrders, markOrderPrinted, clearKitchenHistory, cancelOrder } = useData();
+    const { tables, activeOrders, markOrderPrinted, clearKitchenHistory, cancelOrder, settings } = useData();
     const [ticketToPrint, setTicketToPrint] = useState(null);
     const [activeTab, setActiveTab] = useState('active'); // 'active' or 'history'
 
@@ -125,7 +125,7 @@ const KitchenView = () => {
                     }}>
                         {order.printed && activeTab === 'history' && (
                             <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'var(--success)', color: '#fff', padding: '2px 8px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                                ✅ CHIQARILGAN
+                                вњ… CHIQARILGAN
                             </div>
                         )}
                         <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #333', paddingBottom: '0.5rem' }}>
@@ -213,7 +213,7 @@ const KitchenView = () => {
                     </div>
                     <style>{`
                             .print-ticket {
-                                width: 44mm;
+                                width: ${settings.kitchenPrinterWidth || 50}mm;
                                 margin: 0 auto;
                                 background: white;
                                 color: #000000 !important;
@@ -916,7 +916,7 @@ const AdminApp = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <h2 style={{ color: '#888' }}>Stollar Holati</h2>
                         <button onClick={() => setShowReservations(true)} style={{ background: '#7c3aed', color: '#fff', padding: '0.8rem 1.5rem', borderRadius: '8px', fontWeight: 'bold' }}>
-                            📅 BRONLAR ({reservations.length})
+                            рџ“… BRONLAR ({reservations.length})
                         </button>
                     </div>
 
@@ -1126,7 +1126,7 @@ const AdminApp = () => {
                                         <hr />
                                         <style>{`
                                             .print-receipt {
-                                                width: 50mm;
+                                                width: ${settings.cashierPrinterWidth || 72}mm;
                                                 margin: 0 auto;
                                                 background: white;
                                                 color: #000000 !important;
@@ -1345,7 +1345,7 @@ const AdminApp = () => {
                                     </div>
                                     <style>{`
                                         .print-receipt {
-                                            width: 50mm;
+                                            width: ${settings.cashierPrinterWidth || 72}mm;
                                             margin: 0 auto;
                                             background: white;
                                             color: #000000 !important;
@@ -1478,7 +1478,7 @@ const AdminApp = () => {
                             </div>
                             <style>{`
                             .print-res {
-                                width: 58mm;
+                                width: ${settings.cashierPrinterWidth || 72}mm;
                                 margin: 0 auto;
                                 background: white;
                                 color: #000000 !important;
@@ -1946,6 +1946,7 @@ const AdminApp = () => {
                                             text-align: center;
                                             padding: 50px;
                                             color: #000 !important;
+                                            width: ${settings.cashierPrinterWidth || 72}mm !important;
                                         }
                                     }
                                     .print-qr-code { display: none; }
@@ -2529,7 +2530,7 @@ const AdminApp = () => {
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '2rem' }}>
                             <div style={{ background: '#252525', padding: '1.5rem', borderRadius: '16px', border: '1px solid #333' }}>
-                                <h3 style={{ marginTop: 0, borderBottom: '1px solid #444', paddingBottom: '0.5rem' }}>💰 Moliyaviy Holat</h3>
+                                <h3 style={{ marginTop: 0, borderBottom: '1px solid #444', paddingBottom: '0.5rem' }}>рџ’° Moliyaviy Holat</h3>
 
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
                                     <div style={{ background: '#1a1a1a', padding: '1rem', borderRadius: '12px', textAlign: 'center' }}>
@@ -2572,7 +2573,7 @@ const AdminApp = () => {
 
                             <div style={{ background: '#252525', padding: '1.5rem', borderRadius: '16px', border: '1px solid #333', display: 'flex', flexDirection: 'column' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                                    <h3 style={{ margin: 0 }}>📅 Davomat</h3>
+                                    <h3 style={{ margin: 0 }}>рџ“… Davomat</h3>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: employee.isAtWork ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.05)', color: employee.isAtWork ? 'var(--success)' : '#888', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>
                                         <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: employee.isAtWork ? 'var(--success)' : '#888' }}></div>
                                         {employee.isAtWork ? 'ISHDA' : 'ISHDA EMAS'}
@@ -2742,7 +2743,7 @@ const AdminApp = () => {
                                         </div>
                                         <h2 style={{ margin: '0.3rem 0', fontSize: '1.6rem', fontWeight: '800', color: '#fff' }}>{emp.name}</h2>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#666', fontSize: '0.85rem' }}>
-                                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>🕒 {emp.startTime} - {emp.endTime}</span>
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>рџ•’ {emp.startTime} - {emp.endTime}</span>
                                             <span style={{ opacity: 0.3 }}>|</span>
                                             <span>{emp.dailyHours} soat</span>
                                         </div>
@@ -2839,6 +2840,9 @@ const AdminApp = () => {
                                     </div>
                                 )}
 
+
+
+
                                 <div style={{
                                     fontSize: '0.85rem',
                                     color: '#555',
@@ -2848,7 +2852,7 @@ const AdminApp = () => {
                                     marginTop: '1rem',
                                     fontWeight: '500'
                                 }}>
-                                    📞 {emp.phone || 'Noma\'lum'}
+                                    рџ“ћ {emp.phone || 'Noma\'lum'}
                                 </div>
                             </div>
                         );
@@ -3220,7 +3224,7 @@ const AdminApp = () => {
                         </div>
                         <style>{`
                             .print-archive {
-                                width: 50mm;
+                                width: ${settings.cashierPrinterWidth || 72}mm;
                                 margin: 0 auto;
                                 background: white;
                                 color: #000000 !important;
@@ -3491,6 +3495,27 @@ const AdminApp = () => {
                             <hr />
                             <p>Xaridingiz uchun rahmat!</p>
                         </div>
+                        <style>{`
+                            .print-receipt {
+                                width: ${settings.cashierPrinterWidth || 72}mm;
+                                margin: 0 auto;
+                                background: white;
+                                color: #000000 !important;
+                                font-family: 'Courier New', monospace;
+                                padding: 0 4mm 2mm 4mm;
+                                box-sizing: border-box;
+                                text-align: center;
+                                font-size: 14px;
+                                font-weight: 900;
+                            }
+                            .print-receipt h3 { margin: 0; font-size: 18px; font-weight: 900; color: #000 !important; }
+                            .print-receipt p { margin: 1px 0; font-size: 14px; font-weight: 900; color: #000 !important; }
+                            .receipt-item { display: flex; flex-direction: column; margin-bottom: 5px; padding-bottom: 2px; color: #000 !important; }
+                            .receipt-row-1 { text-align: left; width: 100%; overflow-wrap: break-word; color: #000 !important; }
+                            .receipt-row-2 { text-align: center; width: 100%; margin-top: 1px; font-size: 16px; font-weight: 900; color: #000 !important; }
+                            .receipt-total { display: flex; justify-content: space-between; font-weight: 900; font-size: 16px; margin: 3px 0; color: #000 !important; }
+                            hr { border: none; border-top: 1px dashed #000 !important; height: 0; margin: 5px 0; opacity: 1; }
+                        `}</style>
                     </PrintPortal>
                 )}
 
@@ -3550,7 +3575,7 @@ const AdminApp = () => {
                                 </div>
                                 {msg.phone && (
                                     <div style={{ color: 'var(--accent-color)', fontWeight: 'bold', fontSize: '1rem' }}>
-                                        📞 {msg.phone}
+                                        рџ“ћ {msg.phone}
                                     </div>
                                 )}
                                 <div style={{ color: '#ccc', lineHeight: '1.6', fontSize: '0.95rem', background: '#1a1a1a', padding: '1rem', borderRadius: '8px' }}>
@@ -3628,7 +3653,7 @@ const AdminApp = () => {
                                     <span style={{ color: '#666', fontSize: '0.8rem' }}>{new Date(app.timestamp).toLocaleDateString()}</span>
                                 </div>
                                 <div style={{ color: 'var(--accent-color)', fontWeight: '900', fontSize: '1.2rem', background: 'rgba(255,215,0,0.05)', padding: '0.8rem', borderRadius: '8px', textAlign: 'center' }}>
-                                    📞 {app.phone}
+                                    рџ“ћ {app.phone}
                                 </div>
                                 <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                                     <button
@@ -3683,11 +3708,13 @@ const AdminApp = () => {
                     </div>
                 )}
             </div>
-        );
+    );
     };
 
     const SettingsView = () => {
         const [percentage, setPercentage] = useState(settings.servicePercentage || 0);
+        const [kitchenWidth, setKitchenWidth] = useState(settings.kitchenPrinterWidth || 50);
+        const [cashierWidth, setCashierWidth] = useState(settings.cashierPrinterWidth || 72);
         const [contact, setContact] = useState({
             phone: settings.phone || '+998 90 123 45 67',
             address: settings.address || 'Toshkent sh., Chilonzor tumani, 1-mavze',
@@ -3697,6 +3724,8 @@ const AdminApp = () => {
         const handleSave = () => {
             updateSettings({
                 servicePercentage: Number(percentage),
+                kitchenPrinterWidth: Number(kitchenWidth),
+                cashierPrinterWidth: Number(cashierWidth),
                 ...contact
             });
             openSuccess("Barcha sozlamalar muvaffaqiyatli saqlandi!");
@@ -3723,6 +3752,29 @@ const AdminApp = () => {
                             <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.5rem' }}>
                                 Ushbu foiz barcha <b>yangi</b> buyurtmalarga qo'shiladi.
                             </p>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#aaa' }}>Oshxona Printeri (mm)</label>
+                                <input
+                                    type="number"
+                                    value={kitchenWidth}
+                                    onChange={(e) => setKitchenWidth(e.target.value)}
+                                    style={{ width: '100%', padding: '0.8rem', borderRadius: '4px', border: '1px solid #444', background: '#333', color: '#fff' }}
+                                />
+                                <p style={{ fontSize: '0.7rem', color: '#666', marginTop: '0.3rem' }}>Odatda 58mm printer uchun 44-50mm</p>
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#aaa' }}>Kassa Printeri (mm)</label>
+                                <input
+                                    type="number"
+                                    value={cashierWidth}
+                                    onChange={(e) => setCashierWidth(e.target.value)}
+                                    style={{ width: '100%', padding: '0.8rem', borderRadius: '4px', border: '1px solid #444', background: '#333', color: '#fff' }}
+                                />
+                                <p style={{ fontSize: '0.7rem', color: '#666', marginTop: '0.3rem' }}>Odatda 80mm printer uchun 70-75mm</p>
+                            </div>
                         </div>
                     </div>
 
@@ -4118,6 +4170,16 @@ const AdminApp = () => {
 
                         <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '14px', fontWeight: 'bold' }}>KASSA YOPILDI</p>
                     </div>
+                    <style>{`
+                        @media print {
+                            .print-report {
+                                width: ${settings.cashierPrinterWidth || 72}mm !important;
+                                margin: 0 auto !important;
+                                padding: 0 4mm 5mm 4mm !important;
+                                box-sizing: border-box !important;
+                            }
+                        }
+                    `}</style>
                 </PrintPortal>
             )}
         </div>

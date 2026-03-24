@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useData } from '../context/DataContext';
 import { FaUsers, FaHistory, FaCheck, FaChartLine, FaPlus, FaTrash, FaEdit, FaPrint, FaUtensils, FaChair, FaSignOutAlt, FaTimes, FaCamera, FaImage, FaSearch, FaWallet, FaQrcode, FaCashRegister, FaEnvelope, FaLock } from 'react-icons/fa';
@@ -61,7 +61,7 @@ const KitchenView = () => {
     }, [ticketToPrint]);
 
     const handleDelete = (order) => {
-        const identifier = order.isSaboy ? `Saboy buyurtmasi: ${order.customerName}` : (tables?.find(t => t.id === order.tableId)?.name || `Stol ${order.tableId}`);
+        const identifier = order.isSaboy ? `Saboy buyurtmasi: ${order.customerName}` : (tables?.find(t => String(t.id) === String(order.tableId))?.name || `Stol ${order.tableId}`);
         if (window.confirm(`Haqiqatan ham ${identifier} buyurtmasini O'CHIRMOQCHIMISIZ?`)) {
             cancelOrder(order.id);
         }
@@ -131,7 +131,7 @@ const KitchenView = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #333', paddingBottom: '0.5rem' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: order.isSaboy ? 'var(--accent-color)' : '#fff' }}>
-                                    {order.isSaboy ? `SABOY: ${order.customerName}` : (tables?.find(t => t.id === order.tableId)?.name || `STOL ${order.tableId}`)}
+                                    {order.isSaboy ? `SABOY: ${order.customerName}` : (tables?.find(t => String(t.id) === String(order.tableId))?.name || `STOL ${order.tableId}`)}
                                 </span>
                                 {order.isSaboy && order.phone && <span style={{ fontSize: '0.9rem', color: '#888' }}>{order.phone}</span>}
                             </div>
@@ -189,7 +189,7 @@ const KitchenView = () => {
                         <p>Oshxona Cheki</p>
                         <hr />
                         <div className="ticket-header">
-                            <h2>{ticketToPrint.isSaboy ? `SABOY: ${ticketToPrint.customerName}` : `STOL ${tables.find(t => t.id === ticketToPrint.tableId)?.name || ticketToPrint.tableId}`}</h2>
+                            <h2>{ticketToPrint.isSaboy ? `SABOY: ${ticketToPrint.customerName}` : `STOL ${tables.find(t => String(t.id) === String(ticketToPrint.tableId))?.name || ticketToPrint.tableId}`}</h2>
                             {ticketToPrint.isSaboy && ticketToPrint.phone && <p>Tel: {ticketToPrint.phone}</p>}
                             <p>{ticketToPrint.isSaboy ? `Mijoz: ${ticketToPrint.customerName}` : `Ofitsiant: ${ticketToPrint.waiterName || 'Noma\'lum'}`}</p>
                             <p>{new Date(ticketToPrint.timestamp).toLocaleString()}</p>
@@ -213,7 +213,7 @@ const KitchenView = () => {
                     </div>
                     <style>{`
                             .print-ticket {
-                                width: ${settings.kitchenPrinterWidth || 50}mm;
+                                width: ${settings.kitchenPrinterWidth || 72}mm;
                                 margin: 0 auto;
                                 background: white;
                                 color: #000000 !important;
@@ -432,7 +432,7 @@ const PaymentModalContent = ({ selectedTable, onClose, onCheckout, settings, onE
 
 const AdminApp = () => {
     const {
-        tables, checkoutTable, updateOrder, completedOrders, archives, menu, categories, addMenuItem, updateMenuItem, deleteMenuItem, addCategory, deleteCategory, clearHistory, closeDay, addTable, deleteTable, reservations, addReservation, updateReservation, deleteReservation, activateReservation, settings, updateSettings, isConnected, messages, deleteMessage, activeOrders, saboyOrders, clearArchives, deleteArchive,
+        tables, checkoutTable, updateOrder, completedOrders, archives, menu, categories, addMenuItem, updateMenuItem, deleteMenuItem, addCategory, deleteCategory, clearHistory, closeDay, addTable, deleteTable, reservations, addReservation, updateReservation, deleteReservation, activateReservation, settings, updateSettings, isConnected, messages, deleteMessage, activeOrders, saboyOrders, clearArchives, deleteArchive, clearAllStatistics,
         waiterApplications, approveWaiter, deleteWaiterApplication, user, isAuthenticated, logout
     } = useData();
     const navigate = useNavigate();
@@ -1395,7 +1395,7 @@ const AdminApp = () => {
                                                 <div>
                                                     <h3 style={{ margin: 0 }}>{res.customer} <span style={{ fontSize: '0.9rem', color: '#aaa' }}>({res.guests} kishi)</span></h3>
                                                     <p style={{ margin: '5px 0', color: 'var(--accent-color)' }}>{new Date(res.date).toLocaleString()}</p>
-                                                    <p style={{ margin: 0, fontSize: '0.9rem', color: '#aaa' }}>Stollar: {res.tableIds.map(tid => tables.find(t => t.id === tid)?.name).join(', ')}</p>
+                                                    <p style={{ margin: 0, fontSize: '0.9rem', color: '#aaa' }}>Stollar: {res.tableIds.map(tid => tables.find(t => String(t.id) === String(tid))?.name).join(', ')}</p>
                                                     {res.items && res.items.length > 0 && <p style={{ fontSize: '0.8rem', color: '#888', marginTop: '5px' }}>+ {res.items.length} ta taom oldindan</p>}
                                                 </div>
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -1445,7 +1445,7 @@ const AdminApp = () => {
                                     <p>Tel: {reservationToPrint.phone}</p>
                                     <p>Sana: {new Date(reservationToPrint.date).toLocaleString()}</p>
                                     <p>Mehmonlar: {reservationToPrint.guests} kishi</p>
-                                    <p>Stollar: {reservationToPrint.tableIds.map(tid => tables.find(t => t.id === tid)?.name).join(', ')}</p>
+                                    <p>Stollar: {reservationToPrint.tableIds.map(tid => tables.find(t => String(t.id) === String(tid))?.name).join(', ')}</p>
                                 </div>
                                 <hr />
                                 <div className="res-items">
@@ -2026,7 +2026,7 @@ const AdminApp = () => {
                                                     <span style={{ fontWeight: 'bold', color: 'var(--accent-color)' }}>SABOY: {order.customerName}</span>
                                                     {order.phone && <span style={{ fontSize: '0.8rem', color: '#888' }}>{order.phone}</span>}
                                                 </div>
-                                            ) : (tables?.find(t => t.id === order.tableId)?.name || `Stol ${order.tableId}`)}
+                                            ) : (tables?.find(t => String(t.id) === String(order.tableId))?.name || `Stol ${order.tableId}`)}
                                         </td>
                                         <td style={{ padding: '0.5rem' }}>{order.total.toLocaleString()}</td>
                                         <td style={{ padding: '0.5rem', color: '#aaa', fontSize: '0.9rem' }}>{order.paymentMethod}</td>
@@ -3151,7 +3151,7 @@ const AdminApp = () => {
                                                                         <span style={{ color: 'var(--accent-color)', fontWeight: 'bold' }}>SABOY: {order.customerName}</span>
                                                                         {order.phone && <span style={{ fontSize: '0.75rem', color: '#888' }}>{order.phone}</span>}
                                                                     </div>
-                                                                ) : (tables?.find(t => t.id === order.tableId)?.name || `Stol ${order.tableId}`)}
+                                                                ) : (tables?.find(t => String(t.id) === String(order.tableId))?.name || `Stol ${order.tableId}`)}
                                                             </td>
                                                             <td style={{ padding: '0.5rem', fontSize: '0.8rem', color: '#ccc' }}>
                                                                 {order.items.map((item, idx) => (
@@ -3194,7 +3194,7 @@ const AdminApp = () => {
                             <p>Chek nusxasi (Arxiv)</p>
                             <hr />
                             <div className="receipt-header">
-                                <h2>{receiptOrder.isSaboy ? `SABOY: ${receiptOrder.customerName}` : (tables?.find(t => t.id === receiptOrder.tableId)?.name || `Stol ${receiptOrder.tableId}`)}</h2>
+                                <h2>{receiptOrder.isSaboy ? `SABOY: ${receiptOrder.customerName}` : (tables?.find(t => String(t.id) === String(receiptOrder.tableId))?.name || `Stol ${receiptOrder.tableId}`)}</h2>
                                 {receiptOrder.isSaboy && receiptOrder.phone && <p style={{ fontSize: '14px' }}>Tel: {receiptOrder.phone}</p>}
                                 <p>{new Date(receiptOrder.timestamp).toLocaleString()}</p>
                             </div>
@@ -3731,6 +3731,18 @@ const AdminApp = () => {
             openSuccess("Barcha sozlamalar muvaffaqiyatli saqlandi!");
         };
 
+        const handleSystemReset = () => {
+            const pass = window.prompt("TIZIMNI TOZALASH uchun Admin parolini kiriting (8888):");
+            if (pass === '8888') {
+                if (window.confirm("DIQQAT! Barcha statistika, xarajatlar va arxivlar o'chiriladi. Ushbu amalni ortga qaytarib bo'lmaydi. Rozimisiz?")) {
+                    clearAllStatistics();
+                    openSuccess("Tizim muvaffaqiyatli tozalandi! Barcha statistika 0 ga tenglashtirildi.");
+                }
+            } else if (pass !== null) {
+                alert("Parol noto'g'ri!");
+            }
+        };
+
         return (
             <div>
                 <h2>Sozlamalar</h2>
@@ -3815,6 +3827,19 @@ const AdminApp = () => {
                     >
                         BARCHA O'ZGARISHLARNI SAQLASH
                     </button>
+
+                    <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid #333' }}>
+                        <h4 style={{ color: '#ef4444', marginBottom: '1rem' }}>Xavfli Hudud</h4>
+                        <button
+                            onClick={handleSystemReset}
+                            style={{ width: '100%', padding: '1rem', background: 'transparent', color: '#ef4444', border: '2px solid #ef4444', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
+                        >
+                            TIZIMNI TOZALASH (STATISTIKA 0)
+                        </button>
+                        <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.5rem', textAlign: 'center' }}>
+                            Ushbu tugma barcha savdo tarixi va statistikalarni o'chiradi.
+                        </p>
+                    </div>
                 </div>
             </div>
         );

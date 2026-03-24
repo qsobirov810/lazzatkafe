@@ -163,7 +163,8 @@ const defaultData = {
     saboyOrders: [],
     messages: [], // New: Store contact messages
     settings: {
-        servicePercentage: 0,
+        kitchenPrinterWidth: 72,
+        cashierPrinterWidth: 72,
         phone: '+998 90 123 45 67',
         address: 'Toshkent sh., Chilonzor tumani, 1-mavze',
         hours: 'Har kuni: 09:00 - 23:00'
@@ -640,6 +641,24 @@ io.on('connection', (socket) => {
     socket.on('clear_all_archives', () => {
         if (socket.user?.role !== 'admin') return;
         db.archives = [];
+        saveDb();
+        io.emit('data_update', db);
+    });
+
+    socket.on('clear_all_statistics', () => {
+        if (socket.user?.role !== 'admin') return;
+        console.log("SERVER: Full Statistics Reset requested.");
+        db.history = [];
+        db.archives = [];
+        db.expenses = [];
+        db.attendance = [];
+        db.messages = [];
+        db.waiterApplications = [];
+        db.saboyOrders = [];
+        
+        // Also clean up any loose active orders that might be in history or are old?
+        // Usually system reset means brand new start.
+        
         saveDb();
         io.emit('data_update', db);
     });

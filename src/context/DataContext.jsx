@@ -214,6 +214,7 @@ export const DataProvider = ({ children }) => {
     };
     const clearArchives = () => socket.emit('clear_all_archives');
     const deleteArchive = (id) => socket.emit('delete_archive', id);
+    const clearAllStatistics = () => socket.emit('clear_all_statistics');
 
     const clearKitchenHistory = (orderIds) => {
         socket.emit('clear_kitchen_history', orderIds);
@@ -320,7 +321,7 @@ export const DataProvider = ({ children }) => {
             tables, menu, categories, activeOrders, completedOrders, archives, reservations, settings, expenses, employees, attendance, saboyOrders, messages, waiterApplications,
             isConnected, isAuthenticated, user, isLoading,
             sendOrder, updateOrder, checkoutTable, markOrderPrinted, addMenuItem, updateMenuItem, deleteMenuItem,
-            addCategory, deleteCategory, clearHistory, closeDay, clearKitchenHistory, cancelOrder, clearArchives, deleteArchive,
+            addCategory, deleteCategory, clearHistory, closeDay, clearKitchenHistory, cancelOrder, clearArchives, deleteArchive, clearAllStatistics,
             addTable, deleteTable, addReservation, updateReservation, deleteReservation, activateReservation,
             updateSettings, addExpense, deleteExpense, addEmployee, updateEmployee, deleteEmployee,
             addAdvance, deleteAdvance, updateEmployeeSalary, logAttendance, settleEmployee,

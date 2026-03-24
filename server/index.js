@@ -1,14 +1,34 @@
 require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
+
+// Basic logging for cPanel debugging
+const logFile = path.join(__dirname, 'server-debug.log');
+const log = (msg) => {
+    const entry = `${new Date().toISOString()} - ${msg}\n`;
+    fs.appendFileSync(logFile, entry);
+    console.log(msg);
+};
+
+process.on('uncaughtException', (err) => {
+    log(`UNCAUGHT EXCEPTION: ${err.message}\n${err.stack}`);
+    process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    log(`UNHANDLED REJECTION: ${reason}`);
+});
+
+log('Server starting...');
+
 const express = require('express');
 const http = require('http');
 const { Server } = require("socket.io");
 const cors = require('cors');
-const fs = require('fs');
-const path = require('path');
 const multer = require('multer');
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-lazzat-kafe-2024'; // In production, use process.env.JWT_SECRET
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-lazzat-kafe-2024';
 
 const app = express();
 app.use(cors());
@@ -188,11 +208,12 @@ if (fs.existsSync(DB_FILE)) {
         }
         // -------------------------------------------------------
 
-        console.log("Database loaded.");
+        log("Database loaded.");
     } catch (e) {
-        console.log("Error loading DB, using default.", e);
+        log(`Error loading DB: ${e.message}`);
     }
 } else {
+    log("Database file missing, creating default...");
     fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
 }
 
@@ -1067,5 +1088,5 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    log(`Server running on port ${PORT}`);
 });

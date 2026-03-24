@@ -1060,9 +1060,9 @@ app.post('/api/messages', (req, res) => {
 });
 
 // Serve React App in Production/Ngrok
-app.use(express.static(path.join(__dirname, '../dist')));
+app.use(express.static(path.join(__dirname, '../public_html')));
 app.use((req, res) => {
-    res.sendFile(path.join(__dirname, '../dist/index.html'));
+    res.sendFile(path.join(__dirname, '../public_html/index.html'));
 });
 
 const PORT = process.env.PORT || 3000;

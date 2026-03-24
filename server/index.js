@@ -68,7 +68,7 @@ app.post('/api/verify', (req, res) => {
 });
 
 // Serve static images from the frontend public folder
-app.use('/images', express.static(path.join(__dirname, '../public/images')));
+app.use('/images', express.static(path.join(__dirname, '../public_html/images')));
 
 // Create HTTP server
 const server = http.createServer(app);
@@ -100,8 +100,8 @@ io.use((socket, next) => {
 // --- FILE UPLOAD (Multer) ---
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        // Save to frontend public/images directory
-        const uploadDir = path.join(__dirname, '../public/images');
+        // Save to frontend public_html/images directory
+        const uploadDir = path.join(__dirname, '../public_html/images');
         if (!fs.existsSync(uploadDir)) {
             fs.mkdirSync(uploadDir, { recursive: true });
         }

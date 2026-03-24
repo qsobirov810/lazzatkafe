@@ -133,7 +133,7 @@ const QRMenu = () => {
                                 <div key={item.id} className="qr-menu-card">
                                     <div className="qr-img-wrapper">
                                         <img
-                                            src={item.image.startsWith('http') ? item.image : `http://${window.location.hostname}:3000${item.image}`}
+                                            src={item.image.startsWith('http') ? item.image : item.image}
                                             alt={item.name}
                                             onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80'; }}
                                         />

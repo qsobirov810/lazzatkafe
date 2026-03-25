@@ -449,7 +449,10 @@ io.on('connection', (socket) => {
 
     // 5. Menu Management
     socket.on('add_menu_item', (item) => {
-        if (socket.user?.role !== 'admin') return;
+        if (socket.user?.role !== 'admin') {
+            console.warn(`[REJECTED] add_menu_item from ${socket.id}. Role: ${socket.user?.role}`);
+            return;
+        }
         const newItem = { ...item, id: Date.now() }; // Simple ID generation
         db.menu.push(newItem);
         saveDb();
@@ -457,7 +460,10 @@ io.on('connection', (socket) => {
     });
 
     socket.on('update_menu_item', (updatedItem) => {
-        if (socket.user?.role !== 'admin') return;
+        if (socket.user?.role !== 'admin') {
+            console.warn(`[REJECTED] update_menu_item from ${socket.id}. Role: ${socket.user?.role}`);
+            return;
+        }
         const index = db.menu.findIndex(i => i.id === updatedItem.id);
         if (index !== -1) {
             db.menu[index] = updatedItem;
@@ -467,7 +473,10 @@ io.on('connection', (socket) => {
     });
 
     socket.on('delete_menu_item', (itemId) => {
-        if (socket.user?.role !== 'admin') return;
+        if (socket.user?.role !== 'admin') {
+            console.warn(`[REJECTED] delete_menu_item from ${socket.id}. Role: ${socket.user?.role}`);
+            return;
+        }
         db.menu = db.menu.filter(i => i.id !== itemId);
         saveDb();
         io.emit('data_update', db);
@@ -476,7 +485,10 @@ io.on('connection', (socket) => {
 
     // 5.5 Category Management
     socket.on('add_category', (name) => {
-        if (socket.user?.role !== 'admin') return;
+        if (socket.user?.role !== 'admin') {
+            console.warn(`[REJECTED] add_category from ${socket.id}. Role: ${socket.user?.role}`);
+            return;
+        }
         const newCat = { id: Date.now(), name };
         if (!db.categories) db.categories = [];
         db.categories.push(newCat);

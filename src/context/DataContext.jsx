@@ -6,7 +6,9 @@ const DataContext = createContext();
 export const useData = () => useContext(DataContext);
 
 // Connect to Backend
+const savedToken = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
 const socket = io('/', {
+    auth: savedToken ? { token: savedToken } : {},
     extraHeaders: {
         'ngrok-skip-browser-warning': 'true'
     }
@@ -30,8 +32,8 @@ export const DataProvider = ({ children }) => {
     const [waiterApplications, setWaiterApplications] = useState([]); // New
 
     const [isConnected, setIsConnected] = useState(socket.connected);
-    const [token, setToken] = useState(localStorage.getItem('adminToken'));
-    const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('adminToken'));
+    const [token, setToken] = useState(savedToken);
+    const [isAuthenticated, setIsAuthenticated] = useState(!!savedToken);
     const [user, setUser] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -52,10 +54,12 @@ export const DataProvider = ({ children }) => {
         }
     }, [token]);
 
-    // Initial socket auth if token exists
-    if (token && !socket.auth) {
-        socket.auth = { token };
-    }
+    // Initial socket auth sync
+    useEffect(() => {
+        if (token) {
+            socket.auth = { token };
+        }
+    }, [token]);
 
     const login = async (username, password) => {
         try {

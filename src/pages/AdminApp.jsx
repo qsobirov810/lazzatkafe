@@ -1113,10 +1113,10 @@ const AdminApp = () => {
                                                 <tbody>
                                                     {selectedTable.orders.flatMap(o => o.items).map((item, i) => (
                                                         <tr key={i} style={{ borderBottom: '1px dashed #ccc' }}>
-                                                            <td style={{ padding: '2px 0', wordBreak: 'break-word' }}>{item.name}</td>
-                                                            <td style={{ textAlign: 'center' }}>{item.quantity}</td>
-                                                            <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{Number(item.price).toLocaleString()}</td>
-                                                            <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{(item.price * item.quantity).toLocaleString()}</td>
+                                                            <td style={{ padding: '2px 0', verticalAlign: 'top', wordBreak: 'break-word' }}>{item.name}</td>
+                                                            <td style={{ padding: '2px 0', verticalAlign: 'top', textAlign: 'center' }}>{item.quantity}</td>
+                                                            <td style={{ padding: '2px 0', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{Number(item.price).toLocaleString()}</td>
+                                                            <td style={{ padding: '2px 0', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{(item.price * item.quantity).toLocaleString()}</td>
                                                         </tr>
                                                     ))}
                                                 </tbody>
@@ -1333,10 +1333,10 @@ const AdminApp = () => {
                                                 <tbody>
                                                     {selectedTable.orders.flatMap(o => o.items).map((item, i) => (
                                                         <tr key={i} style={{ borderBottom: '1px dashed #ccc' }}>
-                                                            <td style={{ padding: '2px 0', wordBreak: 'break-word' }}>{item.name}</td>
-                                                            <td style={{ textAlign: 'center' }}>{item.quantity}</td>
-                                                            <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{Number(item.price).toLocaleString()}</td>
-                                                            <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{(item.price * item.quantity).toLocaleString()}</td>
+                                                            <td style={{ padding: '2px 0', verticalAlign: 'top', wordBreak: 'break-word' }}>{item.name}</td>
+                                                            <td style={{ padding: '2px 0', verticalAlign: 'top', textAlign: 'center' }}>{item.quantity}</td>
+                                                            <td style={{ padding: '2px 0', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{Number(item.price).toLocaleString()}</td>
+                                                            <td style={{ padding: '2px 0', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{(item.price * item.quantity).toLocaleString()}</td>
                                                         </tr>
                                                     ))}
                                                 </tbody>
@@ -1478,10 +1478,10 @@ const AdminApp = () => {
                                         <tbody>
                                             {reservationToPrint.items && reservationToPrint.items.map((item, i) => (
                                                 <tr key={i} style={{ borderBottom: '1px dashed #ccc' }}>
-                                                    <td style={{ padding: '2px 0', wordBreak: 'break-word' }}>{item.name}</td>
-                                                    <td style={{ textAlign: 'center' }}>{item.quantity}</td>
-                                                    <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{Number(item.price).toLocaleString()}</td>
-                                                    <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{(item.price * item.quantity).toLocaleString()}</td>
+                                                    <td style={{ padding: '2px 0', verticalAlign: 'top', wordBreak: 'break-word' }}>{item.name}</td>
+                                                    <td style={{ padding: '2px 0', verticalAlign: 'top', textAlign: 'center' }}>{item.quantity}</td>
+                                                    <td style={{ padding: '2px 0', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{Number(item.price).toLocaleString()}</td>
+                                                    <td style={{ padding: '2px 0', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{(item.price * item.quantity).toLocaleString()}</td>
                                                 </tr>
                                             ))}
                                         </tbody>

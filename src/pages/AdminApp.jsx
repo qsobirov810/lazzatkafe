@@ -200,7 +200,7 @@ const KitchenView = () => {
                                 <tbody>
                                     {ticketToPrint.items.map((item, i) => (
                                         <tr key={i} style={{ borderBottom: '1px dashed #ccc' }}>
-                                            <td style={{ width: '80%', padding: '2px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</td>
+                                            <td style={{ width: '80%', padding: '3px 0', wordBreak: 'break-word', fontSize: '15px' }}>{item.name}</td>
                                             <td style={{ width: '20%', textAlign: 'right', fontWeight: 'bold', fontSize: '16px' }}>x{item.quantity}</td>
                                         </tr>
                                     ))}
@@ -1113,7 +1113,7 @@ const AdminApp = () => {
                                                 <tbody>
                                                     {selectedTable.orders.flatMap(o => o.items).map((item, i) => (
                                                         <tr key={i} style={{ borderBottom: '1px dashed #ccc' }}>
-                                                            <td style={{ padding: '2px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</td>
+                                                            <td style={{ padding: '2px 0', wordBreak: 'break-word' }}>{item.name}</td>
                                                             <td style={{ textAlign: 'center' }}>{item.quantity}</td>
                                                             <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{Number(item.price).toLocaleString()}</td>
                                                             <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{(item.price * item.quantity).toLocaleString()}</td>
@@ -1333,7 +1333,7 @@ const AdminApp = () => {
                                                 <tbody>
                                                     {selectedTable.orders.flatMap(o => o.items).map((item, i) => (
                                                         <tr key={i} style={{ borderBottom: '1px dashed #ccc' }}>
-                                                            <td style={{ padding: '2px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</td>
+                                                            <td style={{ padding: '2px 0', wordBreak: 'break-word' }}>{item.name}</td>
                                                             <td style={{ textAlign: 'center' }}>{item.quantity}</td>
                                                             <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{Number(item.price).toLocaleString()}</td>
                                                             <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{(item.price * item.quantity).toLocaleString()}</td>
@@ -1478,7 +1478,7 @@ const AdminApp = () => {
                                         <tbody>
                                             {reservationToPrint.items && reservationToPrint.items.map((item, i) => (
                                                 <tr key={i} style={{ borderBottom: '1px dashed #ccc' }}>
-                                                    <td style={{ padding: '2px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</td>
+                                                    <td style={{ padding: '2px 0', wordBreak: 'break-word' }}>{item.name}</td>
                                                     <td style={{ textAlign: 'center' }}>{item.quantity}</td>
                                                     <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{Number(item.price).toLocaleString()}</td>
                                                     <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{(item.price * item.quantity).toLocaleString()}</td>
@@ -3304,7 +3304,7 @@ const AdminApp = () => {
                                     <tbody>
                                         {receiptOrder.items.map((item, i) => (
                                             <tr key={i} style={{ borderBottom: '1px dashed #ccc' }}>
-                                                <td style={{ padding: '2px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</td>
+                                                <td style={{ padding: '2px 0', wordBreak: 'break-word' }}>{item.name}</td>
                                                 <td style={{ textAlign: 'center' }}>{item.quantity}</td>
                                                 <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{Number(item.price).toLocaleString()}</td>
                                                 <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{(item.price * item.quantity).toLocaleString()}</td>
@@ -3592,7 +3592,7 @@ const AdminApp = () => {
                                     <tbody>
                                         {selectedOrder.items.map((item, i) => (
                                             <tr key={i} style={{ borderBottom: '1px dashed #ccc' }}>
-                                                <td style={{ padding: '2px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</td>
+                                                <td style={{ padding: '2px 0', wordBreak: 'break-word' }}>{item.name}</td>
                                                 <td style={{ textAlign: 'center' }}>{item.quantity}</td>
                                                 <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{Number(item.price).toLocaleString()}</td>
                                                 <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{(item.price * item.quantity).toLocaleString()}</td>

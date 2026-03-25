@@ -196,18 +196,18 @@ const KitchenView = () => {
                         </div>
                         <hr />
                         <div className="ticket-body" style={{ padding: '0 3mm' }}>
-                            <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left', color: '#000', fontWeight: '900', fontFamily: 'monospace' }}>
+                            <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', border: '1px solid #000', fontSize: '13px', textAlign: 'left', color: '#000', fontWeight: '900', fontFamily: 'monospace' }}>
                                 <tbody>
                                     {ticketToPrint.items.map((item, i) => (
-                                        <tr key={i} style={{ borderBottom: '1px dashed #ccc' }}>
-                                            <td style={{ width: '80%', padding: '3px 0', wordBreak: 'break-word', fontSize: '15px' }}>{item.name}</td>
-                                            <td style={{ width: '20%', textAlign: 'right', fontWeight: 'bold', fontSize: '16px' }}>x{item.quantity}</td>
+                                        <tr key={i}>
+                                            <td style={{ border: '1px solid #000', width: '80%', padding: '2px', verticalAlign: 'top', wordBreak: 'break-word' }}>{item.name}</td>
+                                            <td style={{ border: '1px solid #000', width: '20%', textAlign: 'right', padding: '2px', verticalAlign: 'top', fontWeight: 'bold', fontSize: '15px' }}>x{item.quantity}</td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
                             {ticketToPrint.note && (
-                                <div style={{ marginTop: '5px', borderTop: '1px solid #000', paddingTop: '3px', fontSize: '14px', fontWeight: '900' }}>
+                                <div style={{ border: '1px solid #000', marginTop: '5px', padding: '3px', fontSize: '14px', fontWeight: '900' }}>
                                     IZOH: {ticketToPrint.note}
                                 </div>
                             )}
@@ -1101,22 +1101,22 @@ const AdminApp = () => {
                                         </div>
                                         <hr />
                                         <div style={{ padding: '0 3mm' }}>
-                                            <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', color: '#000', fontWeight: '900', fontFamily: 'monospace' }}>
+                                            <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', border: '1px solid #000', fontSize: '11px', textAlign: 'left', color: '#000', fontWeight: '900', fontFamily: 'monospace' }}>
                                                 <thead>
-                                                    <tr style={{ borderBottom: '1px solid #000' }}>
-                                                        <th style={{ width: '40%', padding: '2px 0' }}>Nomi</th>
-                                                        <th style={{ width: '15%', textAlign: 'center' }}>Soni</th>
-                                                        <th style={{ width: '20%', textAlign: 'right' }}>Narxi</th>
-                                                        <th style={{ width: '25%', textAlign: 'right' }}>Summa</th>
+                                                    <tr style={{ background: '#f2f2f2' }}>
+                                                        <th style={{ border: '1px solid #000', width: '40%', padding: '2px' }}>Nomi</th>
+                                                        <th style={{ border: '1px solid #000', width: '15%', textAlign: 'center', padding: '2px' }}>Soni</th>
+                                                        <th style={{ border: '1px solid #000', width: '20%', textAlign: 'right', padding: '2px' }}>Narxi</th>
+                                                        <th style={{ border: '1px solid #000', width: '25%', textAlign: 'right', padding: '2px' }}>Summa</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     {selectedTable.orders.flatMap(o => o.items).map((item, i) => (
-                                                        <tr key={i} style={{ borderBottom: '1px dashed #ccc' }}>
-                                                            <td style={{ padding: '2px 0', verticalAlign: 'top', wordBreak: 'break-word' }}>{item.name}</td>
-                                                            <td style={{ padding: '2px 0', verticalAlign: 'top', textAlign: 'center' }}>{item.quantity}</td>
-                                                            <td style={{ padding: '2px 0', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{Number(item.price).toLocaleString()}</td>
-                                                            <td style={{ padding: '2px 0', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{(item.price * item.quantity).toLocaleString()}</td>
+                                                        <tr key={i}>
+                                                            <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', wordBreak: 'break-word' }}>{item.name}</td>
+                                                            <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', textAlign: 'center' }}>{item.quantity}</td>
+                                                            <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{Number(item.price).toLocaleString()}</td>
+                                                            <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{(item.price * item.quantity).toLocaleString()}</td>
                                                         </tr>
                                                     ))}
                                                 </tbody>
@@ -1321,22 +1321,22 @@ const AdminApp = () => {
                                         </div>
                                         <hr />
                                         <div style={{ padding: '0 3mm' }}>
-                                            <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', color: '#000', fontWeight: '900', fontFamily: 'monospace' }}>
+                                            <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', border: '1px solid #000', fontSize: '11px', textAlign: 'left', color: '#000', fontWeight: '900', fontFamily: 'monospace' }}>
                                                 <thead>
-                                                    <tr style={{ borderBottom: '1px solid #000' }}>
-                                                        <th style={{ width: '40%', padding: '2px 0' }}>Nomi</th>
-                                                        <th style={{ width: '15%', textAlign: 'center' }}>Soni</th>
-                                                        <th style={{ width: '20%', textAlign: 'right' }}>Narxi</th>
-                                                        <th style={{ width: '25%', textAlign: 'right' }}>Summa</th>
+                                                    <tr style={{ background: '#f2f2f2' }}>
+                                                        <th style={{ border: '1px solid #000', width: '40%', padding: '2px' }}>Nomi</th>
+                                                        <th style={{ border: '1px solid #000', width: '15%', textAlign: 'center', padding: '2px' }}>Soni</th>
+                                                        <th style={{ border: '1px solid #000', width: '20%', textAlign: 'right', padding: '2px' }}>Narxi</th>
+                                                        <th style={{ border: '1px solid #000', width: '25%', textAlign: 'right', padding: '2px' }}>Summa</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     {selectedTable.orders.flatMap(o => o.items).map((item, i) => (
-                                                        <tr key={i} style={{ borderBottom: '1px dashed #ccc' }}>
-                                                            <td style={{ padding: '2px 0', verticalAlign: 'top', wordBreak: 'break-word' }}>{item.name}</td>
-                                                            <td style={{ padding: '2px 0', verticalAlign: 'top', textAlign: 'center' }}>{item.quantity}</td>
-                                                            <td style={{ padding: '2px 0', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{Number(item.price).toLocaleString()}</td>
-                                                            <td style={{ padding: '2px 0', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{(item.price * item.quantity).toLocaleString()}</td>
+                                                        <tr key={i}>
+                                                            <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', wordBreak: 'break-word' }}>{item.name}</td>
+                                                            <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', textAlign: 'center' }}>{item.quantity}</td>
+                                                            <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{Number(item.price).toLocaleString()}</td>
+                                                            <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{(item.price * item.quantity).toLocaleString()}</td>
                                                         </tr>
                                                     ))}
                                                 </tbody>
@@ -1466,22 +1466,22 @@ const AdminApp = () => {
                                 </div>
                                 <hr />
                                 <div style={{ padding: '0 3mm' }}>
-                                    <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', color: '#000', fontWeight: '900', fontFamily: 'monospace' }}>
+                                    <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', border: '1px solid #000', fontSize: '11px', textAlign: 'left', color: '#000', fontWeight: '900', fontFamily: 'monospace' }}>
                                         <thead>
-                                            <tr style={{ borderBottom: '1px solid #000' }}>
-                                                <th style={{ width: '40%', padding: '2px 0' }}>Nomi</th>
-                                                <th style={{ width: '15%', textAlign: 'center' }}>Soni</th>
-                                                <th style={{ width: '20%', textAlign: 'right' }}>Narxi</th>
-                                                <th style={{ width: '25%', textAlign: 'right' }}>Summa</th>
+                                            <tr style={{ background: '#f2f2f2' }}>
+                                                <th style={{ border: '1px solid #000', width: '40%', padding: '2px' }}>Nomi</th>
+                                                <th style={{ border: '1px solid #000', width: '15%', textAlign: 'center', padding: '2px' }}>Soni</th>
+                                                <th style={{ border: '1px solid #000', width: '20%', textAlign: 'right', padding: '2px' }}>Narxi</th>
+                                                <th style={{ border: '1px solid #000', width: '25%', textAlign: 'right', padding: '2px' }}>Summa</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {reservationToPrint.items && reservationToPrint.items.map((item, i) => (
-                                                <tr key={i} style={{ borderBottom: '1px dashed #ccc' }}>
-                                                    <td style={{ padding: '2px 0', verticalAlign: 'top', wordBreak: 'break-word' }}>{item.name}</td>
-                                                    <td style={{ padding: '2px 0', verticalAlign: 'top', textAlign: 'center' }}>{item.quantity}</td>
-                                                    <td style={{ padding: '2px 0', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{Number(item.price).toLocaleString()}</td>
-                                                    <td style={{ padding: '2px 0', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{(item.price * item.quantity).toLocaleString()}</td>
+                                                <tr key={i}>
+                                                    <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', wordBreak: 'break-word' }}>{item.name}</td>
+                                                    <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', textAlign: 'center' }}>{item.quantity}</td>
+                                                    <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{Number(item.price).toLocaleString()}</td>
+                                                    <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{(item.price * item.quantity).toLocaleString()}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -3292,22 +3292,22 @@ const AdminApp = () => {
                             </div>
                             <hr />
                             <div style={{ padding: '0 3mm' }}>
-                                <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', color: '#000', fontWeight: '900', fontFamily: 'monospace' }}>
+                                <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', border: '1px solid #000', fontSize: '11px', textAlign: 'left', color: '#000', fontWeight: '900', fontFamily: 'monospace' }}>
                                     <thead>
-                                        <tr style={{ borderBottom: '1px solid #000' }}>
-                                            <th style={{ width: '40%', padding: '2px 0' }}>Nomi</th>
-                                            <th style={{ width: '15%', textAlign: 'center' }}>Soni</th>
-                                            <th style={{ width: '20%', textAlign: 'right' }}>Narxi</th>
-                                            <th style={{ width: '25%', textAlign: 'right' }}>Summa</th>
+                                        <tr style={{ background: '#f2f2f2' }}>
+                                            <th style={{ border: '1px solid #000', width: '40%', padding: '2px' }}>Nomi</th>
+                                            <th style={{ border: '1px solid #000', width: '15%', textAlign: 'center', padding: '2px' }}>Soni</th>
+                                            <th style={{ border: '1px solid #000', width: '20%', textAlign: 'right', padding: '2px' }}>Narxi</th>
+                                            <th style={{ border: '1px solid #000', width: '25%', textAlign: 'right', padding: '2px' }}>Summa</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {receiptOrder.items.map((item, i) => (
-                                            <tr key={i} style={{ borderBottom: '1px dashed #ccc' }}>
-                                                <td style={{ padding: '2px 0', wordBreak: 'break-word' }}>{item.name}</td>
-                                                <td style={{ textAlign: 'center' }}>{item.quantity}</td>
-                                                <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{Number(item.price).toLocaleString()}</td>
-                                                <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{(item.price * item.quantity).toLocaleString()}</td>
+                                            <tr key={i}>
+                                                <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', wordBreak: 'break-word' }}>{item.name}</td>
+                                                <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', textAlign: 'center' }}>{item.quantity}</td>
+                                                <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{Number(item.price).toLocaleString()}</td>
+                                                <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{(item.price * item.quantity).toLocaleString()}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -3580,22 +3580,22 @@ const AdminApp = () => {
                             </div>
                             <hr />
                             <div style={{ padding: '0 3mm' }}>
-                                <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', color: '#000', fontWeight: '900', fontFamily: 'monospace' }}>
+                                <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', border: '1px solid #000', fontSize: '11px', textAlign: 'left', color: '#000', fontWeight: '900', fontFamily: 'monospace' }}>
                                     <thead>
-                                        <tr style={{ borderBottom: '1px solid #000' }}>
-                                            <th style={{ width: '40%', padding: '2px 0' }}>Nomi</th>
-                                            <th style={{ width: '15%', textAlign: 'center' }}>Soni</th>
-                                            <th style={{ width: '20%', textAlign: 'right' }}>Narxi</th>
-                                            <th style={{ width: '25%', textAlign: 'right' }}>Summa</th>
+                                        <tr style={{ background: '#f2f2f2' }}>
+                                            <th style={{ border: '1px solid #000', width: '40%', padding: '2px' }}>Nomi</th>
+                                            <th style={{ border: '1px solid #000', width: '15%', textAlign: 'center', padding: '2px' }}>Soni</th>
+                                            <th style={{ border: '1px solid #000', width: '20%', textAlign: 'right', padding: '2px' }}>Narxi</th>
+                                            <th style={{ border: '1px solid #000', width: '25%', textAlign: 'right', padding: '2px' }}>Summa</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {selectedOrder.items.map((item, i) => (
-                                            <tr key={i} style={{ borderBottom: '1px dashed #ccc' }}>
-                                                <td style={{ padding: '2px 0', wordBreak: 'break-word' }}>{item.name}</td>
-                                                <td style={{ textAlign: 'center' }}>{item.quantity}</td>
-                                                <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{Number(item.price).toLocaleString()}</td>
-                                                <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{(item.price * item.quantity).toLocaleString()}</td>
+                                            <tr key={i}>
+                                                <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', wordBreak: 'break-word' }}>{item.name}</td>
+                                                <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', textAlign: 'center' }}>{item.quantity}</td>
+                                                <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{Number(item.price).toLocaleString()}</td>
+                                                <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{(item.price * item.quantity).toLocaleString()}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -4272,24 +4272,24 @@ const AdminApp = () => {
                         <hr style={{ borderTop: '2px dashed #000' }} />
                         
                         <div style={{ padding: '0 3mm' }}>
-                            <table style={{ width: '100%', fontSize: '15px', fontWeight: '900', borderCollapse: 'collapse', textAlign: 'left' }}>
+                            <table style={{ width: '100%', fontSize: '14px', fontWeight: '900', borderCollapse: 'collapse', border: '1px solid #000', textAlign: 'left', fontFamily: 'monospace' }}>
                                 <tbody>
-                                    <tr style={{ borderBottom: '1px solid #000' }}>
-                                        <td style={{ padding: '3px 0' }}>JAMI TUSHUM:</td>
-                                        <td style={{ textAlign: 'right' }}>{dailyStats.total.toLocaleString()}</td>
+                                    <tr style={{ background: '#f2f2f2' }}>
+                                        <td style={{ border: '1px solid #000', padding: '3px' }}>JAMI TUSHUM:</td>
+                                        <td style={{ border: '1px solid #000', textAlign: 'right', padding: '3px' }}>{dailyStats.total.toLocaleString()}</td>
                                     </tr>
-                                    <tr><td colSpan="2" style={{ padding: '5px 0', fontSize: '13px' }}>TULOV TURLARI:</td></tr>
+                                    <tr><td colSpan="2" style={{ border: '1px solid #000', padding: '5px', fontSize: '13px', background: '#eee' }}>TULOV TURLARI:</td></tr>
                                     <tr>
-                                        <td style={{ padding: '2px 0', fontSize: '14px' }}>NAQD:</td>
-                                        <td style={{ textAlign: 'right' }}>{dailyStats.cash.toLocaleString()}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style={{ padding: '2px 0', fontSize: '14px' }}>KARTA:</td>
-                                        <td style={{ textAlign: 'right' }}>{dailyStats.card.toLocaleString()}</td>
+                                        <td style={{ border: '1px solid #000', padding: '3px', fontSize: '14px' }}>NAQD:</td>
+                                        <td style={{ border: '1px solid #000', textAlign: 'right', padding: '3px' }}>{dailyStats.cash.toLocaleString()}</td>
                                     </tr>
                                     <tr>
-                                        <td style={{ padding: '2px 0', fontSize: '14px' }}>CLICK:</td>
-                                        <td style={{ textAlign: 'right' }}>{dailyStats.click.toLocaleString()}</td>
+                                        <td style={{ border: '1px solid #000', padding: '3px', fontSize: '14px' }}>KARTA:</td>
+                                        <td style={{ border: '1px solid #000', textAlign: 'right', padding: '3px' }}>{dailyStats.card.toLocaleString()}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style={{ border: '1px solid #000', padding: '3px', fontSize: '14px' }}>CLICK:</td>
+                                        <td style={{ border: '1px solid #000', textAlign: 'right', padding: '3px' }}>{dailyStats.click.toLocaleString()}</td>
                                     </tr>
                                 </tbody>
                             </table>

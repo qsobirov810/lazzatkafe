@@ -213,20 +213,21 @@ const KitchenView = () => {
                     </div>
                     <style>{`
                             .print-ticket {
-                                width: ${settings.kitchenPrinterWidth || 72}mm;
-                                margin: 0 auto;
+                                width: 100%;
+                                margin: 0;
                                 background: white;
                                 color: #000000 !important;
                                 font-family: 'Courier New', monospace;
-                                padding-bottom: 5mm;
+                                padding: 0 4mm 5mm 4mm;
+                                box-sizing: border-box;
                                 font-size: 16px;
                                 font-weight: 700;
                             }
                             .print-ticket h3 { margin: 0 0 5px 0; font-size: 20px; font-weight: 900; text-align: center; }
                             .print-ticket p { margin: 0; font-size: 16px; text-align: center; font-weight: 800; }
                             .print-ticket hr { border: none; border-top: 1px dashed #000 !important; height: 0; margin: 5px 0; opacity: 1; }
-                            .ticket-header h2 { font-size: 18px; margin: 0; font-weight: 900; }
-                            .ticket-header p { font-size: 14px; margin: 0; font-weight: 700; }
+                            .ticket-header h2 { font-size: 18px; margin: 0; font-weight: 900; text-align: center; }
+                            .ticket-header p { font-size: 14px; margin: 0; font-weight: 700; text-align: center; }
                             .ticket-body { font-size: 17px; font-weight: 900; }
                             .ticket-item { margin-bottom: 8px; display: flex; flexDirection: column; padding-bottom: 2px; }
                             .ticket-row-1 { display: flex; justify-content: flex-start; text-align: left; overflow-wrap: break-word; }
@@ -1123,11 +1124,10 @@ const AdminApp = () => {
                                             <span>JAMI:</span>
                                             <span>{(getTableTotal(selectedTable) * (1 + (settings.servicePercentage || 0) / 100)).toLocaleString()} so'm</span>
                                         </div>
-                                        <hr />
                                         <style>{`
                                             .print-receipt {
-                                                width: ${settings.cashierPrinterWidth || 72}mm;
-                                                margin: 0 auto;
+                                                width: 100%;
+                                                margin: 0;
                                                 background: white;
                                                 color: #000000 !important;
                                                 font-family: 'Courier New', monospace;
@@ -1143,7 +1143,7 @@ const AdminApp = () => {
                                             .receipt-row-1 { text-align: left; width: 100%; overflow-wrap: break-word; color: #000 !important; }
                                             .receipt-row-2 { text-align: center; width: 100%; margin-top: 1px; font-size: 16px; font-weight: 900; color: #000 !important; }
                                             .receipt-total { display: flex; justify-content: space-between; font-weight: 900; font-size: 16px; margin: 3px 0; color: #000 !important; }
-                                            hr { border-top: 1px dashed #000; margin: 5px 0; border-bottom: none; border-left: none; border-right: none; }
+                                            hr { border-top: 1px dashed #000 !important; margin: 5px 0; border-bottom: none; border-left: none; border-right: none; }
                                         `}</style>
                                     </div>
                                 </PrintPortal>
@@ -1342,11 +1342,10 @@ const AdminApp = () => {
                                                 : paymentMethod}
                                         </div>
                                         <p style={{ textAlign: 'center', marginTop: '10px' }}>Xaridingiz uchun rahmat!</p>
-                                    </div>
-                                    <style>{`
+                                        <style>{`
                                         .print-receipt {
-                                            width: ${settings.cashierPrinterWidth || 72}mm;
-                                            margin: 0 auto;
+                                            width: 100%;
+                                            margin: 0;
                                             background: white;
                                             color: #000000 !important;
                                             font-family: 'Courier New', monospace;
@@ -1362,18 +1361,19 @@ const AdminApp = () => {
                                         .receipt-row-1 { text-align: left; width: 100%; overflow-wrap: break-word; color: #000 !important; }
                                         .receipt-row-2 { text-align: center; width: 100%; margin-top: 1px; font-size: 16px; font-weight: 900; color: #000 !important; }
                                         .receipt-total { display: flex; justify-content: space-between; font-weight: 900; font-size: 16px; margin: 3px 0; color: #000 !important; }
+                                        .receipt-footer { margin-top: 10px; font-size: 12px; font-weight: 900; text-align: center; }
                                         hr { border: none; border-top: 1px dashed #000 !important; height: 0; margin: 5px 0; opacity: 1; }
                                     `}</style>
+                                    </div>
                                 </PrintPortal>
-                            )
-                            }
+                            )}
                         </>
                     ) : (
                         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666' }}>
                             Stol tanlang
                         </div>
                     )}
-                </div >
+                </div>
 
                 {/* RESERVATIONS LIST MODAL */}
                 {
@@ -1478,12 +1478,13 @@ const AdminApp = () => {
                             </div>
                             <style>{`
                             .print-res {
-                                width: ${settings.cashierPrinterWidth || 72}mm;
-                                margin: 0 auto;
+                                width: 100%;
+                                margin: 0;
                                 background: white;
                                 color: #000000 !important;
                                 font-family: 'Courier New', monospace;
-                                padding-bottom: 5mm;
+                                padding: 0 4mm 5mm 4mm;
+                                box-sizing: border-box;
                                 text-align: center;
                                 font-size: 16px;
                                 font-weight: 700;
@@ -1493,8 +1494,8 @@ const AdminApp = () => {
                             .res-item { display: flex; flex-direction: column; margin-bottom: 8px; border-bottom: 1px dotted #ccc; padding-bottom: 2px; }
                             .res-row-1 { text-align: left; width: 100%; overflow-wrap: break-word; }
                             .res-row-2 { text-align: center; width: 100%; margin-top: 2px; font-weight: 900; }
-                            .res-total { display: flex; justifyContent: space-between; font-weight: 900; font-size: 16px; margin: 5px 0; }
-                            hr { border-top: 2px dashed #000; margin: 5px 0; }
+                            .res-total { display: flex; justify-content: space-between; font-weight: 900; font-size: 16px; margin: 5px 0; }
+                            hr { border: none; border-top: 1px dashed #000 !important; height: 0; margin: 5px 0; opacity: 1; }
                         `}</style>
                         </PrintPortal>
                     )
@@ -1778,14 +1779,17 @@ const AdminApp = () => {
     };
 
     // 3. CATEGORIES VIEW
-    const CategoriesView = () => {
+    const CategoriesView = ({ categories, addCategory, deleteCategory }) => {
         const [newCat, setNewCat] = useState('');
 
         const handleAdd = (e) => {
             e.preventDefault();
+            console.log("Adding category:", newCat);
             if (newCat.trim()) {
                 addCategory(newCat.trim());
                 setNewCat('');
+            } else {
+                alert("Kategoriya nomi bo'sh bo'lmasligi kerak!");
             }
         };
 
@@ -4026,7 +4030,7 @@ const AdminApp = () => {
                 {activeTab === 'saboy' && <SaboyView />}
                 {activeTab === 'kitchen' && <KitchenView />}
                 {activeTab === 'menu' && <MenuView />}
-                {activeTab === 'categories' && <CategoriesView />}
+                {activeTab === 'categories' && <CategoriesView categories={categories} addCategory={addCategory} deleteCategory={deleteCategory} />}
                 {activeTab === 'places' && <PlacesView />}
                 {activeTab === 'stats' && <StatsView />}
                 {activeTab === 'expenses' && <ExpensesView />}

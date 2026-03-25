@@ -184,59 +184,65 @@ const KitchenView = () => {
             {/* KITCHEN TICKET PRINT PORTAL */}
             {ticketToPrint && (
                 <PrintPortal>
-                    <div className="print-ticket">
-                        <h3>LAZZAT KAFE</h3>
-                        <p>Oshxona Cheki</p>
+                    <div className="print-receipt">
+                        <h3>{settings.restaurantName || "LAZZAT KAFE"}</h3>
+                        <p style={{ fontSize: '11px' }}>OSHXONA CHEKI</p>
                         <hr />
-                        <div className="ticket-header">
-                            <h2>{ticketToPrint.isSaboy ? `SABOY: ${ticketToPrint.customerName}` : `STOL ${tables.find(t => String(t.id) === String(ticketToPrint.tableId))?.name || ticketToPrint.tableId}`}</h2>
-                            {ticketToPrint.isSaboy && ticketToPrint.phone && <p>Tel: {ticketToPrint.phone}</p>}
-                            <p>{ticketToPrint.isSaboy ? `Mijoz: ${ticketToPrint.customerName}` : `Ofitsiant: ${ticketToPrint.waiterName || 'Noma\'lum'}`}</p>
-                            <p>{new Date(ticketToPrint.timestamp).toLocaleString()}</p>
+                        <div className="receipt-header" style={{ textAlign: 'left', fontSize: '12px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span>STOL: <b>{ticketToPrint.isSaboy ? `SABOY (${ticketToPrint.customerName})` : (tables.find(t => String(t.id) === String(ticketToPrint.tableId))?.name || ticketToPrint.tableId)}</b></span>
+                                <span>#<b>{ticketToPrint.id.slice(-6).toUpperCase()}</b></span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span>SANA: {new Date(ticketToPrint.timestamp).toLocaleDateString()}</span>
+                                <span>VAQT: {new Date(ticketToPrint.timestamp).toLocaleTimeString()}</span>
+                            </div>
+                            <div>OFITSIANT: <b>{ticketToPrint.waiterName || 'Kassir/Admin'}</b></div>
                         </div>
                         <hr />
-                        <div className="ticket-body" style={{ padding: '0 3mm' }}>
-                            <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', border: '1px solid #000', fontSize: '13px', textAlign: 'left', color: '#000', fontWeight: '900', fontFamily: 'monospace' }}>
+                        <div style={{ padding: '0' }}>
+                            <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', border: '1px solid #000', fontSize: '13px', textAlign: 'left', color: '#000' }}>
+                                <thead>
+                                    <tr style={{ background: '#f2f2f2' }}>
+                                        <th style={{ border: '1px solid #000', width: '15%', padding: '2px', textAlign: 'center' }}>No</th>
+                                        <th style={{ border: '1px solid #000', width: '65%', padding: '2px' }}>Nomi</th>
+                                        <th style={{ border: '1px solid #000', width: '20%', textAlign: 'center', padding: '2px' }}>Soni</th>
+                                    </tr>
+                                </thead>
                                 <tbody>
                                     {ticketToPrint.items.map((item, i) => (
                                         <tr key={i}>
-                                            <td style={{ border: '1px solid #000', width: '80%', padding: '2px', verticalAlign: 'top', wordBreak: 'break-word' }}>{item.name}</td>
-                                            <td style={{ border: '1px solid #000', width: '20%', textAlign: 'right', padding: '2px', verticalAlign: 'top', fontWeight: 'bold', fontSize: '15px' }}>x{item.quantity}</td>
+                                            <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center' }}>{i + 1}</td>
+                                            <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', wordBreak: 'break-word', fontSize: '15px' }}>{item.name}</td>
+                                            <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center', fontWeight: 'bold', fontSize: '18px' }}>{item.quantity}</td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
                             {ticketToPrint.note && (
-                                <div style={{ border: '1px solid #000', marginTop: '5px', padding: '3px', fontSize: '14px', fontWeight: '900' }}>
+                                <div style={{ border: '2px solid #000', marginTop: '5px', padding: '5px', fontSize: '16px', fontWeight: 'bold', textAlign: 'left' }}>
                                     IZOH: {ticketToPrint.note}
                                 </div>
                             )}
                         </div>
                         <hr />
-                    </div>
-                    <style>{`
-                            .print-ticket {
-                                width: 80mm;
+                        <style>{`
+                            .print-receipt {
+                                width: 80mm !important;
                                 margin: 0;
                                 background: white;
                                 color: #000000 !important;
                                 font-family: 'Courier New', monospace;
                                 padding: 2mm 3mm;
                                 box-sizing: border-box;
-                                font-size: 15px;
-                                font-weight: 900;
+                                text-align: center;
+                                font-size: 14px;
                             }
-                            .print-ticket h3 { margin: 0 0 5px 0; font-size: 20px; font-weight: 900; text-align: center; }
-                            .print-ticket p { margin: 0; font-size: 16px; text-align: center; font-weight: 800; }
-                            .print-ticket hr { border: none; border-top: 1px dashed #000 !important; height: 0; margin: 5px 0; opacity: 1; }
-                            .ticket-header h2 { font-size: 18px; margin: 0; font-weight: 900; text-align: center; }
-                            .ticket-header p { font-size: 14px; margin: 0; font-weight: 700; text-align: center; }
-                            .ticket-body { font-size: 17px; font-weight: 900; }
-                            .ticket-item { margin-bottom: 8px; display: flex; flexDirection: column; padding-bottom: 2px; }
-                            .ticket-row-1 { display: flex; justify-content: flex-start; text-align: left; overflow-wrap: break-word; }
-                            .ticket-row-2 { text-align: center; width: 100%; margin-top: 2px; } /* Centered Price/Qty */
-                            .ticket-footer { font-size: 14px; margin-top: 5px; text-align: center; font-weight: 700; }
+                            .print-receipt h3 { margin: 0; font-size: 20px; font-weight: bold; }
+                            .receipt-header { margin: 5px 0; }
+                            hr { border: none; border-top: 1px dashed #000 !important; margin: 5px 0; opacity: 1; }
                         `}</style>
+                    </div>
                 </PrintPortal>
             )}
         </div>
@@ -1091,66 +1097,80 @@ const AdminApp = () => {
                             {printingBill && (
                                 <PrintPortal>
                                     <div className="print-receipt">
-                                        <h3>LAZZAT KAFE</h3>
-                                        <p>Hisob-kitob (To'lanmagan)</p>
+                                        <h3>{settings.restaurantName || "LAZZAT KAFE"}</h3>
+                                        <p style={{ fontSize: '11px' }}>{settings.address || "Toshkent sh., Chilonzor tumani"}</p>
+                                        <p style={{ fontSize: '11px' }}>Tel: {settings.phone || "+998 90 123 45 67"}</p>
                                         <hr />
-                                        <div className="receipt-header">
-                                            <h2>{selectedTable.name}</h2>
-                                            <p style={{ fontSize: '12px' }}>Ochilgan: {selectedTable.orders[0] ? new Date(selectedTable.orders[0].timestamp).toLocaleString() : new Date().toLocaleString()}</p>
-                                            <p style={{ fontSize: '12px' }}>Hisob vaqti: {new Date().toLocaleString()}</p>
+                                        <div className="receipt-header" style={{ textAlign: 'left', fontSize: '12px' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                <span>STOL: <b>{selectedTable.name}</b></span>
+                                                <span>BUYURTMA: #<b>{selectedTable.id}</b></span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                <span>SANA: {new Date().toLocaleDateString()}</span>
+                                                <span>VAQT: {new Date().toLocaleTimeString()}</span>
+                                            </div>
+                                            <div>KASSIR: <b>{user?.username || "Kassir"}</b></div>
                                         </div>
+                                        <p style={{ fontWeight: 'bold', margin: '5px 0' }}>HISOB-KITOB (To'lanmagan)</p>
                                         <hr />
-                                        <div style={{ padding: '0 3mm' }}>
-                                            <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', border: '1px solid #000', fontSize: '11px', textAlign: 'left', color: '#000', fontWeight: '900', fontFamily: 'monospace' }}>
+                                        <div style={{ padding: '0' }}>
+                                            <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', border: '1px solid #000', fontSize: '10px', textAlign: 'left', color: '#000' }}>
                                                 <thead>
                                                     <tr style={{ background: '#f2f2f2' }}>
-                                                        <th style={{ border: '1px solid #000', width: '40%', padding: '2px' }}>Nomi</th>
-                                                        <th style={{ border: '1px solid #000', width: '15%', textAlign: 'center', padding: '2px' }}>Soni</th>
-                                                        <th style={{ border: '1px solid #000', width: '20%', textAlign: 'right', padding: '2px' }}>Narxi</th>
+                                                        <th style={{ border: '1px solid #000', width: '10%', padding: '2px', textAlign: 'center' }}>No</th>
+                                                        <th style={{ border: '1px solid #000', width: '35%', padding: '2px' }}>Nomi</th>
+                                                        <th style={{ border: '1px solid #000', width: '12%', textAlign: 'center', padding: '2px' }}>Soni</th>
+                                                        <th style={{ border: '1px solid #000', width: '18%', textAlign: 'right', padding: '2px' }}>Narxi</th>
                                                         <th style={{ border: '1px solid #000', width: '25%', textAlign: 'right', padding: '2px' }}>Summa</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     {selectedTable.orders.flatMap(o => o.items).map((item, i) => (
                                                         <tr key={i}>
+                                                            <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center' }}>{i + 1}</td>
                                                             <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', wordBreak: 'break-word' }}>{item.name}</td>
-                                                            <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', textAlign: 'center' }}>{item.quantity}</td>
-                                                            <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{Number(item.price).toLocaleString()}</td>
-                                                            <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{(item.price * item.quantity).toLocaleString()}</td>
+                                                            <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center', fontWeight: 'bold' }}>{item.quantity}</td>
+                                                            <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'right' }}>{Number(item.price).toLocaleString()}</td>
+                                                            <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'right', fontWeight: 'bold' }}>{(item.price * item.quantity).toLocaleString()}</td>
                                                         </tr>
                                                     ))}
                                                 </tbody>
                                             </table>
                                         </div>
                                         <hr />
-                                        <div style={{ padding: '0 3mm' }}>
+                                        <div style={{ padding: '0' }}>
+                                            <div className="receipt-total">
+                                                <span>ORALIK JAMI:</span>
+                                                <span>{getTableTotal(selectedTable).toLocaleString()}</span>
+                                            </div>
                                             {settings.servicePercentage > 0 && (
                                                 <div className="receipt-total">
-                                                    <span>Xizmat ({settings.servicePercentage}%):</span>
+                                                    <span>XIZMAT ({settings.servicePercentage}%):</span>
                                                     <span>{(getTableTotal(selectedTable) * settings.servicePercentage / 100).toLocaleString()}</span>
                                                 </div>
                                             )}
-                                            <div className="receipt-total" style={{ borderTop: '1px solid #000', paddingTop: '2px', marginTop: '2px' }}>
-                                                <span>JAMI:</span>
+                                            <div className="receipt-total" style={{ borderTop: '1px solid #000', paddingTop: '2px', fontSize: '16px' }}>
+                                                <span>UMUMIY JAMI:</span>
                                                 <span>{(getTableTotal(selectedTable) * (1 + (settings.servicePercentage || 0) / 100)).toLocaleString()}</span>
                                             </div>
                                         </div>
                                         <style>{`
                                             .print-receipt {
-                                                width: 80mm;
+                                                width: 80mm !important;
                                                 margin: 0;
                                                 background: white;
                                                 color: #000000 !important;
                                                 font-family: 'Courier New', monospace;
-                                                padding: 2mm 0;
+                                                padding: 2mm 3mm;
                                                 box-sizing: border-box;
                                                 text-align: center;
+                                                font-size: 12px;
                                             }
-                                            .print-receipt h3 { margin: 0; font-size: 16px; font-weight: 900; }
-                                            .print-receipt h2 { margin: 2px 0; font-size: 18px; font-weight: 900; }
-                                            .print-receipt p { margin: 1px 0; font-size: 11px; font-weight: 900; }
-                                            .receipt-total { display: flex; justify-content: space-between; font-weight: 900; font-size: 14px; margin: 1px 0; }
-                                            hr { border-top: 1px dashed #000 !important; margin: 3px 0; }
+                                            .print-receipt h3 { margin: 0; font-size: 18px; font-weight: bold; }
+                                            .print-receipt h2 { margin: 2px 0; font-size: 20px; font-weight: bold; }
+                                            .receipt-total { display: flex; justify-content: space-between; font-weight: bold; margin: 3px 0; }
+                                            hr { border: none; border-top: 1px dashed #000 !important; margin: 5px 0; opacity: 1; }
                                         `}</style>
                                     </div>
                                 </PrintPortal>
@@ -1311,76 +1331,86 @@ const AdminApp = () => {
                             {showPaymentModal && (
                                 <PrintPortal>
                                     <div className="print-receipt">
-                                        <h3>LAZZAT KAFE</h3>
-                                        <p>Mijoz Cheki</p>
+                                        <h3>{settings.restaurantName || "LAZZAT KAFE"}</h3>
+                                        <p style={{ fontSize: '11px' }}>{settings.address || "Toshkent sh., Chilonzor tumani"}</p>
+                                        <p style={{ fontSize: '11px' }}>Tel: {settings.phone || "+998 90 123 45 67"}</p>
                                         <hr />
-                                        <div className="receipt-header">
-                                            <h2>{selectedTable.name}</h2>
-                                            <p style={{ fontSize: '12px' }}>Ochilgan: {selectedTable.orders[0] ? new Date(selectedTable.orders[0].timestamp).toLocaleString() : new Date().toLocaleString()}</p>
-                                            <p style={{ fontSize: '12px' }}>Yopilgan: {new Date().toLocaleString()}</p>
+                                        <div className="receipt-header" style={{ textAlign: 'left', fontSize: '12px' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                <span>STOL: <b>{selectedTable.name}</b></span>
+                                                <span>BUYURTMA: #<b>{selectedTable.id}</b></span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                <span>SANA: {new Date().toLocaleDateString()}</span>
+                                                <span>VAQT: {new Date().toLocaleTimeString()}</span>
+                                            </div>
+                                            <div>KASSIR: <b>{user?.username || "Kassir"}</b></div>
                                         </div>
+                                        <p style={{ fontWeight: 'bold', margin: '5px 0' }}>MIJOZ CHEKI</p>
                                         <hr />
-                                        <div style={{ padding: '0 3mm' }}>
-                                            <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', border: '1px solid #000', fontSize: '11px', textAlign: 'left', color: '#000', fontWeight: '900', fontFamily: 'monospace' }}>
+                                        <div style={{ padding: '0' }}>
+                                            <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', border: '1px solid #000', fontSize: '10px', textAlign: 'left', color: '#000' }}>
                                                 <thead>
                                                     <tr style={{ background: '#f2f2f2' }}>
-                                                        <th style={{ border: '1px solid #000', width: '40%', padding: '2px' }}>Nomi</th>
-                                                        <th style={{ border: '1px solid #000', width: '15%', textAlign: 'center', padding: '2px' }}>Soni</th>
-                                                        <th style={{ border: '1px solid #000', width: '20%', textAlign: 'right', padding: '2px' }}>Narxi</th>
+                                                        <th style={{ border: '1px solid #000', width: '10%', padding: '2px', textAlign: 'center' }}>No</th>
+                                                        <th style={{ border: '1px solid #000', width: '35%', padding: '2px' }}>Nomi</th>
+                                                        <th style={{ border: '1px solid #000', width: '12%', textAlign: 'center', padding: '2px' }}>Soni</th>
+                                                        <th style={{ border: '1px solid #000', width: '18%', textAlign: 'right', padding: '2px' }}>Narxi</th>
                                                         <th style={{ border: '1px solid #000', width: '25%', textAlign: 'right', padding: '2px' }}>Summa</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     {selectedTable.orders.flatMap(o => o.items).map((item, i) => (
                                                         <tr key={i}>
+                                                            <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center' }}>{i + 1}</td>
                                                             <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', wordBreak: 'break-word' }}>{item.name}</td>
-                                                            <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', textAlign: 'center' }}>{item.quantity}</td>
-                                                            <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{Number(item.price).toLocaleString()}</td>
-                                                            <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{(item.price * item.quantity).toLocaleString()}</td>
+                                                            <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center', fontWeight: 'bold' }}>{item.quantity}</td>
+                                                            <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'right' }}>{Number(item.price).toLocaleString()}</td>
+                                                            <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'right', fontWeight: 'bold' }}>{(item.price * item.quantity).toLocaleString()}</td>
                                                         </tr>
                                                     ))}
                                                 </tbody>
                                             </table>
                                         </div>
-                                        <div style={{ padding: '0 3mm' }}>
-                                            {((selectedTable.orders.reduce((sum, o) => sum + (o.serviceAmount || 0), 0)) > 0) && (
+                                        <hr />
+                                        <div style={{ padding: '0' }}>
+                                            <div className="receipt-total">
+                                                <span>ORALIK JAMI:</span>
+                                                <span>{getTableTotal(selectedTable).toLocaleString()}</span>
+                                            </div>
+                                            {settings.servicePercentage > 0 && (
                                                 <div className="receipt-total">
-                                                    <span>Xizmat ({settings.servicePercentage}%):</span>
+                                                    <span>XIZMAT ({settings.servicePercentage}%):</span>
                                                     <span>{selectedTable.orders.reduce((sum, o) => sum + (o.serviceAmount || 0), 0).toLocaleString()}</span>
                                                 </div>
                                             )}
-                                            <div className="receipt-total" style={{ borderTop: '1px solid #000', paddingTop: '2px', marginTop: '2px' }}>
-                                                <span>JAMI TO'LOV:</span>
+                                            <div className="receipt-total" style={{ borderTop: '1px solid #000', paddingTop: '2px', fontSize: '16px' }}>
+                                                <span>UMUMIY JAMI:</span>
                                                 <span>{selectedTable.orders.reduce((sum, o) => sum + o.total, 0).toLocaleString()}</span>
                                             </div>
                                             <hr />
-                                            <div style={{ textAlign: 'left', fontSize: '12px', fontWeight: 'bold' }}>
-                                                To'lov: {paymentMethod}
+                                            <div style={{ textAlign: 'left', fontSize: '13px', fontWeight: 'bold' }}>
+                                                TO'LOV TURI: {paymentMethod}
                                             </div>
                                         </div>
-                                        <p style={{ textAlign: 'center', marginTop: '5px' }}>Xaridingiz uchun rahmat!</p>
+                                        <p style={{ textAlign: 'center', marginTop: '10px', fontSize: '14px' }}>Xaridingiz uchun rahmat!</p>
                                         <style>{`
-                                        .print-receipt {
-                                            width: 100%;
-                                            margin: 0;
-                                            background: white;
-                                            color: #000000 !important;
-                                            font-family: 'Courier New', monospace;
-                                            padding: 0 4mm 2mm 4mm;
-                                            box-sizing: border-box;
-                                            text-align: center;
-                                            font-size: 14px;
-                                            font-weight: 900;
-                                        }
-                                        .print-receipt h3 { margin: 0; font-size: 18px; font-weight: 900; color: #000 !important; }
-                                        .print-receipt p { margin: 1px 0; font-size: 14px; font-weight: 900; color: #000 !important; }
-                                        .receipt-item { display: flex; flex-direction: column; margin-bottom: 5px; padding-bottom: 2px; color: #000 !important; }
-                                        .receipt-row-1 { text-align: left; width: 100%; overflow-wrap: break-word; color: #000 !important; }
-                                        .receipt-row-2 { text-align: center; width: 100%; margin-top: 1px; font-size: 16px; font-weight: 900; color: #000 !important; }
-                                        .receipt-total { display: flex; justify-content: space-between; font-weight: 900; font-size: 16px; margin: 3px 0; color: #000 !important; }
-                                        .receipt-footer { margin-top: 10px; font-size: 12px; font-weight: 900; text-align: center; }
-                                        hr { border: none; border-top: 1px dashed #000 !important; height: 0; margin: 5px 0; opacity: 1; }
-                                    `}</style>
+                                            .print-receipt {
+                                                width: 80mm !important;
+                                                margin: 0;
+                                                background: white;
+                                                color: #000000 !important;
+                                                font-family: 'Courier New', monospace;
+                                                padding: 2mm 3mm;
+                                                box-sizing: border-box;
+                                                text-align: center;
+                                                font-size: 12px;
+                                            }
+                                            .print-receipt h3 { margin: 0; font-size: 18px; font-weight: bold; }
+                                            .print-receipt h2 { margin: 2px 0; font-size: 20px; font-weight: bold; }
+                                            .receipt-total { display: flex; justify-content: space-between; font-weight: bold; margin: 3px 0; }
+                                            hr { border: none; border-top: 1px dashed #000 !important; margin: 5px 0; opacity: 1; }
+                                        `}</style>
                                     </div>
                                 </PrintPortal>
                             )}
@@ -1453,79 +1483,82 @@ const AdminApp = () => {
                 {
                     reservationToPrint && (
                         <PrintPortal>
-                            <div className="print-res">
-                                <h3>LAZZAT KAFE</h3>
-                                <p>Banket Cheki</p>
+                            <div className="print-receipt">
+                                <h3>{settings.restaurantName || "LAZZAT KAFE"}</h3>
+                                <p style={{ fontSize: '11px' }}>{settings.address || "Toshkent sh., Chilonzor tumani"}</p>
+                                <p style={{ fontSize: '11px' }}>Tel: {settings.phone || "+998 90 123 45 67"}</p>
                                 <hr />
-                                <div style={{ textAlign: 'left', margin: '10px 0' }}>
-                                    <p>Mijoz: {reservationToPrint.customer}</p>
-                                    <p>Tel: {reservationToPrint.phone}</p>
-                                    <p>Sana: {new Date(reservationToPrint.date).toLocaleString()}</p>
-                                    <p>Mehmonlar: {reservationToPrint.guests} kishi</p>
-                                    <p>Stollar: {reservationToPrint.tableIds.map(tid => tables.find(t => String(t.id) === String(tid))?.name).join(', ')}</p>
+                                <div className="receipt-header" style={{ textAlign: 'left', fontSize: '12px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <span>MIJOZ: <b>{reservationToPrint.customer}</b></span>
+                                        <span>STOL: <b>{reservationToPrint.tableIds.map(tid => tables.find(t => String(t.id) === String(tid))?.name).join(', ')}</b></span>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <span>SANA: {new Date(reservationToPrint.date).toLocaleDateString()}</span>
+                                        <span>VAQT: {new Date(reservationToPrint.date).toLocaleTimeString()}</span>
+                                    </div>
+                                    <div>MEHMONLAR: <b>{reservationToPrint.guests} kishi</b></div>
+                                    <div>KASSIR: <b>{user?.username || "Kassir"}</b></div>
                                 </div>
+                                <p style={{ fontWeight: 'bold', margin: '5px 0' }}>BANKET BRONI</p>
                                 <hr />
-                                <div style={{ padding: '0 3mm' }}>
-                                    <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', border: '1px solid #000', fontSize: '11px', textAlign: 'left', color: '#000', fontWeight: '900', fontFamily: 'monospace' }}>
+                                <div style={{ padding: '0' }}>
+                                    <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', border: '1px solid #000', fontSize: '10px', textAlign: 'left', color: '#000' }}>
                                         <thead>
                                             <tr style={{ background: '#f2f2f2' }}>
-                                                <th style={{ border: '1px solid #000', width: '40%', padding: '2px' }}>Nomi</th>
-                                                <th style={{ border: '1px solid #000', width: '15%', textAlign: 'center', padding: '2px' }}>Soni</th>
-                                                <th style={{ border: '1px solid #000', width: '20%', textAlign: 'right', padding: '2px' }}>Narxi</th>
+                                                <th style={{ border: '1px solid #000', width: '10%', padding: '2px', textAlign: 'center' }}>No</th>
+                                                <th style={{ border: '1px solid #000', width: '35%', padding: '2px' }}>Nomi</th>
+                                                <th style={{ border: '1px solid #000', width: '12%', textAlign: 'center', padding: '2px' }}>Soni</th>
+                                                <th style={{ border: '1px solid #000', width: '18%', textAlign: 'right', padding: '2px' }}>Narxi</th>
                                                 <th style={{ border: '1px solid #000', width: '25%', textAlign: 'right', padding: '2px' }}>Summa</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {reservationToPrint.items && reservationToPrint.items.map((item, i) => (
                                                 <tr key={i}>
+                                                    <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center' }}>{i + 1}</td>
                                                     <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', wordBreak: 'break-word' }}>{item.name}</td>
-                                                    <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', textAlign: 'center' }}>{item.quantity}</td>
-                                                    <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{Number(item.price).toLocaleString()}</td>
-                                                    <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{(item.price * item.quantity).toLocaleString()}</td>
+                                                    <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center', fontWeight: 'bold' }}>{item.quantity}</td>
+                                                    <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'right' }}>{Number(item.price).toLocaleString()}</td>
+                                                    <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'right', fontWeight: 'bold' }}>{(item.price * item.quantity).toLocaleString()}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
                                     </table>
                                 </div>
                                 <hr />
-                                <div style={{ padding: '0 3mm' }}>
-                                    <div className="res-total">
-                                        <span>JAMI BUYURTMA:</span>
+                                <div style={{ padding: '0' }}>
+                                    <div className="receipt-total">
+                                        <span>BUYURTMA JAMI:</span>
                                         <span>{reservationToPrint.items ? reservationToPrint.items.reduce((sum, i) => sum + (i.price * i.quantity), 0).toLocaleString() : 0}</span>
                                     </div>
-                                    <div className="res-total">
-                                        <span>ZALOG:</span>
-                                        <span>{reservationToPrint.deposit ? reservationToPrint.deposit.toLocaleString() : 0}</span>
+                                    <div className="receipt-total">
+                                        <span>ZALOG (FAKULTATIV):</span>
+                                        <span>{Number(reservationToPrint.deposit || 0).toLocaleString()}</span>
                                     </div>
-                                    <hr />
-                                    <div className="res-total" style={{ fontSize: '18px', borderTop: '1px solid #000', paddingTop: '2px' }}>
+                                    <div className="receipt-total" style={{ borderTop: '1px solid #000', paddingTop: '2px', fontSize: '16px' }}>
                                         <span>QOLDIQ:</span>
-                                        <span>{((reservationToPrint.items ? reservationToPrint.items.reduce((sum, i) => sum + (i.price * i.quantity), 0) : 0) - (reservationToPrint.deposit || 0)).toLocaleString()}</span>
+                                        <span>{((reservationToPrint.items ? reservationToPrint.items.reduce((sum, i) => sum + (i.price * i.quantity), 0) : 0) - Number(reservationToPrint.deposit || 0)).toLocaleString()}</span>
                                     </div>
                                 </div>
-                                <p style={{ textAlign: 'center', marginTop: '10px' }}>Kutingizni kutamiz!</p>
+                                <style>{`
+                                    .print-receipt {
+                                        width: 80mm !important;
+                                        margin: 0;
+                                        background: white;
+                                        color: #000000 !important;
+                                        font-family: 'Courier New', monospace;
+                                        padding: 2mm 3mm;
+                                        box-sizing: border-box;
+                                        text-align: center;
+                                        font-size: 12px;
+                                    }
+                                    .print-receipt h3 { margin: 0; font-size: 18px; font-weight: bold; }
+                                    .print-receipt h2 { margin: 2px 0; font-size: 20px; font-weight: bold; }
+                                    .receipt-total { display: flex; justify-content: space-between; font-weight: bold; margin: 3px 0; }
+                                    hr { border: none; border-top: 1px dashed #000 !important; margin: 5px 0; opacity: 1; }
+                                `}</style>
                             </div>
-                            <style>{`
-                            .print-res {
-                                width: 100%;
-                                margin: 0;
-                                background: white;
-                                color: #000000 !important;
-                                font-family: 'Courier New', monospace;
-                                padding: 0 4mm 5mm 4mm;
-                                box-sizing: border-box;
-                                text-align: center;
-                                font-size: 16px;
-                                font-weight: 700;
-                            }
-                            .print-res h3 { margin: 0; font-size: 20px; font-weight: 900; }
-                            .print-res p { margin: 2px 0; font-size: 16px; font-weight: 800; }
-                            .res-item { display: flex; flex-direction: column; margin-bottom: 8px; border-bottom: 1px dotted #ccc; padding-bottom: 2px; }
-                            .res-row-1 { text-align: left; width: 100%; overflow-wrap: break-word; }
-                            .res-row-2 { text-align: center; width: 100%; margin-top: 2px; font-weight: 900; }
-                            .res-total { display: flex; justify-content: space-between; font-weight: 900; font-size: 16px; margin: 5px 0; }
-                            hr { border: none; border-top: 1px dashed #000 !important; height: 0; margin: 5px 0; opacity: 1; }
-                        `}</style>
                         </PrintPortal>
                     )
                 }
@@ -3281,72 +3314,78 @@ const AdminApp = () => {
                 {/* ARCHIVE RECEIPT PORTAL */}
                 {receiptOrder && (
                     <PrintPortal>
-                        <div className="print-archive">
-                            <h3>LAZZAT KAFE</h3>
-                            <p>Chek nusxasi (Arxiv)</p>
+                        <div className="print-receipt">
+                            <h3>{settings.restaurantName || "LAZZAT KAFE"}</h3>
+                            <p style={{ fontSize: '11px' }}>{settings.address || "Toshkent sh., Chilonzor tumani"}</p>
+                            <p style={{ fontSize: '11px' }}>Tel: {settings.phone || "+998 90 123 45 67"}</p>
                             <hr />
-                            <div className="receipt-header">
-                                <h2>{receiptOrder.isSaboy ? `SABOY: ${receiptOrder.customerName}` : (tables?.find(t => String(t.id) === String(receiptOrder.tableId))?.name || `Stol ${receiptOrder.tableId}`)}</h2>
-                                {receiptOrder.isSaboy && receiptOrder.phone && <p style={{ fontSize: '14px' }}>Tel: {receiptOrder.phone}</p>}
-                                <p>{new Date(receiptOrder.timestamp).toLocaleString()}</p>
+                            <div className="receipt-header" style={{ textAlign: 'left', fontSize: '12px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span>STOL: <b>{receiptOrder.isSaboy ? `SABOY (${receiptOrder.customerName})` : (tables?.find(t => String(t.id) === String(receiptOrder.tableId))?.name || `Stol ${receiptOrder.tableId}`)}</b></span>
+                                    <span>BUYURTMA: #<b>{receiptOrder.id.slice(-6).toUpperCase()}</b></span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span>SANA: {new Date(receiptOrder.timestamp).toLocaleDateString()}</span>
+                                    <span>VAQT: {new Date(receiptOrder.timestamp).toLocaleTimeString()}</span>
+                                </div>
+                                <div>KASSIR: <b>{user?.username || "Kassir"}</b></div>
                             </div>
+                            <p style={{ fontWeight: 'bold', margin: '5px 0' }}>CHEK NUSXASI (Arxiv)</p>
                             <hr />
-                            <div style={{ padding: '0 3mm' }}>
-                                <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', border: '1px solid #000', fontSize: '11px', textAlign: 'left', color: '#000', fontWeight: '900', fontFamily: 'monospace' }}>
+                            <div style={{ padding: '0' }}>
+                                <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', border: '1px solid #000', fontSize: '10px', textAlign: 'left', color: '#000' }}>
                                     <thead>
                                         <tr style={{ background: '#f2f2f2' }}>
-                                            <th style={{ border: '1px solid #000', width: '40%', padding: '2px' }}>Nomi</th>
-                                            <th style={{ border: '1px solid #000', width: '15%', textAlign: 'center', padding: '2px' }}>Soni</th>
-                                            <th style={{ border: '1px solid #000', width: '20%', textAlign: 'right', padding: '2px' }}>Narxi</th>
+                                            <th style={{ border: '1px solid #000', width: '10%', padding: '2px', textAlign: 'center' }}>No</th>
+                                            <th style={{ border: '1px solid #000', width: '35%', padding: '2px' }}>Nomi</th>
+                                            <th style={{ border: '1px solid #000', width: '12%', textAlign: 'center', padding: '2px' }}>Soni</th>
+                                            <th style={{ border: '1px solid #000', width: '18%', textAlign: 'right', padding: '2px' }}>Narxi</th>
                                             <th style={{ border: '1px solid #000', width: '25%', textAlign: 'right', padding: '2px' }}>Summa</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {receiptOrder.items.map((item, i) => (
                                             <tr key={i}>
+                                                <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center' }}>{i + 1}</td>
                                                 <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', wordBreak: 'break-word' }}>{item.name}</td>
-                                                <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', textAlign: 'center' }}>{item.quantity}</td>
-                                                <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{Number(item.price).toLocaleString()}</td>
-                                                <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{(item.price * item.quantity).toLocaleString()}</td>
+                                                <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center', fontWeight: 'bold' }}>{item.quantity}</td>
+                                                <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'right' }}>{Number(item.price).toLocaleString()}</td>
+                                                <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'right', fontWeight: 'bold' }}>{(item.price * item.quantity).toLocaleString()}</td>
                                             </tr>
                                         ))}
                                     </tbody>
                                 </table>
                             </div>
                             <hr />
-                            <div style={{ padding: '0 3mm' }}>
+                            <div style={{ padding: '0' }}>
                                 <div className="receipt-total">
                                     <span>JAMI:</span>
                                     <span>{receiptOrder.total.toLocaleString()}</span>
                                 </div>
                                 <hr />
-                                <div style={{ textAlign: 'left', fontSize: '12px', fontWeight: 'bold' }}>
-                                    To'lov: {receiptOrder.paymentMethod}
+                                <div style={{ textAlign: 'left', fontSize: '13px', fontWeight: 'bold' }}>
+                                    TO'LOV TURI: {receiptOrder.paymentMethod}
                                 </div>
                             </div>
-                            <p style={{ textAlign: 'center', marginTop: '5px' }}>Qayta chop etildi</p>
+                            <p style={{ textAlign: 'center', marginTop: '10px', fontSize: '12px' }}>Qayta chop etildi</p>
+                            <style>{`
+                                .print-receipt {
+                                    width: 80mm !important;
+                                    margin: 0;
+                                    background: white;
+                                    color: #000000 !important;
+                                    font-family: 'Courier New', monospace;
+                                    padding: 2mm 3mm;
+                                    box-sizing: border-box;
+                                    text-align: center;
+                                    font-size: 12px;
+                                }
+                                .print-receipt h3 { margin: 0; font-size: 18px; font-weight: bold; }
+                                .print-receipt h2 { margin: 2px 0; font-size: 20px; font-weight: bold; }
+                                .receipt-total { display: flex; justify-content: space-between; font-weight: bold; margin: 3px 0; }
+                                hr { border: none; border-top: 1px dashed #000 !important; margin: 5px 0; opacity: 1; }
+                            `}</style>
                         </div>
-                        <style>{`
-                            .print-archive {
-                                width: ${settings.cashierPrinterWidth || 72}mm;
-                                margin: 0 auto;
-                                background: white;
-                                color: #000000 !important;
-                                font-family: 'Courier New', monospace;
-                                padding: 0 4mm 2mm 4mm;
-                                box-sizing: border-box;
-                                text-align: center;
-                                font-size: 14px;
-                                font-weight: 900;
-                            }
-                            .print-archive h3 { margin: 0; font-size: 18px; font-weight: 900; color: #000 !important; }
-                            .print-archive p { margin: 1px 0; font-size: 14px; font-weight: 900; color: #000 !important; }
-                            .receipt-item { display: flex; flex-direction: column; margin-bottom: 5px; padding-bottom: 2px; color: #000 !important; }
-                            .receipt-row-1 { text-align: left; width: 100%; overflow-wrap: break-word; color: #000 !important; }
-                            .receipt-row-2 { text-align: center; width: 100%; margin-top: 1px; font-size: 16px; font-weight: 900; color: #000 !important; }
-                            .receipt-total { display: flex; justify-content: space-between; font-weight: 900; font-size: 16px; margin: 3px 0; color: #000 !important; }
-                            hr { border: none; border-top: 1px dashed #000 !important; height: 0; margin: 5px 0; opacity: 1; }
-                        `}</style>
                     </PrintPortal>
                 )}
             </div >
@@ -3569,69 +3608,81 @@ const AdminApp = () => {
                 {selectedOrder && (
                     <PrintPortal>
                         <div className="print-receipt">
-                            <h3>LAZZAT KAFE</h3>
-                            <p>SABOY (To'lov)</p>
+                            <h3>{settings.restaurantName || "LAZZAT KAFE"}</h3>
+                            <p style={{ fontSize: '11px' }}>{settings.address || "Toshkent sh., Chilonzor tumani"}</p>
+                            <p style={{ fontSize: '11px' }}>Tel: {settings.phone || "+998 90 123 45 67"}</p>
                             <hr />
-                            <div className="receipt-header">
-                                <h2>MIJOZ: {selectedOrder.customerName}</h2>
-                                {selectedOrder.phone && <p>Tel: {selectedOrder.phone}</p>}
-                                <p style={{ fontSize: '12px' }}>Ochilgan: {new Date(selectedOrder.timestamp).toLocaleString()}</p>
-                                <p style={{ fontSize: '12px' }}>Yopilgan: {new Date().toLocaleString()}</p>
+                            <div className="receipt-header" style={{ textAlign: 'left', fontSize: '12px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span>MIJOZ: <b>{selectedOrder.customerName || 'Saboy'}</b></span>
+                                    <span>TEL: <b>{selectedOrder.phone || '...'}</b></span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span>SANA: {new Date().toLocaleDateString()}</span>
+                                    <span>VAQT: {new Date().toLocaleTimeString()}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span>BUYURTMA: #<b>{selectedOrder.id.slice(-6).toUpperCase()}</b></span>
+                                    <span>TUR: <b>SABOY</b></span>
+                                </div>
+                                <div>KASSIR: <b>{user?.username || "Kassir"}</b></div>
                             </div>
+                            <p style={{ fontWeight: 'bold', margin: '5px 0' }}>SABOY CHEKI</p>
                             <hr />
-                            <div style={{ padding: '0 3mm' }}>
-                                <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', border: '1px solid #000', fontSize: '11px', textAlign: 'left', color: '#000', fontWeight: '900', fontFamily: 'monospace' }}>
+                            <div style={{ padding: '0' }}>
+                                <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', border: '1px solid #000', fontSize: '10px', textAlign: 'left', color: '#000' }}>
                                     <thead>
                                         <tr style={{ background: '#f2f2f2' }}>
-                                            <th style={{ border: '1px solid #000', width: '40%', padding: '2px' }}>Nomi</th>
-                                            <th style={{ border: '1px solid #000', width: '15%', textAlign: 'center', padding: '2px' }}>Soni</th>
-                                            <th style={{ border: '1px solid #000', width: '20%', textAlign: 'right', padding: '2px' }}>Narxi</th>
+                                            <th style={{ border: '1px solid #000', width: '10%', padding: '2px', textAlign: 'center' }}>No</th>
+                                            <th style={{ border: '1px solid #000', width: '35%', padding: '2px' }}>Nomi</th>
+                                            <th style={{ border: '1px solid #000', width: '12%', textAlign: 'center', padding: '2px' }}>Soni</th>
+                                            <th style={{ border: '1px solid #000', width: '18%', textAlign: 'right', padding: '2px' }}>Narxi</th>
                                             <th style={{ border: '1px solid #000', width: '25%', textAlign: 'right', padding: '2px' }}>Summa</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {selectedOrder.items.map((item, i) => (
                                             <tr key={i}>
+                                                <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center' }}>{i + 1}</td>
                                                 <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', wordBreak: 'break-word' }}>{item.name}</td>
-                                                <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', textAlign: 'center' }}>{item.quantity}</td>
-                                                <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{Number(item.price).toLocaleString()}</td>
-                                                <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', textAlign: 'right', whiteSpace: 'nowrap' }}>{(item.price * item.quantity).toLocaleString()}</td>
+                                                <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center', fontWeight: 'bold' }}>{item.quantity}</td>
+                                                <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'right' }}>{Number(item.price).toLocaleString()}</td>
+                                                <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'right', fontWeight: 'bold' }}>{(item.price * item.quantity).toLocaleString()}</td>
                                             </tr>
                                         ))}
                                     </tbody>
                                 </table>
                             </div>
                             <hr />
-                            <div style={{ padding: '0 3mm' }}>
-                                <div className="receipt-total" style={{ borderTop: '1px solid #000', paddingTop: '2px' }}>
-                                    <span>JAMI:</span>
+                            <div style={{ padding: '0' }}>
+                                <div className="receipt-total" style={{ fontSize: '16px' }}>
+                                    <span>JAMI TO'LOV:</span>
                                     <span>{selectedOrder.total.toLocaleString()}</span>
                                 </div>
+                                <hr />
+                                <div style={{ textAlign: 'left', fontSize: '13px', fontWeight: 'bold' }}>
+                                    TO'LOV TURI: {pendingSaboyCheckout?.method || 'Naqd'}
+                                </div>
                             </div>
-                            <hr />
-                            <p>Xaridingiz uchun rahmat!</p>
+                            <p style={{ textAlign: 'center', marginTop: '10px' }}>Xaridingiz uchun rahmat!</p>
+                            <style>{`
+                                .print-receipt {
+                                    width: 80mm !important;
+                                    margin: 0;
+                                    background: white;
+                                    color: #000000 !important;
+                                    font-family: 'Courier New', monospace;
+                                    padding: 2mm 3mm;
+                                    box-sizing: border-box;
+                                    text-align: center;
+                                    font-size: 12px;
+                                }
+                                .print-receipt h3 { margin: 0; font-size: 18px; font-weight: bold; }
+                                .print-receipt h2 { margin: 2px 0; font-size: 20px; font-weight: bold; }
+                                .receipt-total { display: flex; justify-content: space-between; font-weight: bold; margin: 3px 0; }
+                                hr { border: none; border-top: 1px dashed #000 !important; margin: 5px 0; opacity: 1; }
+                            `}</style>
                         </div>
-                        <style>{`
-                            .print-receipt {
-                                width: ${settings.cashierPrinterWidth || 72}mm;
-                                margin: 0 auto;
-                                background: white;
-                                color: #000000 !important;
-                                font-family: 'Courier New', monospace;
-                                padding: 0 4mm 2mm 4mm;
-                                box-sizing: border-box;
-                                text-align: center;
-                                font-size: 14px;
-                                font-weight: 900;
-                            }
-                            .print-receipt h3 { margin: 0; font-size: 18px; font-weight: 900; color: #000 !important; }
-                            .print-receipt p { margin: 1px 0; font-size: 14px; font-weight: 900; color: #000 !important; }
-                            .receipt-item { display: flex; flex-direction: column; margin-bottom: 5px; padding-bottom: 2px; color: #000 !important; }
-                            .receipt-row-1 { text-align: left; width: 100%; overflow-wrap: break-word; color: #000 !important; }
-                            .receipt-row-2 { text-align: center; width: 100%; margin-top: 1px; font-size: 16px; font-weight: 900; color: #000 !important; }
-                            .receipt-total { display: flex; justify-content: space-between; font-weight: 900; font-size: 16px; margin: 3px 0; color: #000 !important; }
-                            hr { border: none; border-top: 1px dashed #000 !important; height: 0; margin: 5px 0; opacity: 1; }
-                        `}</style>
                     </PrintPortal>
                 )}
 
@@ -4272,23 +4323,23 @@ const AdminApp = () => {
                         <hr style={{ borderTop: '2px dashed #000' }} />
                         
                         <div style={{ padding: '0 3mm' }}>
-                            <table style={{ width: '100%', fontSize: '14px', fontWeight: '900', borderCollapse: 'collapse', border: '1px solid #000', textAlign: 'left', fontFamily: 'monospace' }}>
+                            <table style={{ width: '100%', fontSize: '13px', fontWeight: 'bold', borderCollapse: 'collapse', border: '1px solid #000', textAlign: 'left', fontFamily: 'monospace' }}>
                                 <tbody>
                                     <tr style={{ background: '#f2f2f2' }}>
-                                        <td style={{ border: '1px solid #000', padding: '3px' }}>JAMI TUSHUM:</td>
-                                        <td style={{ border: '1px solid #000', textAlign: 'right', padding: '3px' }}>{dailyStats.total.toLocaleString()}</td>
+                                        <td style={{ border: '1px solid #000', padding: '3px', width: '60%' }}>JAMI TUSHUM:</td>
+                                        <td style={{ border: '1px solid #000', textAlign: 'right', padding: '3px', width: '40%' }}>{dailyStats.total.toLocaleString()}</td>
                                     </tr>
-                                    <tr><td colSpan="2" style={{ border: '1px solid #000', padding: '5px', fontSize: '13px', background: '#eee' }}>TULOV TURLARI:</td></tr>
+                                    <tr><td colSpan="2" style={{ border: '1px solid #000', padding: '5px', fontSize: '12px', background: '#eee' }}>TULOV TURLARI:</td></tr>
                                     <tr>
-                                        <td style={{ border: '1px solid #000', padding: '3px', fontSize: '14px' }}>NAQD:</td>
+                                        <td style={{ border: '1px solid #000', padding: '3px', fontSize: '12px' }}>NAQD:</td>
                                         <td style={{ border: '1px solid #000', textAlign: 'right', padding: '3px' }}>{dailyStats.cash.toLocaleString()}</td>
                                     </tr>
                                     <tr>
-                                        <td style={{ border: '1px solid #000', padding: '3px', fontSize: '14px' }}>KARTA:</td>
+                                        <td style={{ border: '1px solid #000', padding: '3px', fontSize: '12px' }}>KARTA:</td>
                                         <td style={{ border: '1px solid #000', textAlign: 'right', padding: '3px' }}>{dailyStats.card.toLocaleString()}</td>
                                     </tr>
                                     <tr>
-                                        <td style={{ border: '1px solid #000', padding: '3px', fontSize: '14px' }}>CLICK:</td>
+                                        <td style={{ border: '1px solid #000', padding: '3px', fontSize: '12px' }}>CLICK:</td>
                                         <td style={{ border: '1px solid #000', textAlign: 'right', padding: '3px' }}>{dailyStats.click.toLocaleString()}</td>
                                     </tr>
                                 </tbody>

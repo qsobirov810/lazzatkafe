@@ -3910,7 +3910,7 @@ const AdminApp = () => {
 
     // --- LAYOUT ---
     return (
-        <div style={{ display: 'flex', height: '100vh', background: 'var(--bg-primary)' }}>
+        <div style={{ display: 'flex', height: '100vh', background: 'var(--bg-primary)', overflow: 'hidden' }}>
 
             {/* Sidebar */}
             <div style={{ width: '250px', background: '#18181b', borderRight: '1px solid #333', padding: '1rem', display: 'flex', flexDirection: 'column' }}>

@@ -43,7 +43,8 @@ body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   line-height: 1.5;
-  overflow-x: hidden;
+  overflow: hidden;
+  height: 100vh;
 }
 
 button {
@@ -145,7 +146,8 @@ a {
 /* Print Report Styles (Moved from AdminApp) */
 @media print {
   .print-report {
-    margin: 0 auto;
+    width: 100%;
+    margin: 0;
     background: white;
     color: #000000 !important;
     font-family: 'Courier New', monospace;

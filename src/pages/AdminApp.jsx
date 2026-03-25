@@ -213,15 +213,15 @@ const KitchenView = () => {
                     </div>
                     <style>{`
                             .print-ticket {
-                                width: 100%;
+                                width: 80mm;
                                 margin: 0;
                                 background: white;
                                 color: #000000 !important;
                                 font-family: 'Courier New', monospace;
-                                padding: 0 4mm 5mm 4mm;
+                                padding: 2mm 3mm;
                                 box-sizing: border-box;
-                                font-size: 16px;
-                                font-weight: 700;
+                                font-size: 15px;
+                                font-weight: 900;
                             }
                             .print-ticket h3 { margin: 0 0 5px 0; font-size: 20px; font-weight: 900; text-align: center; }
                             .print-ticket p { margin: 0; font-size: 16px; text-align: center; font-weight: 800; }
@@ -1097,53 +1097,57 @@ const AdminApp = () => {
                                             <p style={{ fontSize: '12px' }}>Hisob vaqti: {new Date().toLocaleString()}</p>
                                         </div>
                                         <hr />
-                                        <div className="receipt-items">
-                                            {selectedTable.orders.flatMap(o => o.items).map((item, i) => (
-                                                <div key={i} className="receipt-item">
-                                                    <div className="receipt-row-1">
-                                                        {item.quantity} x {item.name}
-                                                    </div>
-                                                    <div className="receipt-row-2">
-                                                        {(item.price * item.quantity).toLocaleString()}
-                                                    </div>
-                                                </div>
-                                            ))}
+                                        <div style={{ padding: '0 3mm' }}>
+                                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left', color: '#000', fontWeight: '900' }}>
+                                                <thead>
+                                                    <tr style={{ borderBottom: '1px solid #000' }}>
+                                                        <th style={{ padding: '2px 0' }}>Nomi</th>
+                                                        <th style={{ textAlign: 'center' }}>Soni</th>
+                                                        <th style={{ textAlign: 'right' }}>Narxi</th>
+                                                        <th style={{ textAlign: 'right' }}>Summa</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {selectedTable.orders.flatMap(o => o.items).map((item, i) => (
+                                                        <tr key={i} style={{ borderBottom: '1px dashed #ccc' }}>
+                                                            <td style={{ padding: '2px 0', maxWidth: '35mm', overflowWrap: 'break-word' }}>{item.name}</td>
+                                                            <td style={{ textAlign: 'center' }}>{item.quantity}</td>
+                                                            <td style={{ textAlign: 'right' }}>{Number(item.price).toLocaleString()}</td>
+                                                            <td style={{ textAlign: 'right' }}>{(item.price * item.quantity).toLocaleString()}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
                                         </div>
                                         <hr />
-                                        {/* Show default service charge if enabled in settings? 
-                                            We don't know if they will toggle it off, but standard bill shows it.
-                                            Let's show it based on settings.
-                                        */}
-                                        {settings.servicePercentage > 0 && (
-                                            <div className="receipt-total">
-                                                <span>Xizmat ({settings.servicePercentage}%):</span>
-                                                <span>{(getTableTotal(selectedTable) * settings.servicePercentage / 100).toLocaleString()} so'm</span>
+                                        <div style={{ padding: '0 3mm' }}>
+                                            {settings.servicePercentage > 0 && (
+                                                <div className="receipt-total">
+                                                    <span>Xizmat ({settings.servicePercentage}%):</span>
+                                                    <span>{(getTableTotal(selectedTable) * settings.servicePercentage / 100).toLocaleString()}</span>
+                                                </div>
+                                            )}
+                                            <div className="receipt-total" style={{ borderTop: '1px solid #000', paddingTop: '2px', marginTop: '2px' }}>
+                                                <span>JAMI:</span>
+                                                <span>{(getTableTotal(selectedTable) * (1 + (settings.servicePercentage || 0) / 100)).toLocaleString()}</span>
                                             </div>
-                                        )}
-                                        <div className="receipt-total" style={{ paddingTop: '5px', marginTop: '5px' }}>
-                                            <span>JAMI:</span>
-                                            <span>{(getTableTotal(selectedTable) * (1 + (settings.servicePercentage || 0) / 100)).toLocaleString()} so'm</span>
                                         </div>
                                         <style>{`
                                             .print-receipt {
-                                                width: 100%;
+                                                width: 80mm;
                                                 margin: 0;
                                                 background: white;
                                                 color: #000000 !important;
                                                 font-family: 'Courier New', monospace;
-                                                padding: 0 4mm 2mm 4mm;
+                                                padding: 2mm 0;
                                                 box-sizing: border-box;
                                                 text-align: center;
-                                                font-size: 14px;
-                                                font-weight: 900;
                                             }
-                                            .print-receipt h3 { margin: 0; font-size: 18px; font-weight: 900; color: #000 !important; }
-                                            .print-receipt p { margin: 1px 0; font-size: 14px; font-weight: 900; color: #000 !important; }
-                                            .receipt-item { display: flex; flex-direction: column; margin-bottom: 5px; border-bottom: 1px dashed #000; padding-bottom: 2px; color: #000 !important; }
-                                            .receipt-row-1 { text-align: left; width: 100%; overflow-wrap: break-word; color: #000 !important; }
-                                            .receipt-row-2 { text-align: center; width: 100%; margin-top: 1px; font-size: 16px; font-weight: 900; color: #000 !important; }
-                                            .receipt-total { display: flex; justify-content: space-between; font-weight: 900; font-size: 16px; margin: 3px 0; color: #000 !important; }
-                                            hr { border-top: 1px dashed #000 !important; margin: 5px 0; border-bottom: none; border-left: none; border-right: none; }
+                                            .print-receipt h3 { margin: 0; font-size: 16px; font-weight: 900; }
+                                            .print-receipt h2 { margin: 2px 0; font-size: 18px; font-weight: 900; }
+                                            .print-receipt p { margin: 1px 0; font-size: 11px; font-weight: 900; }
+                                            .receipt-total { display: flex; justify-content: space-between; font-weight: 900; font-size: 14px; margin: 1px 0; }
+                                            hr { border-top: 1px dashed #000 !important; margin: 3px 0; }
                                         `}</style>
                                     </div>
                                 </PrintPortal>
@@ -1313,35 +1317,45 @@ const AdminApp = () => {
                                             <p style={{ fontSize: '12px' }}>Yopilgan: {new Date().toLocaleString()}</p>
                                         </div>
                                         <hr />
-                                        <div className="receipt-items">
-                                            {selectedTable.orders.flatMap(o => o.items).map((item, i) => (
-                                                <div key={i} className="receipt-item">
-                                                    <div className="receipt-row-1">
-                                                        {item.quantity} x {item.name}
-                                                    </div>
-                                                    <div className="receipt-row-2">
-                                                        {(item.price * item.quantity).toLocaleString()}
-                                                    </div>
+                                        <div style={{ padding: '0 3mm' }}>
+                                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left', color: '#000', fontWeight: '900' }}>
+                                                <thead>
+                                                    <tr style={{ borderBottom: '1px solid #000' }}>
+                                                        <th style={{ padding: '2px 0' }}>Nomi</th>
+                                                        <th style={{ textAlign: 'center' }}>Soni</th>
+                                                        <th style={{ textAlign: 'right' }}>Narxi</th>
+                                                        <th style={{ textAlign: 'right' }}>Summa</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {selectedTable.orders.flatMap(o => o.items).map((item, i) => (
+                                                        <tr key={i} style={{ borderBottom: '1px dashed #ccc' }}>
+                                                            <td style={{ padding: '2px 0', maxWidth: '35mm', overflowWrap: 'break-word' }}>{item.name}</td>
+                                                            <td style={{ textAlign: 'center' }}>{item.quantity}</td>
+                                                            <td style={{ textAlign: 'right' }}>{Number(item.price).toLocaleString()}</td>
+                                                            <td style={{ textAlign: 'right' }}>{(item.price * item.quantity).toLocaleString()}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div style={{ padding: '0 3mm' }}>
+                                            {((selectedTable.orders.reduce((sum, o) => sum + (o.serviceAmount || 0), 0)) > 0) && (
+                                                <div className="receipt-total">
+                                                    <span>Xizmat ({settings.servicePercentage}%):</span>
+                                                    <span>{selectedTable.orders.reduce((sum, o) => sum + (o.serviceAmount || 0), 0).toLocaleString()}</span>
                                                 </div>
-                                            ))}
-                                        </div>
-                                        {((selectedTable.orders.reduce((sum, o) => sum + (o.serviceAmount || 0), 0)) > 0) && (
-                                            <div className="receipt-total">
-                                                <span>Xizmat ({settings.servicePercentage}%):</span>
-                                                <span>{selectedTable.orders.reduce((sum, o) => sum + (o.serviceAmount || 0), 0).toLocaleString()} so'm</span>
+                                            )}
+                                            <div className="receipt-total" style={{ borderTop: '1px solid #000', paddingTop: '2px', marginTop: '2px' }}>
+                                                <span>JAMI TO'LOV:</span>
+                                                <span>{selectedTable.orders.reduce((sum, o) => sum + o.total, 0).toLocaleString()}</span>
                                             </div>
-                                        )}
-                                        <div className="receipt-total" style={{ paddingTop: '5px', marginTop: '5px' }}>
-                                            <span>JAMI TO'LOV:</span>
-                                            <span>{selectedTable.orders.reduce((sum, o) => sum + o.total, 0).toLocaleString()} so'm</span>
+                                            <hr />
+                                            <div style={{ textAlign: 'left', fontSize: '12px', fontWeight: 'bold' }}>
+                                                To'lov: {paymentMethod}
+                                            </div>
                                         </div>
-                                        <hr />
-                                        <div style={{ textAlign: 'left', fontSize: '12px', fontWeight: 'bold' }}>
-                                            To'lov: {paymentMethod === 'Aralash'
-                                                ? `Aralash`
-                                                : paymentMethod}
-                                        </div>
-                                        <p style={{ textAlign: 'center', marginTop: '10px' }}>Xaridingiz uchun rahmat!</p>
+                                        <p style={{ textAlign: 'center', marginTop: '5px' }}>Xaridingiz uchun rahmat!</p>
                                         <style>{`
                                         .print-receipt {
                                             width: 100%;
@@ -1448,31 +1462,43 @@ const AdminApp = () => {
                                     <p>Stollar: {reservationToPrint.tableIds.map(tid => tables.find(t => String(t.id) === String(tid))?.name).join(', ')}</p>
                                 </div>
                                 <hr />
-                                <div className="res-items">
-                                    {reservationToPrint.items && reservationToPrint.items.map((item, i) => (
-                                        <div key={i} className="res-item">
-                                            <div className="res-row-1">
-                                                {item.quantity} x {item.name}
-                                            </div>
-                                            <div className="res-row-2">
-                                                {(item.price * item.quantity).toLocaleString()}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                                {reservationToPrint.items && reservationToPrint.items.length > 0 && <hr />}
-                                <div className="res-total">
-                                    <span>JAMI BUYURTMA:</span>
-                                    <span>{reservationToPrint.items ? reservationToPrint.items.reduce((sum, i) => sum + (i.price * i.quantity), 0).toLocaleString() : 0} so'm</span>
-                                </div>
-                                <div className="res-total">
-                                    <span>ZALOG:</span>
-                                    <span>{reservationToPrint.deposit ? reservationToPrint.deposit.toLocaleString() : 0} so'm</span>
+                                <div style={{ padding: '0 3mm' }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left', color: '#000', fontWeight: '900' }}>
+                                        <thead>
+                                            <tr style={{ borderBottom: '1px solid #000' }}>
+                                                <th style={{ padding: '2px 0' }}>Nomi</th>
+                                                <th style={{ textAlign: 'center' }}>Soni</th>
+                                                <th style={{ textAlign: 'right' }}>Narxi</th>
+                                                <th style={{ textAlign: 'right' }}>Summa</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {reservationToPrint.items && reservationToPrint.items.map((item, i) => (
+                                                <tr key={i} style={{ borderBottom: '1px dashed #ccc' }}>
+                                                    <td style={{ padding: '2px 0', maxWidth: '35mm', overflowWrap: 'break-word' }}>{item.name}</td>
+                                                    <td style={{ textAlign: 'center' }}>{item.quantity}</td>
+                                                    <td style={{ textAlign: 'right' }}>{Number(item.price).toLocaleString()}</td>
+                                                    <td style={{ textAlign: 'right' }}>{(item.price * item.quantity).toLocaleString()}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
                                 </div>
                                 <hr />
-                                <div className="res-total" style={{ fontSize: '20px' }}>
-                                    <span>QOLDIQ:</span>
-                                    <span>{((reservationToPrint.items ? reservationToPrint.items.reduce((sum, i) => sum + (i.price * i.quantity), 0) : 0) - (reservationToPrint.deposit || 0)).toLocaleString()} so'm</span>
+                                <div style={{ padding: '0 3mm' }}>
+                                    <div className="res-total">
+                                        <span>JAMI BUYURTMA:</span>
+                                        <span>{reservationToPrint.items ? reservationToPrint.items.reduce((sum, i) => sum + (i.price * i.quantity), 0).toLocaleString() : 0}</span>
+                                    </div>
+                                    <div className="res-total">
+                                        <span>ZALOG:</span>
+                                        <span>{reservationToPrint.deposit ? reservationToPrint.deposit.toLocaleString() : 0}</span>
+                                    </div>
+                                    <hr />
+                                    <div className="res-total" style={{ fontSize: '18px', borderTop: '1px solid #000', paddingTop: '2px' }}>
+                                        <span>QOLDIQ:</span>
+                                        <span>{((reservationToPrint.items ? reservationToPrint.items.reduce((sum, i) => sum + (i.price * i.quantity), 0) : 0) - (reservationToPrint.deposit || 0)).toLocaleString()}</span>
+                                    </div>
                                 </div>
                                 <p style={{ textAlign: 'center', marginTop: '10px' }}>Kutingizni kutamiz!</p>
                             </div>
@@ -3262,28 +3288,40 @@ const AdminApp = () => {
                                 <p>{new Date(receiptOrder.timestamp).toLocaleString()}</p>
                             </div>
                             <hr />
-                            <div className="receipt-items">
-                                {receiptOrder.items.map((item, i) => (
-                                    <div key={i} className="receipt-item">
-                                        <div className="receipt-row-1">
-                                            {item.quantity} x {item.name}
-                                        </div>
-                                        <div className="receipt-row-2">
-                                            {(item.price * item.quantity).toLocaleString()}
-                                        </div>
-                                    </div>
-                                ))}
+                            <div style={{ padding: '0 3mm' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left', color: '#000', fontWeight: '900' }}>
+                                    <thead>
+                                        <tr style={{ borderBottom: '1px solid #000' }}>
+                                            <th style={{ padding: '2px 0' }}>Nomi</th>
+                                            <th style={{ textAlign: 'center' }}>Soni</th>
+                                            <th style={{ textAlign: 'right' }}>Narxi</th>
+                                            <th style={{ textAlign: 'right' }}>Summa</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {receiptOrder.items.map((item, i) => (
+                                            <tr key={i} style={{ borderBottom: '1px dashed #ccc' }}>
+                                                <td style={{ padding: '2px 0', maxWidth: '35mm', overflowWrap: 'break-word' }}>{item.name}</td>
+                                                <td style={{ textAlign: 'center' }}>{item.quantity}</td>
+                                                <td style={{ textAlign: 'right' }}>{Number(item.price).toLocaleString()}</td>
+                                                <td style={{ textAlign: 'right' }}>{(item.price * item.quantity).toLocaleString()}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
                             <hr />
-                            <div className="receipt-total">
-                                <span>JAMI:</span>
-                                <span>{receiptOrder.total.toLocaleString()} so'm</span>
+                            <div style={{ padding: '0 3mm' }}>
+                                <div className="receipt-total">
+                                    <span>JAMI:</span>
+                                    <span>{receiptOrder.total.toLocaleString()}</span>
+                                </div>
+                                <hr />
+                                <div style={{ textAlign: 'left', fontSize: '12px', fontWeight: 'bold' }}>
+                                    To'lov: {receiptOrder.paymentMethod}
+                                </div>
                             </div>
-                            <hr />
-                            <div style={{ textAlign: 'left', fontSize: '12px', fontWeight: 'bold' }}>
-                                To'lov: {receiptOrder.paymentMethod}
-                            </div>
-                            <p style={{ textAlign: 'center', marginTop: '10px' }}>Qayta chop etildi</p>
+                            <p style={{ textAlign: 'center', marginTop: '5px' }}>Qayta chop etildi</p>
                         </div>
                         <style>{`
                             .print-archive {
@@ -3538,22 +3576,34 @@ const AdminApp = () => {
                                 <p style={{ fontSize: '12px' }}>Yopilgan: {new Date().toLocaleString()}</p>
                             </div>
                             <hr />
-                            <div className="receipt-items">
-                                {selectedOrder.items.map((item, i) => (
-                                    <div key={i} className="receipt-item">
-                                        <div className="receipt-row-1">
-                                            {item.quantity} x {item.name}
-                                        </div>
-                                        <div className="receipt-row-2">
-                                            {(item.price * item.quantity).toLocaleString()}
-                                        </div>
-                                    </div>
-                                ))}
+                            <div style={{ padding: '0 3mm' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left', color: '#000', fontWeight: '900' }}>
+                                    <thead>
+                                        <tr style={{ borderBottom: '1px solid #000' }}>
+                                            <th style={{ padding: '2px 0' }}>Nomi</th>
+                                            <th style={{ textAlign: 'center' }}>Soni</th>
+                                            <th style={{ textAlign: 'right' }}>Narxi</th>
+                                            <th style={{ textAlign: 'right' }}>Summa</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {selectedOrder.items.map((item, i) => (
+                                            <tr key={i} style={{ borderBottom: '1px dashed #ccc' }}>
+                                                <td style={{ padding: '2px 0', maxWidth: '35mm', overflowWrap: 'break-word' }}>{item.name}</td>
+                                                <td style={{ textAlign: 'center' }}>{item.quantity}</td>
+                                                <td style={{ textAlign: 'right' }}>{Number(item.price).toLocaleString()}</td>
+                                                <td style={{ textAlign: 'right' }}>{(item.price * item.quantity).toLocaleString()}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
                             <hr />
-                            <div className="receipt-total" style={{ paddingTop: '5px', marginTop: '5px' }}>
-                                <span>JAMI:</span>
-                                <span>{selectedOrder.total.toLocaleString()} so'm</span>
+                            <div style={{ padding: '0 3mm' }}>
+                                <div className="receipt-total" style={{ borderTop: '1px solid #000', paddingTop: '2px' }}>
+                                    <span>JAMI:</span>
+                                    <span>{selectedOrder.total.toLocaleString()}</span>
+                                </div>
                             </div>
                             <hr />
                             <p>Xaridingiz uchun rahmat!</p>
@@ -4214,56 +4264,46 @@ const AdminApp = () => {
                 <PrintPortal>
                     <div className="print-report" style={{ opacity: 1, visibility: 'visible', background: 'white', color: 'black' }}>
                         <h3>LAZZAT KAFE</h3>
-                        <p style={{ fontWeight: '900', fontSize: '18px', margin: '5px 0' }}>Z-REPORT (YAKUN)</p>
-                        <p style={{ fontSize: '14px', marginBottom: '10px' }}>{new Date().toLocaleString()}</p>
+                        <p style={{ fontWeight: '900', fontSize: '18px', margin: '2px 0' }}>Z-REPORT (YAKUN)</p>
+                        <p style={{ fontSize: '12px', marginBottom: '5px' }}>{new Date().toLocaleString()}</p>
                         <hr style={{ borderTop: '2px dashed #000' }} />
-
-                        <table style={{ width: '100%', fontSize: '16px', fontWeight: '900', borderCollapse: 'collapse', textAlign: 'left', margin: '10px 0' }}>
-                            <tbody>
-                                <tr>
-                                    <td style={{ padding: '3px 0' }}>JAMI TUSHUM:</td>
-                                    <td style={{ textAlign: 'right', padding: '3px 0' }}>{dailyStats.total.toLocaleString()} s.</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <hr style={{ borderTop: '2px dashed #000' }} />
-
-                        <div style={{ fontWeight: '900', fontSize: '16px', margin: '10px 0', textAlign: 'left' }}>TULOV TURLARI BO'YICHA:</div>
-                        <table style={{ width: '100%', fontSize: '15px', fontWeight: '800', borderCollapse: 'collapse', textAlign: 'left' }}>
-                            <tbody>
-                                <tr>
-                                    <td style={{ padding: '2px 0' }}>NAQD:</td>
-                                    <td style={{ textAlign: 'right', padding: '2px 0' }}>{dailyStats.cash.toLocaleString()}</td>
-                                </tr>
-                                <tr>
-                                    <td style={{ padding: '2px 0' }}>KARTA:</td>
-                                    <td style={{ textAlign: 'right', padding: '2px 0' }}>{dailyStats.card.toLocaleString()}</td>
-                                </tr>
-                                <tr>
-                                    <td style={{ padding: '2px 0' }}>CLICK:</td>
-                                    <td style={{ textAlign: 'right', padding: '2px 0' }}>{dailyStats.click.toLocaleString()}</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        
+                        <div style={{ padding: '0 3mm' }}>
+                            <table style={{ width: '100%', fontSize: '15px', fontWeight: '900', borderCollapse: 'collapse', textAlign: 'left' }}>
+                                <tbody>
+                                    <tr style={{ borderBottom: '1px solid #000' }}>
+                                        <td style={{ padding: '3px 0' }}>JAMI TUSHUM:</td>
+                                        <td style={{ textAlign: 'right' }}>{dailyStats.total.toLocaleString()}</td>
+                                    </tr>
+                                    <tr><td colSpan="2" style={{ padding: '5px 0', fontSize: '13px' }}>TULOV TURLARI:</td></tr>
+                                    <tr>
+                                        <td style={{ padding: '2px 0', fontSize: '14px' }}>NAQD:</td>
+                                        <td style={{ textAlign: 'right' }}>{dailyStats.cash.toLocaleString()}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style={{ padding: '2px 0', fontSize: '14px' }}>KARTA:</td>
+                                        <td style={{ textAlign: 'right' }}>{dailyStats.card.toLocaleString()}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style={{ padding: '2px 0', fontSize: '14px' }}>CLICK:</td>
+                                        <td style={{ textAlign: 'right' }}>{dailyStats.click.toLocaleString()}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                         <hr style={{ borderTop: '2px dashed #000', marginTop: '10px' }} />
-
-                        <table style={{ width: '100%', fontSize: '14px', fontWeight: 'bold', borderCollapse: 'collapse', textAlign: 'left', marginTop: '5px' }}>
-                            <tbody>
-                                <tr>
-                                    <td style={{ padding: '2px 0' }}>Cheklar soni:</td>
-                                    <td style={{ textAlign: 'right', padding: '2px 0' }}>{completedOrders.length} ta</td>
-                                </tr>
-                            </tbody>
-                        </table>
-
-                        <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '14px', fontWeight: 'bold' }}>KASSA YOPILDI</p>
+                        <div style={{ padding: '0 3mm', fontSize: '13px', fontWeight: 'bold' }}>
+                            Cheklar soni: {completedOrders.length} ta
+                        </div>
+                        <p style={{ textAlign: 'center', marginTop: '10px', fontSize: '14px', fontWeight: 'bold' }}>KASSA YOPILDI</p>
                     </div>
                     <style>{`
                         @media print {
                             .print-report {
-                                width: ${settings.cashierPrinterWidth || 72}mm !important;
-                                margin: 0 auto !important;
-                                padding: 0 4mm 5mm 4mm !important;
+                                width: 80mm !important;
+                                margin: 0;
+                                padding: 2mm 0;
+                                font-family: 'Courier New', monospace;
                                 box-sizing: border-box !important;
                             }
                         }

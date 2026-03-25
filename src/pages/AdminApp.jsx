@@ -1512,6 +1512,14 @@ const AdminApp = () => {
         const defaultCat = categories.length > 0 ? categories[0].name : '';
         const [formData, setFormData] = useState({ name: '', price: '', category: defaultCat, image: '' });
         const [uploading, setUploading] = useState(false);
+        const [searchQuery, setSearchQuery] = useState('');
+        const [filterCategory, setFilterCategory] = useState('Barchasi');
+
+        const filteredMenu = menu.filter(item => {
+            const matchesCategory = filterCategory === 'Barchasi' || item.category === filterCategory;
+            const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+            return matchesCategory && matchesSearch;
+        });
 
         const handleSubmit = (e) => {
             e.preventDefault();
@@ -1607,6 +1615,60 @@ const AdminApp = () => {
                     >
                         <FaPlus /> Yangi Taom
                     </button>
+                </div>
+
+                {/* SEARCH AND FILTER BAR */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                        {/* Search Bar */}
+                        <div style={{ position: 'relative', width: '100%', maxWidth: '400px' }}>
+                            <FaSearch style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#666' }} />
+                            <input
+                                type="text"
+                                placeholder="Taom nomini qidiring..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                style={{
+                                    width: '100%', padding: '0.8rem 1rem 0.8rem 2.8rem',
+                                    borderRadius: '12px', border: '1px solid #333',
+                                    background: '#1a1a1a', color: '#fff', fontSize: '1rem',
+                                    outline: 'none'
+                                }}
+                            />
+                        </div>
+
+                        {/* Category Tabs */}
+                        <div style={{
+                            display: 'flex', gap: '0.5rem', overflowX: 'auto',
+                            paddingBottom: '0.5rem', flex: 1, justifyContent: 'flex-start'
+                        }}>
+                            <button
+                                onClick={() => setFilterCategory('Barchasi')}
+                                style={{
+                                    padding: '0.6rem 1.2rem', borderRadius: '10px', whiteSpace: 'nowrap',
+                                    background: filterCategory === 'Barchasi' ? 'var(--accent-color)' : '#252525',
+                                    color: filterCategory === 'Barchasi' ? '#000' : '#888',
+                                    fontWeight: 'bold', border: 'none', cursor: 'pointer'
+                                }}
+                            >
+                                Barchasi
+                            </button>
+                            {categories.map(cat => (
+                                <button
+                                    key={cat.id}
+                                    onClick={() => setFilterCategory(cat.name)}
+                                    style={{
+                                        padding: '0.6rem 1.2rem', borderRadius: '10px', whiteSpace: 'nowrap',
+                                        background: filterCategory === cat.name ? 'var(--accent-color)' : '#252525',
+                                        color: filterCategory === cat.name ? '#000' : '#888',
+                                        fontWeight: 'bold', border: 'none', cursor: 'pointer'
+                                    }}
+                                >
+                                    {cat.name}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
                 </div>
 
                 {/* MODAL */}
@@ -1721,8 +1783,8 @@ const AdminApp = () => {
                 )}
 
                 {/* Grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1rem' }}>
-                    {menu.map(item => (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1.2rem' }}>
+                    {filteredMenu.map(item => (
                         <div key={item.id} style={{ background: item.available === false ? '#331111' : '#252525', padding: '1rem', borderRadius: '8px', border: item.available === false ? '1px solid #7f1d1d' : '1px solid #333', position: 'relative', opacity: item.available === false ? 0.7 : 1 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                                 <div>

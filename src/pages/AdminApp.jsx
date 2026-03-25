@@ -1846,12 +1846,9 @@ const AdminApp = () => {
 
         const handleAdd = (e) => {
             e.preventDefault();
-            console.log("Adding category:", newCat);
             if (newCat.trim()) {
                 addCategory(newCat.trim());
                 setNewCat('');
-            } else {
-                alert("Kategoriya nomi bo'sh bo'lmasligi kerak!");
             }
         };
 

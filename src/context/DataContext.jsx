@@ -200,10 +200,7 @@ export const DataProvider = ({ children }) => {
     };
 
     // 5. Admin: Categories
-    const addCategory = (name) => {
-        alert("DataContext: Sending add_category for " + name);
-        socket.emit('add_category', name);
-    };
+    const addCategory = (name) => socket.emit('add_category', name);
     const deleteCategory = (id) => {
         if (window.confirm("Kategoriyani o'chirmoqchimisiz?")) {
             socket.emit('delete_category', id);

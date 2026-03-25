@@ -489,7 +489,6 @@ io.on('connection', (socket) => {
             console.warn(`[REJECTED] add_category from ${socket.id}. Role: ${socket.user?.role}`);
             return;
         }
-        console.log(`[EVENT] add_category received: "${name}" from ${socket.id}`);
         const newCat = { id: Date.now(), name };
         if (!db.categories) db.categories = [];
         db.categories.push(newCat);

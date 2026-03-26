@@ -1118,10 +1118,6 @@ const AdminApp = () => {
                                 ) : (
                                     selectedTable.orders.map((order, idx) => (
                                         <div key={order.id} style={{ marginBottom: '1rem', borderBottom: '1px dashed #333', paddingBottom: '0.5rem' }}>
-                                            <div style={{ textAlign: 'center', marginBottom: '1rem', borderBottom: '1px solid #000', paddingBottom: '0.5rem' }}>
-                                                <h2>LAZZAT KAFE</h2>
-                                                <p style={{ fontSize: '0.9rem' }}>{settings.phone || '+998 90 123 45 67'}</p>
-                                            </div>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#aaa', marginBottom: '0.2rem' }}>
                                                 <span>Buyurtma #{idx + 1} - {new Date(order.timestamp).toLocaleTimeString()}</span>
                                                 <span style={{ color: 'var(--accent-color)' }}>Ofitsiant: {order.waiterName || "Noma'lum"}</span>

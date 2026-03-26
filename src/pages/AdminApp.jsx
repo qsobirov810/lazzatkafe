@@ -440,6 +440,140 @@ const PaymentModalContent = ({ selectedTable, onClose, onCheckout, settings, onE
     );
 };
 
+const SettingsView = ({ settings, updateSettings, clearAllStatistics, openSuccess }) => {
+    const [percentage, setPercentage] = useState(settings.servicePercentage || 0);
+    const [kitchenWidth, setKitchenWidth] = useState(settings.kitchenPrinterWidth || 50);
+    const [cashierWidth, setCashierWidth] = useState(settings.cashierPrinterWidth || 72);
+    const [contact, setContact] = useState({
+        phone: settings.phone || '+998 90 123 45 67',
+        address: settings.address || 'Toshkent sh., Chilonzor tumani, 1-mavze',
+        hours: settings.hours || 'Har kuni: 09:00 - 23:00'
+    });
+
+    const handleSave = () => {
+        updateSettings({
+            servicePercentage: Number(percentage),
+            kitchenPrinterWidth: Number(kitchenWidth),
+            cashierPrinterWidth: Number(cashierWidth),
+            ...contact
+        });
+        openSuccess("Barcha sozlamalar muvaffaqiyatli saqlandi!");
+    };
+
+    const handleSystemReset = () => {
+        const pass = window.prompt("TIZIMNI TOZALASH uchun Admin parolini kiriting (8888):");
+        if (pass === '8888') {
+            if (window.confirm("DIQQAT! Barcha statistika, xarajatlar va arxivlar o'chiriladi. Ushbu amalni ortga qaytarib bo'lmaydi. Rozimisiz?")) {
+                clearAllStatistics();
+                openSuccess("Tizim muvaffaqiyatli tozalandi! Barcha statistika 0 ga tenglashtirildi.");
+            }
+        } else if (pass !== null) {
+            alert("Parol noto'g'ri!");
+        }
+    };
+
+    return (
+        <div>
+            <h2>Sozlamalar</h2>
+            <div style={{ maxWidth: '600px', margin: '2rem 0', display: 'grid', gap: '2rem' }}>
+
+                {/* General Settings */}
+                <div style={{ background: '#252525', padding: '1.5rem', borderRadius: '8px', border: '1px solid #333' }}>
+                    <h3 style={{ marginBottom: '1.5rem', color: 'var(--accent-color)' }}>Umumiy</h3>
+                    <div style={{ marginBottom: '1.5rem' }}>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#aaa' }}>Xizmat Haqi (Usluga) %</label>
+                        <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={percentage}
+                            onChange={(e) => setPercentage(e.target.value)}
+                            style={{ width: '100%', padding: '0.8rem', borderRadius: '4px', border: '1px solid #444', background: '#333', color: '#fff', fontSize: '1.1rem' }}
+                        />
+                        <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.5rem' }}>
+                            Ushbu foiz barcha <b>yangi</b> buyurtmalarga qo'shiladi.
+                        </p>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#aaa' }}>Oshxona Printeri (mm)</label>
+                            <input
+                                type="number"
+                                value={kitchenWidth}
+                                onChange={(e) => setKitchenWidth(e.target.value)}
+                                style={{ width: '100%', padding: '0.8rem', borderRadius: '4px', border: '1px solid #444', background: '#333', color: '#fff' }}
+                            />
+                            <p style={{ fontSize: '0.7rem', color: '#666', marginTop: '0.3rem' }}>Odatda 58mm printer uchun 44-50mm</p>
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#aaa' }}>Kassa Printeri (mm)</label>
+                            <input
+                                type="number"
+                                value={cashierWidth}
+                                onChange={(e) => setCashierWidth(e.target.value)}
+                                style={{ width: '100%', padding: '0.8rem', borderRadius: '4px', border: '1px solid #444', background: '#333', color: '#fff' }}
+                            />
+                            <p style={{ fontSize: '0.7rem', color: '#666', marginTop: '0.3rem' }}>Odatda 80mm printer uchun 70-75mm</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Contact Settings */}
+                <div style={{ background: '#252525', padding: '1.5rem', borderRadius: '8px', border: '1px solid #333' }}>
+                    <h3 style={{ marginBottom: '1.5rem', color: 'var(--accent-color)' }}>Sayt Kontakt Ma'lumotlari</h3>
+                    <div style={{ display: 'grid', gap: '1rem' }}>
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#aaa' }}>Telefon raqami</label>
+                            <input
+                                value={contact.phone}
+                                onChange={(e) => setContact({ ...contact, phone: e.target.value })}
+                                style={{ width: '100%', padding: '0.8rem', borderRadius: '4px', border: '1px solid #444', background: '#333', color: '#fff' }}
+                            />
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#aaa' }}>Manzil</label>
+                            <input
+                                value={contact.address}
+                                onChange={(e) => setContact({ ...contact, address: e.target.value })}
+                                style={{ width: '100%', padding: '0.8rem', borderRadius: '4px', border: '1px solid #444', background: '#333', color: '#fff' }}
+                            />
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#aaa' }}>Ish vaqti</label>
+                            <input
+                                value={contact.hours}
+                                onChange={(e) => setContact({ ...contact, hours: e.target.value })}
+                                style={{ width: '100%', padding: '0.8rem', borderRadius: '4px', border: '1px solid #444', background: '#333', color: '#fff' }}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <button
+                    onClick={handleSave}
+                    style={{ padding: '1.2rem', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}
+                >
+                    BARCHA O'ZGARISHLARNI SAQLASH
+                </button>
+
+                <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid #333' }}>
+                    <h4 style={{ color: '#ef4444', marginBottom: '1rem' }}>Xavfli Hudud</h4>
+                    <button
+                        onClick={handleSystemReset}
+                        style={{ width: '100%', padding: '1rem', background: 'transparent', color: '#ef4444', border: '2px solid #ef4444', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
+                    >
+                        TIZIMNI TOZALASH (STATISTIKA 0)
+                    </button>
+                    <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.5rem', textAlign: 'center' }}>
+                        Ushbu tugma barcha savdo tarixi va statistikalarni o'chiradi.
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const AdminApp = () => {
     const {
         tables, checkoutTable, updateOrder, completedOrders, archives, menu, categories, addMenuItem, updateMenuItem, deleteMenuItem, addCategory, deleteCategory, clearHistory, closeDay, addTable, deleteTable, reservations, addReservation, updateReservation, deleteReservation, activateReservation, settings, updateSettings, isConnected, messages, deleteMessage, activeOrders, saboyOrders, clearArchives, deleteArchive, clearAllStatistics,
@@ -3870,139 +4004,6 @@ const AdminApp = () => {
     );
     };
 
-    const SettingsView = () => {
-        const [percentage, setPercentage] = useState(settings.servicePercentage || 0);
-        const [kitchenWidth, setKitchenWidth] = useState(settings.kitchenPrinterWidth || 50);
-        const [cashierWidth, setCashierWidth] = useState(settings.cashierPrinterWidth || 72);
-        const [contact, setContact] = useState({
-            phone: settings.phone || '+998 90 123 45 67',
-            address: settings.address || 'Toshkent sh., Chilonzor tumani, 1-mavze',
-            hours: settings.hours || 'Har kuni: 09:00 - 23:00'
-        });
-
-        const handleSave = () => {
-            updateSettings({
-                servicePercentage: Number(percentage),
-                kitchenPrinterWidth: Number(kitchenWidth),
-                cashierPrinterWidth: Number(cashierWidth),
-                ...contact
-            });
-            openSuccess("Barcha sozlamalar muvaffaqiyatli saqlandi!");
-        };
-
-        const handleSystemReset = () => {
-            const pass = window.prompt("TIZIMNI TOZALASH uchun Admin parolini kiriting (8888):");
-            if (pass === '8888') {
-                if (window.confirm("DIQQAT! Barcha statistika, xarajatlar va arxivlar o'chiriladi. Ushbu amalni ortga qaytarib bo'lmaydi. Rozimisiz?")) {
-                    clearAllStatistics();
-                    openSuccess("Tizim muvaffaqiyatli tozalandi! Barcha statistika 0 ga tenglashtirildi.");
-                }
-            } else if (pass !== null) {
-                alert("Parol noto'g'ri!");
-            }
-        };
-
-        return (
-            <div>
-                <h2>Sozlamalar</h2>
-                <div style={{ maxWidth: '600px', margin: '2rem 0', display: 'grid', gap: '2rem' }}>
-
-                    {/* General Settings */}
-                    <div style={{ background: '#252525', padding: '1.5rem', borderRadius: '8px', border: '1px solid #333' }}>
-                        <h3 style={{ marginBottom: '1.5rem', color: 'var(--accent-color)' }}>Umumiy</h3>
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#aaa' }}>Xizmat Haqi (Usluga) %</label>
-                            <input
-                                type="number"
-                                min="0"
-                                max="100"
-                                value={percentage}
-                                onChange={(e) => setPercentage(e.target.value)}
-                                style={{ width: '100%', padding: '0.8rem', borderRadius: '4px', border: '1px solid #444', background: '#333', color: '#fff', fontSize: '1.1rem' }}
-                            />
-                            <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.5rem' }}>
-                                Ushbu foiz barcha <b>yangi</b> buyurtmalarga qo'shiladi.
-                            </p>
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#aaa' }}>Oshxona Printeri (mm)</label>
-                                <input
-                                    type="number"
-                                    value={kitchenWidth}
-                                    onChange={(e) => setKitchenWidth(e.target.value)}
-                                    style={{ width: '100%', padding: '0.8rem', borderRadius: '4px', border: '1px solid #444', background: '#333', color: '#fff' }}
-                                />
-                                <p style={{ fontSize: '0.7rem', color: '#666', marginTop: '0.3rem' }}>Odatda 58mm printer uchun 44-50mm</p>
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#aaa' }}>Kassa Printeri (mm)</label>
-                                <input
-                                    type="number"
-                                    value={cashierWidth}
-                                    onChange={(e) => setCashierWidth(e.target.value)}
-                                    style={{ width: '100%', padding: '0.8rem', borderRadius: '4px', border: '1px solid #444', background: '#333', color: '#fff' }}
-                                />
-                                <p style={{ fontSize: '0.7rem', color: '#666', marginTop: '0.3rem' }}>Odatda 80mm printer uchun 70-75mm</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Contact Settings */}
-                    <div style={{ background: '#252525', padding: '1.5rem', borderRadius: '8px', border: '1px solid #333' }}>
-                        <h3 style={{ marginBottom: '1.5rem', color: 'var(--accent-color)' }}>Sayt Kontakt Ma'lumotlari</h3>
-                        <div style={{ display: 'grid', gap: '1rem' }}>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#aaa' }}>Telefon raqami</label>
-                                <input
-                                    value={contact.phone}
-                                    onChange={(e) => setContact({ ...contact, phone: e.target.value })}
-                                    style={{ width: '100%', padding: '0.8rem', borderRadius: '4px', border: '1px solid #444', background: '#333', color: '#fff' }}
-                                />
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#aaa' }}>Manzil</label>
-                                <input
-                                    value={contact.address}
-                                    onChange={(e) => setContact({ ...contact, address: e.target.value })}
-                                    style={{ width: '100%', padding: '0.8rem', borderRadius: '4px', border: '1px solid #444', background: '#333', color: '#fff' }}
-                                />
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#aaa' }}>Ish vaqti</label>
-                                <input
-                                    value={contact.hours}
-                                    onChange={(e) => setContact({ ...contact, hours: e.target.value })}
-                                    style={{ width: '100%', padding: '0.8rem', borderRadius: '4px', border: '1px solid #444', background: '#333', color: '#fff' }}
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <button
-                        onClick={handleSave}
-                        style={{ padding: '1.2rem', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}
-                    >
-                        BARCHA O'ZGARISHLARNI SAQLASH
-                    </button>
-
-                    <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid #333' }}>
-                        <h4 style={{ color: '#ef4444', marginBottom: '1rem' }}>Xavfli Hudud</h4>
-                        <button
-                            onClick={handleSystemReset}
-                            style={{ width: '100%', padding: '1rem', background: 'transparent', color: '#ef4444', border: '2px solid #ef4444', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
-                        >
-                            TIZIMNI TOZALASH (STATISTIKA 0)
-                        </button>
-                        <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.5rem', textAlign: 'center' }}>
-                            Ushbu tugma barcha savdo tarixi va statistikalarni o'chiradi.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        );
-    };
 
     // --- LAYOUT ---
     return (
@@ -4195,7 +4196,7 @@ const AdminApp = () => {
                 {activeTab === 'settlements' && <SettlementView />}
                 {activeTab === 'messages' && <MessagesView />}
                 {activeTab === 'waiter_apps' && <WaiterApplicationsView />}
-                {activeTab === 'settings' && <SettingsView />}
+                {activeTab === 'settings' && <SettingsView settings={settings} updateSettings={updateSettings} clearAllStatistics={clearAllStatistics} openSuccess={openSuccess} />}
             </div>
 
             {/* NEW ORDER NOTIFICATION MODAL (CENTERED & MODERN) */}

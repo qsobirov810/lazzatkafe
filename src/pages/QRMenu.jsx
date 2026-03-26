@@ -124,7 +124,7 @@ const QRMenu = () => {
             </div>
 
             {/* Menu Grid */}
-            <main className="container menu-section" style={{ paddingBottom: '100px' }}>
+            <main className="container menu-section" style={{ paddingBottom: '160px' }}>
                 <div className="qr-menu-grid">
                     {filteredMenu.length > 0 ? (
                         filteredMenu.map(item => {

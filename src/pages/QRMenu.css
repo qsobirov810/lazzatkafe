@@ -1,6 +1,8 @@
 .qr-container {
     background: #000;
-    min-height: 100vh;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
     color: #fff;
     font-family: 'Outfit', sans-serif;
 }

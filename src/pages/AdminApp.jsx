@@ -3953,8 +3953,8 @@ const AdminApp = () => {
                                     <h3 style={{ margin: 0, color: '#fff', fontSize: '1.3rem' }}>{app.name}</h3>
                                     <span style={{ color: '#666', fontSize: '0.8rem' }}>{new Date(app.timestamp).toLocaleDateString()}</span>
                                 </div>
-                                <div style={{ color: 'var(--accent-color)', fontWeight: '900', fontSize: '1.2rem', background: 'rgba(255,215,0,0.05)', padding: '0.8rem', borderRadius: '8px', textAlign: 'center' }}>
-                                    рџ“ћ {app.phone}
+                                <div style={{ color: 'var(--accent-color)', fontWeight: '900', fontSize: '1.2rem', background: 'rgba(255,215,0,0.05)', padding: '0.8rem', borderRadius: '8px', textAlign: 'center', marginBottom: '1rem' }}>
+                                    Tel: {app.phone}
                                 </div>
                                 <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                                     <button

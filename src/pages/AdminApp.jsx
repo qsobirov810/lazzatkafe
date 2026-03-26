@@ -1140,19 +1140,15 @@ const AdminApp = () => {
                                         </div>
                                         <hr />
                                         <div style={{ padding: '0' }}>
-                                            <div className="receipt-total">
-                                                <span>ORALIK JAMI:</span>
-                                                <span>{getTableTotal(selectedTable).toLocaleString()}</span>
-                                            </div>
                                             {settings.servicePercentage > 0 && (
                                                 <div className="receipt-total">
                                                     <span>XIZMAT ({settings.servicePercentage}%):</span>
-                                                    <span>{(getTableTotal(selectedTable) * settings.servicePercentage / 100).toLocaleString()}</span>
+                                                    <span>{selectedTable.orders.reduce((sum, o) => sum + (o.itemsTotal * settings.servicePercentage / 100), 0).toLocaleString()}</span>
                                                 </div>
                                             )}
                                             <div className="receipt-total" style={{ borderTop: '1px solid #000', paddingTop: '2px', fontSize: '16px' }}>
                                                 <span>UMUMIY JAMI:</span>
-                                                <span>{(getTableTotal(selectedTable) * (1 + (settings.servicePercentage || 0) / 100)).toLocaleString()}</span>
+                                                <span>{selectedTable.orders.reduce((sum, o) => sum + (o.itemsTotal * (1 + (settings.servicePercentage || 0) / 100)), 0).toLocaleString()}</span>
                                             </div>
                                         </div>
                                         <style>{`
@@ -1374,10 +1370,6 @@ const AdminApp = () => {
                                         </div>
                                         <hr />
                                         <div style={{ padding: '0' }}>
-                                            <div className="receipt-total">
-                                                <span>ORALIK JAMI:</span>
-                                                <span>{getTableTotal(selectedTable).toLocaleString()}</span>
-                                            </div>
                                             {settings.servicePercentage > 0 && (
                                                 <div className="receipt-total">
                                                     <span>XIZMAT ({settings.servicePercentage}%):</span>

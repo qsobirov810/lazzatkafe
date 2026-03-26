@@ -292,7 +292,7 @@ io.on('connection', (socket) => {
         // But wait, if they add items, the service charge should apply to new items too.
         // So we use oldOrder.servicePercentage.
 
-        const servicePercentage = (oldOrder.servicePercentage !== undefined) ? oldOrder.servicePercentage : (db.settings.servicePercentage || 0);
+        const servicePercentage = db.settings.servicePercentage || 0;
         const serviceAmount = itemsTotal * (servicePercentage / 100);
         const newTotal = itemsTotal + serviceAmount;
 
@@ -608,6 +608,35 @@ io.on('connection', (socket) => {
     socket.on('update_settings', (newSettings) => {
         if (socket.user?.role !== 'admin') return;
         db.settings = { ...db.settings, ...newSettings };
+
+        // If service charge changed, update all active orders to reflect the new setting
+        if (newSettings.servicePercentage !== undefined) {
+            const newPercent = Number(newSettings.servicePercentage);
+
+            // 1. Update Active Orders list
+            db.activeOrders.forEach(order => {
+                // Takeaway (Saboy) usually has 0 service charge, we can skip if you want, but better follow the rule if it's there
+                if (order.isSaboy) return; 
+
+                const itemsTotal = order.itemsTotal || 0;
+                order.servicePercentage = newPercent;
+                order.serviceAmount = itemsTotal * (newPercent / 100);
+                order.total = itemsTotal + order.serviceAmount;
+            });
+
+            // 2. Update Orders within Tables
+            db.tables.forEach(table => {
+                table.orders.forEach(order => {
+                    const itemsTotal = order.itemsTotal || 0;
+                    order.servicePercentage = newPercent;
+                    order.serviceAmount = itemsTotal * (newPercent / 100);
+                    order.total = itemsTotal + order.serviceAmount;
+                });
+                // Recalculate table total
+                table.total = table.orders.reduce((sum, o) => sum + o.total, 0);
+            });
+        }
+
         saveDb();
         io.emit('data_update', db);
     });

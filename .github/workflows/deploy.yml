@@ -42,3 +42,4 @@ jobs:
           exclude: |
             **/node_modules/**
             **/.env
+            db.json

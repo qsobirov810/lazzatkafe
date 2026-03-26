@@ -232,7 +232,7 @@ const WaiterApp = () => {
 
     if (!selectedTable) {
         return (
-            <div className="container animate-fade-in" style={{ padding: '1rem', paddingBottom: '80px' }}>
+            <div className="container animate-fade-in" style={{ padding: '1rem', paddingBottom: '80px', height: '100vh', overflowY: 'auto', boxSizing: 'border-box' }}>
                 <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                     <div>
                         <h2 style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>Stollar</h2>
@@ -246,7 +246,7 @@ const WaiterApp = () => {
                     </button>
                 </header>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.2rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
                     {tables.map(table => (
                         <TableCard key={table.id} table={table} onClick={handleTableClick} />
                     ))}

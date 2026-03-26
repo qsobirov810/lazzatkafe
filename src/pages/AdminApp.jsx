@@ -1228,8 +1228,6 @@ const AdminApp = () => {
                                 <PrintPortal>
                                     <div className="print-receipt">
                                         <h3>{settings.restaurantName || "LAZZAT KAFE"}</h3>
-                                        <p style={{ fontSize: '11px' }}>{settings.address || "Toshkent sh., Chilonzor tumani"}</p>
-                                        <p style={{ fontSize: '11px' }}>Tel: {settings.phone || "+998 90 123 45 67"}</p>
                                         <hr />
                                         <div className="receipt-header" style={{ textAlign: 'left', fontSize: '12px' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -1270,16 +1268,20 @@ const AdminApp = () => {
                                         </div>
                                         <hr />
                                         <div style={{ padding: '0' }}>
-                                            {settings.servicePercentage > 0 && (
-                                                <div className="receipt-total">
-                                                    <span>XIZMAT ({settings.servicePercentage}%):</span>
-                                                    <span>{selectedTable.orders.reduce((sum, o) => sum + (o.itemsTotal * settings.servicePercentage / 100), 0).toLocaleString()}</span>
-                                                </div>
-                                            )}
+                                            <div className="receipt-total">
+                                                <span>XIZMAT HAQI ({settings.servicePercentage || 0}%):</span>
+                                                <span>{selectedTable.orders.reduce((sum, o) => sum + (o.itemsTotal * (settings.servicePercentage || 0) / 100), 0).toLocaleString()}</span>
+                                            </div>
                                             <div className="receipt-total" style={{ borderTop: '1px solid #000', paddingTop: '2px', fontSize: '16px' }}>
-                                                <span>UMUMIY JAMI:</span>
+                                                <span>JAMI TO'LOV:</span>
                                                 <span>{selectedTable.orders.reduce((sum, o) => sum + (o.itemsTotal * (1 + (settings.servicePercentage || 0) / 100)), 0).toLocaleString()}</span>
                                             </div>
+                                        </div>
+                                        <div style={{ marginTop: '10px', fontSize: '12px', textAlign: 'center', fontWeight: 'bold' }}>
+                                            <p>Buyurtma uchun telefonlar:</p>
+                                            <p>+99833-177-22-22</p>
+                                            <p>+99891-301-48-67</p>
+                                            <p style={{ marginTop: '5px' }}>Instagram: @lazzat__kafe_</p>
                                         </div>
                                         <style>{`
                                             .print-receipt {
@@ -1458,8 +1460,6 @@ const AdminApp = () => {
                                 <PrintPortal>
                                     <div className="print-receipt">
                                         <h3>{settings.restaurantName || "LAZZAT KAFE"}</h3>
-                                        <p style={{ fontSize: '11px' }}>{settings.address || "Toshkent sh., Chilonzor tumani"}</p>
-                                        <p style={{ fontSize: '11px' }}>Tel: {settings.phone || "+998 90 123 45 67"}</p>
                                         <hr />
                                         <div className="receipt-header" style={{ textAlign: 'left', fontSize: '12px' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -1500,14 +1500,12 @@ const AdminApp = () => {
                                         </div>
                                         <hr />
                                         <div style={{ padding: '0' }}>
-                                            {settings.servicePercentage > 0 && (
-                                                <div className="receipt-total">
-                                                    <span>XIZMAT ({settings.servicePercentage}%):</span>
-                                                    <span>{selectedTable.orders.reduce((sum, o) => sum + (o.serviceAmount || 0), 0).toLocaleString()}</span>
-                                                </div>
-                                            )}
+                                            <div className="receipt-total">
+                                                <span>XIZMAT HAQI ({settings.servicePercentage || 0}%):</span>
+                                                <span>{selectedTable.orders.reduce((sum, o) => sum + (o.serviceAmount || 0), 0).toLocaleString()}</span>
+                                            </div>
                                             <div className="receipt-total" style={{ borderTop: '1px solid #000', paddingTop: '2px', fontSize: '16px' }}>
-                                                <span>UMUMIY JAMI:</span>
+                                                <span>JAMI TO'LOV:</span>
                                                 <span>{selectedTable.orders.reduce((sum, o) => sum + o.total, 0).toLocaleString()}</span>
                                             </div>
                                             <hr />
@@ -1516,6 +1514,12 @@ const AdminApp = () => {
                                             </div>
                                         </div>
                                         <p style={{ textAlign: 'center', marginTop: '10px', fontSize: '14px' }}>Xaridingiz uchun rahmat!</p>
+                                        <div style={{ marginTop: '10px', fontSize: '12px', textAlign: 'center', fontWeight: 'bold' }}>
+                                            <p>Buyurtma uchun telefonlar:</p>
+                                            <p>+99833-177-22-22</p>
+                                            <p>+99891-301-48-67</p>
+                                            <p style={{ marginTop: '5px' }}>Instagram: @lazzat__kafe_</p>
+                                        </div>
                                         <style>{`
                                             .print-receipt {
                                                 width: 80mm !important;
@@ -3438,8 +3442,6 @@ const AdminApp = () => {
                     <PrintPortal>
                         <div className="print-receipt">
                             <h3>{settings.restaurantName || "LAZZAT KAFE"}</h3>
-                            <p style={{ fontSize: '11px' }}>{settings.address || "Toshkent sh., Chilonzor tumani"}</p>
-                            <p style={{ fontSize: '11px' }}>Tel: {settings.phone || "+998 90 123 45 67"}</p>
                             <hr />
                             <div className="receipt-header" style={{ textAlign: 'left', fontSize: '12px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -3481,7 +3483,11 @@ const AdminApp = () => {
                             <hr />
                             <div style={{ padding: '0' }}>
                                 <div className="receipt-total">
-                                    <span>JAMI:</span>
+                                    <span>XIZMAT HAQI ({receiptOrder.servicePercentage || 0}%):</span>
+                                    <span>{receiptOrder.serviceAmount?.toLocaleString() || '0'}</span>
+                                </div>
+                                <div className="receipt-total" style={{ borderTop: '1px solid #000', paddingTop: '2px', fontSize: '16px' }}>
+                                    <span>JAMI TO'LOV:</span>
                                     <span>{receiptOrder.total.toLocaleString()}</span>
                                 </div>
                                 <hr />
@@ -3787,6 +3793,12 @@ const AdminApp = () => {
                                 </div>
                             </div>
                             <p style={{ textAlign: 'center', marginTop: '10px' }}>Xaridingiz uchun rahmat!</p>
+                            <div style={{ marginTop: '10px', fontSize: '12px', textAlign: 'center', fontWeight: 'bold' }}>
+                                <p>Buyurtma uchun telefonlar:</p>
+                                <p>+99833-177-22-22</p>
+                                <p>+99891-301-48-67</p>
+                                <p style={{ marginTop: '5px' }}>Instagram: @lazzat__kafe_</p>
+                            </div>
                             <style>{`
                                 .print-receipt {
                                     width: 80mm !important;

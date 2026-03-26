@@ -2716,8 +2716,8 @@ const AdminApp = () => {
         useEffect(() => {
             if (!isAdding) return;
             const calculateShiftHours = () => {
-                const [sH, sM] = formData.startTime.split(':').map(Number);
-                const [eH, eM] = formData.endTime.split(':').map(Number);
+                const [sH, sM] = (formData.startTime || '09:00').split(':').map(Number);
+                const [eH, eM] = (formData.endTime || '19:00').split(':').map(Number);
                 if (isNaN(sH) || isNaN(eH)) return;
 
                 let diff = (eH * 60 + eM) - (sH * 60 + sM);

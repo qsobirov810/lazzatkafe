@@ -1119,7 +1119,7 @@ const AdminApp = () => {
                                     selectedTable.orders.map((order, idx) => (
                                         <div key={order.id} style={{ marginBottom: '1rem', borderBottom: '1px dashed #333', paddingBottom: '0.5rem' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#aaa', marginBottom: '0.2rem' }}>
-                                                <span>Buyurtma #{idx + 1} - {new Date(order.timestamp).toLocaleTimeString()}</span>
+                                                <span>Buyurtma #{order.orderNumber || idx + 1} - {new Date(order.timestamp).toLocaleTimeString()}</span>
                                                 <span style={{ color: 'var(--accent-color)' }}>Ofitsiant: {order.waiterName || "Noma'lum"}</span>
                                             </div>
                                             {order.items.map((item, i) => (
@@ -1234,7 +1234,7 @@ const AdminApp = () => {
                                         <div className="receipt-header" style={{ textAlign: 'left', fontSize: '12px' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                                 <span>STOL: <b>{selectedTable.name}</b></span>
-                                                <span>BUYURTMA: #<b>{selectedTable.id}</b></span>
+                                                <span>BUYURTMA: #<b>{selectedTable.orders?.[0]?.orderNumber || selectedTable.id.toString().slice(-4)}</b></span>
                                             </div>
                                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                                 <span>SANA: {new Date().toLocaleDateString()}</span>
@@ -1464,7 +1464,7 @@ const AdminApp = () => {
                                         <div className="receipt-header" style={{ textAlign: 'left', fontSize: '12px' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                                 <span>STOL: <b>{selectedTable.name}</b></span>
-                                                <span>BUYURTMA: #<b>{selectedTable.id}</b></span>
+                                                <span>BUYURTMA: #<b>{selectedTable.orders?.[0]?.orderNumber || selectedTable.id.toString().slice(-4)}</b></span>
                                             </div>
                                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                                 <span>SANA: {new Date().toLocaleDateString()}</span>
@@ -3444,7 +3444,7 @@ const AdminApp = () => {
                             <div className="receipt-header" style={{ textAlign: 'left', fontSize: '12px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                     <span>STOL: <b>{receiptOrder.isSaboy ? `SABOY (${receiptOrder.customerName})` : (tables?.find(t => String(t.id) === String(receiptOrder.tableId))?.name || `Stol ${receiptOrder.tableId}`)}</b></span>
-                                    <span>BUYURTMA: #<b>{receiptOrder.id.slice(-6).toUpperCase()}</b></span>
+                                    <span>BUYURTMA: #<b>{receiptOrder.orderNumber || receiptOrder.id.toString().slice(-4)}</b></span>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                     <span>SANA: {new Date(receiptOrder.timestamp).toLocaleDateString()}</span>
@@ -3744,7 +3744,7 @@ const AdminApp = () => {
                                     <span>VAQT: {new Date().toLocaleTimeString()}</span>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <span>BUYURTMA: #<b>{selectedOrder.id.slice(-6).toUpperCase()}</b></span>
+                                    <span>BUYURTMA: #<b>{selectedOrder.orderNumber || selectedOrder.id.toString().slice(-4)}</b></span>
                                     <span>TUR: <b>SABOY</b></span>
                                 </div>
                                 <div>KASSIR: <b>{user?.username || "Kassir"}</b></div>

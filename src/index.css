@@ -189,4 +189,31 @@ a {
   .print-report td {
     padding: 2px 0;
   }
-}
+
+  /* Regular Receipt Bold Styles */
+  .print-receipt {
+    width: 100%;
+    margin: 0;
+    padding: 0 3mm 5mm 3mm;
+    background: white;
+    color: #000000 !important;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    font-weight: bold !important;
+    box-sizing: border-box;
+  }
+
+  .print-receipt * {
+    color: #000000 !important;
+    font-weight: bold !important;
+  }
+
+  .print-receipt table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .print-receipt th, .print-receipt td {
+    padding: 2px 0;
+  }
+}

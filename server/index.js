@@ -247,8 +247,11 @@ io.on('connection', (socket) => {
         const serviceAmount = itemsTotal * (servicePercentage / 100);
         const total = itemsTotal + serviceAmount;
 
+        db.orderCounter = (db.orderCounter || 0) + 1;
+
         const newOrder = {
             id: Date.now(),
+            orderNumber: db.orderCounter,
             tableId,
             items,
             status: 'pending', // pending, printed, completed
@@ -998,8 +1001,11 @@ io.on('connection', (socket) => {
         const serviceAmount = 0;
         const total = itemsTotal;
 
+        db.orderCounter = (db.orderCounter || 0) + 1;
+
         const newOrder = {
             id: Date.now(),
+            orderNumber: db.orderCounter,
             isSaboy: true,
             items,
             status: 'pending',

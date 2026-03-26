@@ -228,8 +228,8 @@ const KitchenView = () => {
                         <hr />
                         <style>{`
                             .print-receipt {
-                                width: 55mm !important;
-                                margin: 0 auto;
+                                width: 76mm !important;
+                                margin: 0;
                                 margin: 0;
                                 background: white;
                                 color: #000000 !important;
@@ -1286,7 +1286,7 @@ const AdminApp = () => {
                                         </div>
                                         <style>{`
                                             .print-receipt {
-                                                width: 55mm !important; margin: 0 auto;
+                                                width: 76mm !important; margin: 0;
                                                 margin: 0;
                                                 background: white;
                                                 color: #000000 !important;
@@ -1523,7 +1523,7 @@ const AdminApp = () => {
                                         </div>
                                         <style>{`
                                             .print-receipt {
-                                                width: 55mm !important; margin: 0 auto;
+                                                width: 76mm !important; margin: 0;
                                                 margin: 0;
                                                 background: white;
                                                 color: #000000 !important;
@@ -1670,7 +1670,7 @@ const AdminApp = () => {
                                 </div>
                                 <style>{`
                                     .print-receipt {
-                                        width: 55mm !important; margin: 0 auto;
+                                        width: 76mm !important; margin: 0;
                                         margin: 0;
                                         background: white;
                                         color: #000000 !important;
@@ -3499,7 +3499,7 @@ const AdminApp = () => {
                             <p style={{ textAlign: 'center', marginTop: '10px', fontSize: '12px' }}>Qayta chop etildi</p>
                             <style>{`
                                 .print-receipt {
-                                    width: 55mm !important; margin: 0 auto;
+                                    width: 76mm !important; margin: 0;
                                     margin: 0;
                                     background: white;
                                     color: #000000 !important;
@@ -3802,7 +3802,7 @@ const AdminApp = () => {
                             </div>
                             <style>{`
                                 .print-receipt {
-                                    width: 55mm !important; margin: 0 auto;
+                                    width: 76mm !important; margin: 0;
                                     margin: 0;
                                     background: white;
                                     color: #000000 !important;
@@ -4356,7 +4356,7 @@ const AdminApp = () => {
                     <style>{`
                         @media print {
                             .print-report {
-                                width: 55mm !important; margin: 0 auto;
+                                width: 76mm !important; margin: 0;
                                 margin: 0;
                                 padding: 2mm 0;
                                 font-family: 'Courier New', monospace;

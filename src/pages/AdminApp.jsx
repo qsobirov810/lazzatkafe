@@ -4010,10 +4010,10 @@ const AdminApp = () => {
         <div style={{ display: 'flex', height: '100vh', background: 'var(--bg-primary)', overflow: 'hidden' }}>
 
             {/* Sidebar */}
-            <div style={{ width: '250px', background: '#18181b', borderRight: '1px solid #333', padding: '1rem', display: 'flex', flexDirection: 'column' }}>
-                <h1 style={{ color: 'var(--accent-color)', marginBottom: '2rem' }}>LAZZAT KAFE</h1>
+            <div style={{ width: '250px', background: '#18181b', borderRight: '1px solid #333', padding: '1rem', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+                <h1 style={{ color: 'var(--accent-color)', marginBottom: '2rem', flexShrink: 0 }}>LAZZAT KAFE</h1>
 
-                <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
                     {userRole === 'cashier' && (
                         <>
                             <button

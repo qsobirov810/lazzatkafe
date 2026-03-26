@@ -1240,7 +1240,7 @@ const AdminApp = () => {
                                                 <span>SANA: {new Date().toLocaleDateString()}</span>
                                                 <span>VAQT: {new Date().toLocaleTimeString()}</span>
                                             </div>
-                                            <div>KASSIR: <b>{user?.username || "Kassir"}</b></div>
+                                            <div>OFITSIANT: <b>{selectedTable.orders?.[0]?.waiterName || "Noma'lum"}</b></div>
                                         </div>
                                         <p style={{ fontWeight: 'bold', margin: '5px 0' }}>HISOB-KITOB (To'lanmagan)</p>
                                         <hr />
@@ -1470,7 +1470,7 @@ const AdminApp = () => {
                                                 <span>SANA: {new Date().toLocaleDateString()}</span>
                                                 <span>VAQT: {new Date().toLocaleTimeString()}</span>
                                             </div>
-                                            <div>KASSIR: <b>{user?.username || "Kassir"}</b></div>
+                                            <div>OFITSIANT: <b>{selectedTable.orders?.[0]?.waiterName || "Noma'lum"}</b></div>
                                         </div>
                                         <p style={{ fontWeight: 'bold', margin: '5px 0' }}>MIJOZ CHEKI</p>
                                         <hr />
@@ -3450,7 +3450,7 @@ const AdminApp = () => {
                                     <span>SANA: {new Date(receiptOrder.timestamp).toLocaleDateString()}</span>
                                     <span>VAQT: {new Date(receiptOrder.timestamp).toLocaleTimeString()}</span>
                                 </div>
-                                <div>KASSIR: <b>{user?.username || "Kassir"}</b></div>
+                                <div>OFITSIANT: <b>{receiptOrder.orders?.[0]?.waiterName || receiptOrder.waiterName || "Noma'lum"}</b></div>
                             </div>
                             <p style={{ fontWeight: 'bold', margin: '5px 0' }}>CHEK NUSXASI (Arxiv)</p>
                             <hr />
@@ -3747,7 +3747,7 @@ const AdminApp = () => {
                                     <span>BUYURTMA: #<b>{selectedOrder.orderNumber || selectedOrder.id.toString().slice(-4)}</b></span>
                                     <span>TUR: <b>SABOY</b></span>
                                 </div>
-                                <div>KASSIR: <b>{user?.username || "Kassir"}</b></div>
+                                <div>OFITSIANT: <b>{selectedOrder.waiterName || "Noma'lum"}</b></div>
                             </div>
                             <p style={{ fontWeight: 'bold', margin: '5px 0' }}>SABOY CHEKI</p>
                             <hr />

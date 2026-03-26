@@ -247,11 +247,16 @@ io.on('connection', (socket) => {
         const serviceAmount = itemsTotal * (servicePercentage / 100);
         const total = itemsTotal + serviceAmount;
 
-        db.orderCounter = (db.orderCounter || 0) + 1;
+        let sessionOrderNumber = db.tables[tableIndex].sessionOrderNumber;
+        if (!sessionOrderNumber || db.tables[tableIndex].status === 'free' || db.tables[tableIndex].orders.length === 0) {
+            db.orderCounter = (db.orderCounter || 0) + 1;
+            sessionOrderNumber = db.orderCounter;
+            db.tables[tableIndex].sessionOrderNumber = sessionOrderNumber;
+        }
 
         const newOrder = {
             id: Date.now(),
-            orderNumber: db.orderCounter,
+            orderNumber: sessionOrderNumber, // Session number for all orders in this visit
             tableId,
             items,
             status: 'pending', // pending, printed, completed
@@ -359,7 +364,8 @@ io.on('connection', (socket) => {
                 ...table,
                 status: 'free',
                 total: 0,
-                orders: []
+                orders: [],
+                sessionOrderNumber: null
             };
             saveDb();
             io.emit('data_update', db);
@@ -421,7 +427,8 @@ io.on('connection', (socket) => {
             ...table,
             status: 'free',
             total: 0,
-            orders: []
+            orders: [],
+            sessionOrderNumber: null
         };
 
         // Reset Related Tables
@@ -433,7 +440,8 @@ io.on('connection', (socket) => {
                         ...db.tables[tIdx],
                         status: 'free',
                         total: 0,
-                        orders: []
+                        orders: [],
+                        sessionOrderNumber: null
                     };
                 }
             }

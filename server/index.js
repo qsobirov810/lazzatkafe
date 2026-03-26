@@ -352,7 +352,7 @@ io.on('connection', (socket) => {
 
     // 4. Checkout Table
     socket.on('checkout_table', ({ tableId, paymentMethod, discount = 0, serviceOff = false }) => {
-        if (socket.user?.role !== 'admin') return;
+        // if (socket.user?.role !== 'admin') return;
         const tableIndex = db.tables.findIndex(t => String(t.id) === String(tableId));
         if (tableIndex === -1) return;
 

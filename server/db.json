@@ -138,87 +138,8 @@
       "orders": []
     }
   ],
-  "menu": [
-    {
-      "name": "Osh",
-      "price": 35000,
-      "category": "Taomlar",
-      "image": "/images/osh.png",
-      "id": 1,
-      "available": true
-    },
-    {
-      "name": "Manti",
-      "price": 8000,
-      "category": "Taomlar",
-      "image": "/images/manti.png",
-      "id": 2
-    },
-    {
-      "name": "Kebab",
-      "price": 18000,
-      "category": "Kaboblar",
-      "image": "/images/kebab.png",
-      "id": 3
-    },
-    {
-      "name": "Cola 1.5L",
-      "price": 15000,
-      "category": "Ichimliklar",
-      "image": "/images/cola.png",
-      "id": 4
-    },
-    {
-      "name": "Choy",
-      "price": 5000,
-      "category": "Ichimliklar",
-      "image": "/images/tea.png",
-      "id": 5
-    },
-    {
-      "name": "Non",
-      "price": 4000,
-      "category": "Non maxsulotlari",
-      "image": "/images/non.png",
-      "id": 6
-    },
-    {
-      "name": "lagmon 0.7 porsi",
-      "price": 25000,
-      "category": "Taomlar",
-      "image": "http://localhost:3000/images/upload-1769406384859-456533128.jpg",
-      "id": 1769406414600
-    },
-    {
-      "name": "jiz",
-      "price": 165000,
-      "category": "Taomlar",
-      "image": "",
-      "id": 1769596836566
-    }
-  ],
-  "categories": [
-    {
-      "id": 1,
-      "name": "Taomlar"
-    },
-    {
-      "id": 1769765169908,
-      "name": "Salatlar"
-    },
-    {
-      "id": 1769765179841,
-      "name": "Ichimliklar"
-    },
-    {
-      "id": 1769765205995,
-      "name": "Alkagol Maxsulotlari"
-    },
-    {
-      "id": 1769765873599,
-      "name": "Non maxsulotlari"
-    }
-  ],
+  "menu": [],
+  "categories": [],
   "activeOrders": [
     {
       "id": 1774186763627,

@@ -347,15 +347,13 @@ const WaiterApp = () => {
                 {filteredMenu.map(item => (
                     <MenuItem key={item.id} item={item} onAdd={addToCart} />
                 ))}
-                <div style={{ height: '100px' }}></div>
             </div>
 
             {/* Bottom Cart Bar */}
             {cart.length > 0 && (
                 <div style={{
-                    position: 'fixed', bottom: 0, left: 0, right: 0,
                     background: '#222', borderTop: '1px solid #444',
-                    padding: '1rem', zIndex: 20
+                    padding: '1rem', zIndex: 20, flexShrink: 0
                 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', maxHeight: '150px', overflowY: 'auto' }}>
                         <div style={{ width: '100%' }}>

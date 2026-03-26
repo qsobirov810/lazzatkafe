@@ -191,7 +191,7 @@ const KitchenView = () => {
                         <div className="receipt-header" style={{ textAlign: 'left', fontSize: '12px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <span>STOL: <b>{ticketToPrint.isSaboy ? `SABOY (${ticketToPrint.customerName})` : (tables.find(t => String(t.id) === String(ticketToPrint.tableId))?.name || ticketToPrint.tableId)}</b></span>
-                                <span>#<b>{ticketToPrint.id.slice(-6).toUpperCase()}</b></span>
+                                <span>#<b>{ticketToPrint.id?.toString().slice(-6).toUpperCase()}</b></span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <span>SANA: {new Date(ticketToPrint.timestamp).toLocaleDateString()}</span>

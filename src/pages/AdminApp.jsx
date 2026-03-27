@@ -191,7 +191,7 @@ const KitchenView = () => {
                         <div className="receipt-header" style={{ textAlign: 'left', fontSize: '12px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <span>STOL: <b>{ticketToPrint.isSaboy ? `SABOY (${ticketToPrint.customerName})` : (tables.find(t => String(t.id) === String(ticketToPrint.tableId))?.name || ticketToPrint.tableId)}</b></span>
-                                <span>#<b>{ticketToPrint.id?.toString().slice(-6).toUpperCase()}</b></span>
+                                <span>#<b>{String(ticketToPrint.id || '').slice(-6).toUpperCase()}</b></span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <span>SANA: {new Date(ticketToPrint.timestamp).toLocaleDateString()}</span>
@@ -1233,7 +1233,7 @@ const AdminApp = () => {
                                         <div className="receipt-header" style={{ textAlign: 'left', fontSize: '12px' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                                 <span>STOL: <b>{selectedTable.name}</b></span>
-                                                <span>BUYURTMA: #<b>{selectedTable.orders?.[0]?.orderNumber || selectedTable.id.toString().slice(-4)}</b></span>
+                                                <span>BUYURTMA: #<b>{selectedTable.orders?.[0]?.orderNumber || String(selectedTable.id || '').slice(-4)}</b></span>
                                             </div>
                                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                                 <span>SANA: {new Date().toLocaleDateString()}</span>
@@ -1465,7 +1465,7 @@ const AdminApp = () => {
                                         <div className="receipt-header" style={{ textAlign: 'left', fontSize: '12px' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                                 <span>STOL: <b>{selectedTable.name}</b></span>
-                                                <span>BUYURTMA: #<b>{selectedTable.orders?.[0]?.orderNumber || selectedTable.id.toString().slice(-4)}</b></span>
+                                                <span>BUYURTMA: #<b>{selectedTable.orders?.[0]?.orderNumber || String(selectedTable.id || '').slice(-4)}</b></span>
                                             </div>
                                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                                 <span>SANA: {new Date().toLocaleDateString()}</span>
@@ -3447,7 +3447,7 @@ const AdminApp = () => {
                             <div className="receipt-header" style={{ textAlign: 'left', fontSize: '12px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                     <span>STOL: <b>{receiptOrder.isSaboy ? `SABOY (${receiptOrder.customerName})` : (tables?.find(t => String(t.id) === String(receiptOrder.tableId))?.name || `Stol ${receiptOrder.tableId}`)}</b></span>
-                                    <span>BUYURTMA: #<b>{receiptOrder.orderNumber || receiptOrder.id.toString().slice(-4)}</b></span>
+                                    <span>BUYURTMA: #<b>{receiptOrder.orderNumber || String(receiptOrder.id || '').slice(-4)}</b></span>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                     <span>SANA: {new Date(receiptOrder.timestamp).toLocaleDateString()}</span>
@@ -3751,7 +3751,7 @@ const AdminApp = () => {
                                     <span>VAQT: {new Date().toLocaleTimeString()}</span>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <span>BUYURTMA: #<b>{selectedOrder.orderNumber || selectedOrder.id.toString().slice(-4)}</b></span>
+                                    <span>BUYURTMA: #<b>{selectedOrder.orderNumber || String(selectedOrder.id || '').slice(-4)}</b></span>
                                     <span>TUR: <b>SABOY</b></span>
                                 </div>
                                 <div>OFITSIANT: <b>{selectedOrder.waiterName || "Noma'lum"}</b></div>

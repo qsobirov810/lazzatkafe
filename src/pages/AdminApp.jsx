@@ -255,6 +255,20 @@ const getTableTotal = (table) => {
     return table.orders.reduce((sum, order) => sum + order.total, 0);
 };
 
+const aggregateItems = (items) => {
+    if (!items || !items.length) return [];
+    const aggregated = [];
+    items.forEach(item => {
+        const existing = aggregated.find(i => i.name === item.name && i.price === item.price);
+        if (existing) {
+            existing.quantity += item.quantity;
+        } else {
+            aggregated.push({ ...item });
+        }
+    });
+    return aggregated;
+};
+
 // --- PAYMENT MODAL COMPONENT ---
 const PaymentModalContent = ({ selectedTable, onClose, onCheckout, settings, onError, initialServiceOff = false }) => {
     const [paymentMethod, setPaymentMethod] = useState('Naqd');
@@ -1256,7 +1270,7 @@ const AdminApp = () => {
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {selectedTable.orders.flatMap(o => o.items).map((item, i) => (
+                                                    {aggregateItems(selectedTable.orders.flatMap(o => o.items)).map((item, i) => (
                                                         <tr key={i}>
                                                             <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center' }}>{i + 1}</td>
                                                             <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', wordBreak: 'break-word' }}>{item.name}</td>
@@ -1488,7 +1502,7 @@ const AdminApp = () => {
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {selectedTable.orders.flatMap(o => o.items).map((item, i) => (
+                                                    {aggregateItems(selectedTable.orders.flatMap(o => o.items)).map((item, i) => (
                                                         <tr key={i}>
                                                             <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center' }}>{i + 1}</td>
                                                             <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', wordBreak: 'break-word' }}>{item.name}</td>
@@ -3415,7 +3429,7 @@ const AdminApp = () => {
                                                                 ) : (tables?.find(t => String(t.id) === String(order.tableId))?.name || `Stol ${order.tableId}`)}
                                                             </td>
                                                             <td style={{ padding: '0.5rem', fontSize: '0.8rem', color: '#ccc' }}>
-                                                                {order.items.map((item, idx) => (
+                                                                {aggregateItems(order.items).map((item, idx) => (
                                                                     <div key={idx}>{item.quantity} x {item.name}</div>
                                                                 ))}
                                                                 {order.note && <div style={{ color: 'var(--accent-color)', marginTop: '0.2rem', fontStyle: 'italic' }}>Izoh: {order.note}</div>}
@@ -3779,7 +3793,7 @@ const AdminApp = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {selectedOrder.items.map((item, i) => (
+                                        {aggregateItems(selectedOrder.items).map((item, i) => (
                                             <tr key={i}>
                                                 <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center' }}>{i + 1}</td>
                                                 <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', wordBreak: 'break-word' }}>{item.name}</td>

@@ -664,6 +664,7 @@ const AdminApp = () => {
             else if (method.startsWith('Aralash')) {
                 // Parse "Aralash (Naqd: 10,000, Karta: 5,000, Click: 0)"
                 const clean = method.replace(/[\s,]/g, '');
+                // Improved regex to be more case-insensitive and flexible
                 const match = clean.match(/Naqd:(\d+).*Karta:(\d+).*Click:(\d+)/i);
                 if (match) {
                     cash += Number(match[1]) || 0;
@@ -2345,19 +2346,20 @@ const AdminApp = () => {
         let totalClick = 0;
 
         filteredOrders.forEach(order => {
-            totalRevenue += order.total;
+            const totalAmount = order.total || 0;
+            totalRevenue += totalAmount;
             const method = order.paymentMethod || 'Naqd';
-            if (method === 'Naqd') totalCash += order.total;
-            else if (method === 'Karta') totalCard += order.total;
-            else if (method === 'Click') totalClick += order.total;
+            if (method === 'Naqd') totalCash += totalAmount;
+            else if (method === 'Karta') totalCard += totalAmount;
+            else if (method === 'Click') totalClick += totalAmount;
             else if (method.startsWith('Aralash')) {
-                const clean = method.replace(/,/g, '');
-                const match = clean.match(/Naqd: (\d+).*Karta: (\d+).*Click: (\d+)/);
+                const clean = method.replace(/[\s,]/g, '');
+                const match = clean.match(/Naqd:(\d+).*Karta:(\d+).*Click:(\d+)/i);
                 if (match) {
-                    totalCash += Number(match[1]);
-                    totalCard += Number(match[2]);
-                    totalClick += Number(match[3]);
-                } else totalCash += order.total;
+                    totalCash += Number(match[1]) || 0;
+                    totalCard += Number(match[2]) || 0;
+                    totalClick += Number(match[3]) || 0;
+                } else totalCash += totalAmount;
             }
         });
 
@@ -3304,11 +3306,18 @@ const AdminApp = () => {
             setExpandedId(expandedId === id ? null : id);
         };
 
+        useEffect(() => {
+            if (receiptOrder) {
+                const timer = setTimeout(() => {
+                    window.print();
+                    setReceiptOrder(null);
+                }, 800);
+                return () => clearTimeout(timer);
+            }
+        }, [receiptOrder]);
+
         const handleReprint = (order) => {
             setReceiptOrder(order);
-            setTimeout(() => {
-                window.print();
-            }, 100);
         };
 
         return (

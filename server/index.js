@@ -412,7 +412,22 @@ io.on('connection', (socket) => {
             };
         });
 
-        db.history.push(...ordersToClose);
+        const transaction = {
+            id: Date.now().toString(),
+            timestamp: new Date().toISOString(),
+            tableId: tableId,
+            tableName: table.name,
+            orders: ordersToClose, // Keep for detailed view
+            items: ordersToClose.flatMap(o => o.items), // Flatten items for easy searching/stats
+            total: adjustedTotal - discount,
+            paymentMethod: paymentMethod || 'Naqd',
+            discount: discount,
+            waiterName: table.orders[0]?.waiterName || 'Kassir',
+            note: table.orders.map(o => o.note).filter(Boolean).join('; '),
+            isTransaction: true // Flag to distinguish new grouped structure
+        };
+
+        db.history.push(transaction);
 
         // Check for related tables (Multi-table checkout)
         const relatedTables = new Set();

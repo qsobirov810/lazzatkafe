@@ -169,7 +169,8 @@ const defaultData = {
         address: 'Toshkent sh., Chilonzor tumani, 1-mavze',
         hours: 'Har kuni: 09:00 - 23:00'
     },
-    waiterApplications: [] // New: Store pending waiter applications
+    waiterApplications: [], // New: Store pending waiter applications
+    debts: [] // New: Store customer debts
 };
 
 // Load DB
@@ -351,7 +352,7 @@ io.on('connection', (socket) => {
     });
 
     // 4. Checkout Table
-    socket.on('checkout_table', ({ tableId, paymentMethod, discount = 0, serviceOff = false }) => {
+    socket.on('checkout_table', ({ tableId, paymentMethod, discount = 0, serviceOff = false, customerName = '' }) => {
         // if (socket.user?.role !== 'admin') return;
         const tableIndex = db.tables.findIndex(t => String(t.id) === String(tableId));
         if (tableIndex === -1) return;
@@ -417,17 +418,34 @@ io.on('connection', (socket) => {
             timestamp: new Date().toISOString(),
             tableId: tableId,
             tableName: table.name,
-            orders: ordersToClose, // Keep for detailed view
-            items: ordersToClose.flatMap(o => o.items), // Flatten items for easy searching/stats
+            orders: ordersToClose,
+            items: ordersToClose.flatMap(o => o.items),
             total: adjustedTotal - discount,
             paymentMethod: paymentMethod || 'Naqd',
+            customerName: customerName, // Save customer name if Qarz
             discount: discount,
             waiterName: table.orders[0]?.waiterName || 'Kassir',
             note: table.orders.map(o => o.note).filter(Boolean).join('; '),
-            isTransaction: true // Flag to distinguish new grouped structure
+            isTransaction: true
         };
 
         db.history.push(transaction);
+
+        // If it's a debt, add to debts collection
+        if (paymentMethod === 'Qarz') {
+            db.debts.push({
+                id: 'debt_' + Date.now(),
+                transactionId: transaction.id,
+                customerName: customerName || 'Noma\'lum',
+                amount: transaction.total,
+                originalAmount: transaction.total,
+                timestamp: transaction.timestamp,
+                tableId: tableId,
+                tableName: table.name,
+                paid: false,
+                payments: [] // Track partial payments
+            });
+        }
 
         // Check for related tables (Multi-table checkout)
         const relatedTables = new Set();
@@ -462,10 +480,7 @@ io.on('connection', (socket) => {
             }
         });
 
-        // Cleanup: Remove these orders from Active Orders list
         db.activeOrders = db.activeOrders.filter(o => String(o.tableId) !== String(tableId));
-
-        saveDb();
 
         saveDb();
 
@@ -1051,7 +1066,7 @@ io.on('connection', (socket) => {
         io.emit('data_update', db);
     });
 
-    socket.on('checkout_saboy_order', ({ orderId, paymentMethod, discount = 0, serviceOff = true }) => {
+    socket.on('checkout_saboy_order', ({ orderId, paymentMethod, discount = 0, serviceOff = true, customerName = '' }) => {
         // Relaxing role check for now as cashier login might not have tokens yet
         // if (socket.user?.role !== 'admin') return;
 
@@ -1070,6 +1085,7 @@ io.on('connection', (socket) => {
             timestamp: order.timestamp, // Keep original start time
             closedAt: new Date().toISOString(),
             paymentMethod: paymentMethod || 'Naqd',
+            customerName: customerName || order.customerName,
             discount,
             serviceAmount: finalServiceAmount,
             total: finalTotal,
@@ -1077,9 +1093,76 @@ io.on('connection', (socket) => {
         };
 
         db.history.push(closedOrder);
+
+        // If it's a debt, add to debts collection
+        if (paymentMethod === 'Qarz') {
+            db.debts.push({
+                id: 'debt_' + Date.now(),
+                transactionId: closedOrder.id,
+                customerName: customerName || order.customerName || 'Noma\'lum',
+                amount: closedOrder.total,
+                originalAmount: closedOrder.total,
+                timestamp: closedOrder.closedAt,
+                isSaboy: true,
+                paid: false,
+                payments: []
+            });
+        }
+
         db.saboyOrders.splice(orderIndex, 1);
         db.activeOrders = db.activeOrders.filter(o => o.id !== orderId);
 
+        saveDb();
+        io.emit('data_update', db);
+    });
+
+    // 13. DEBT MANAGEMENT
+    socket.on('pay_debt', ({ debtId, amount, paymentMethod }) => {
+        if (socket.user?.role !== 'admin') return;
+        const debtIndex = db.debts.findIndex(d => d.id === debtId);
+        if (debtIndex === -1) return;
+
+        const debt = db.debts[debtIndex];
+        const payAmount = Number(amount);
+        
+        // Record payment
+        const payment = {
+            id: 'pay_' + Date.now(),
+            amount: payAmount,
+            timestamp: new Date().toISOString(),
+            paymentMethod: paymentMethod || 'Naqd'
+        };
+        debt.payments.push(payment);
+        
+        // Update remaining amount
+        debt.amount -= payAmount;
+
+        // If fully paid
+        if (debt.amount <= 0) {
+            debt.paid = true;
+            debt.paidAt = payment.timestamp;
+            debt.amount = 0; // Ensure no negative debt
+        }
+
+        // Add to history as a separate "Debt Payment" entry for daily tushum
+        db.history.push({
+            id: 'dp_' + Date.now(),
+            timestamp: payment.timestamp,
+            total: payAmount,
+            paymentMethod: payment.paymentMethod,
+            customerName: debt.customerName,
+            isDebtPayment: true,
+            debtId: debt.id,
+            tableName: debt.tableName || 'Saboy'
+        });
+
+        saveDb();
+        io.emit('data_update', db);
+    });
+
+    socket.on('delete_debt', (debtId) => {
+        if (socket.user?.role !== 'admin') return;
+        db.debts = db.debts.filter(d => d.id !== debtId);
         saveDb();
         io.emit('data_update', db);
     });

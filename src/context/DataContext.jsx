@@ -30,6 +30,7 @@ export const DataProvider = ({ children }) => {
     const [saboyOrders, setSaboyOrders] = useState([]);
     const [messages, setMessages] = useState([]); // New
     const [waiterApplications, setWaiterApplications] = useState([]); // New
+    const [debts, setDebts] = useState([]); // New: Store customer debts
 
     const [isConnected, setIsConnected] = useState(socket.connected);
     const [token, setToken] = useState(savedToken);
@@ -137,6 +138,7 @@ export const DataProvider = ({ children }) => {
             setSaboyOrders(data.saboyOrders || []);
             setMessages(data.messages || []);
             setWaiterApplications(data.waiterApplications || []);
+            setDebts(data.debts || []);
             setSettings(data.settings || { servicePercentage: 0 });
             setIsLoading(false);
         });
@@ -156,6 +158,7 @@ export const DataProvider = ({ children }) => {
             setSaboyOrders(data.saboyOrders || []);
             setMessages(data.messages || []);
             setWaiterApplications(data.waiterApplications || []);
+            setDebts(data.debts || []);
             setSettings(data.settings || { servicePercentage: 0 });
         });
 
@@ -320,6 +323,17 @@ export const DataProvider = ({ children }) => {
     const approveWaiter = (data) => socket.emit('approve_waiter', data);
     const deleteWaiterApplication = (id) => socket.emit('delete_waiter_application', id);
 
+    // 15. Debt Management
+    const payDebt = (debtId, amount, paymentMethod) => {
+        socket.emit('pay_debt', { debtId, amount, paymentMethod });
+    };
+
+    const deleteDebt = (debtId) => {
+        if (window.confirm("Qarzni o'chirib yuborasizmi?")) {
+            socket.emit('delete_debt', debtId);
+        }
+    };
+
     return (
         <DataContext.Provider value={{
             tables, menu, categories, activeOrders, completedOrders, archives, reservations, settings, expenses, employees, attendance, saboyOrders, messages, waiterApplications,
@@ -331,6 +345,7 @@ export const DataProvider = ({ children }) => {
             addAdvance, deleteAdvance, updateEmployeeSalary, logAttendance, settleEmployee,
             placeSaboyOrder, checkoutSaboyOrder, deleteMessage,
             applyForWaiter, approveWaiter, deleteWaiterApplication,
+            debts, payDebt, deleteDebt,
             login, logout
         }}>
             {children}

@@ -272,6 +272,7 @@ const aggregateItems = (items) => {
 // --- PAYMENT MODAL COMPONENT ---
 const PaymentModalContent = ({ selectedTable, onClose, onCheckout, settings, onError, initialServiceOff = false }) => {
     const [paymentMethod, setPaymentMethod] = useState('Naqd');
+    const [customerName, setCustomerName] = useState('');
     const [splitValues, setSplitValues] = useState({ cash: 0, card: 0, click: 0 });
     const [serviceOff, setServiceOff] = useState(initialServiceOff);
     const [discount, setDiscount] = useState(0);
@@ -326,7 +327,12 @@ const PaymentModalContent = ({ selectedTable, onClose, onCheckout, settings, onE
             finalMethod = `Aralash (Naqd: ${cash.toLocaleString()}, Karta: ${card.toLocaleString()}, Click: ${click.toLocaleString()})`;
         }
 
-        onCheckout(finalMethod, { discount, serviceOff });
+        if (paymentMethod === 'Qarz' && !customerName.trim()) {
+            onError("Qarz uchun mijoz ismini kiritish shart!");
+            return;
+        }
+
+        onCheckout(finalMethod, { discount, serviceOff, customerName });
     };
 
     return (
@@ -371,23 +377,38 @@ const PaymentModalContent = ({ selectedTable, onClose, onCheckout, settings, onE
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '2rem' }}>
-                {['Naqd', 'Karta', 'Click', 'Aralash'].map(method => (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '0.5rem', marginBottom: '1.5rem' }}>
+                {['Naqd', 'Karta', 'Click', 'Aralash', 'Qarz'].map(method => (
                     <button
                         key={method}
                         onClick={() => setPaymentMethod(method)}
                         style={{
-                            padding: '1rem', borderRadius: '8px', fontWeight: 'bold',
+                            padding: '1rem 0.5rem', borderRadius: '8px', fontWeight: 'bold',
                             background: paymentMethod === method ? 'var(--accent-color)' : '#333',
                             color: paymentMethod === method ? '#000' : '#fff',
                             border: paymentMethod === method ? 'none' : '1px solid #444',
-                            cursor: 'pointer'
+                            cursor: 'pointer',
+                            fontSize: '0.9rem'
                         }}
                     >
                         {method}
                     </button>
                 ))}
             </div>
+
+            {paymentMethod === 'Qarz' && (
+                <div style={{ marginBottom: '1.5rem', background: '#333', padding: '1rem', borderRadius: '8px' }}>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--accent-color)', fontWeight: 'bold' }}>MIJOZ ISMI (QARZDOR):</label>
+                    <input 
+                        type="text"
+                        value={customerName}
+                        onChange={(e) => setCustomerName(e.target.value)}
+                        placeholder="Masalan: Alijon aka"
+                        style={{ width: '100%', padding: '0.8rem', borderRadius: '4px', border: '1px solid #555', background: '#222', color: '#fff', fontSize: '1.1rem' }}
+                        autoFocus
+                    />
+                </div>
+            )}
 
             {/* Split Payment Inputs */}
             {paymentMethod === 'Aralash' && (
@@ -1526,7 +1547,7 @@ const AdminApp = () => {
                                             </div>
                                             <hr />
                                             <div style={{ textAlign: 'left', fontSize: '13px', fontWeight: 'bold' }}>
-                                                TO'LOV TURI: {paymentMethod}
+                                                TO'LOV TURI: {paymentMethod === 'Qarz' ? `QARZ (${extras?.customerName || ''})` : paymentMethod}
                                             </div>
                                         </div>
                                         <p style={{ textAlign: 'center', marginTop: '10px', fontSize: '14px' }}>Xaridingiz uchun rahmat!</p>
@@ -2285,18 +2306,25 @@ const AdminApp = () => {
                             </thead>
                             <tbody>
                                 {completedOrders.map((order, i) => (
-                                    <tr key={i} style={{ borderBottom: '1px solid #333' }}>
+                                    <tr key={i} style={{ borderBottom: order.isDebtPayment ? '2px solid #7c2d12' : '1px solid #333' }}>
                                         <td style={{ padding: '0.5rem' }}>{new Date(order.timestamp).toLocaleString()}</td>
                                         <td style={{ padding: '0.5rem' }}>
-                                            {order.isSaboy ? (
+                                            {order.isDebtPayment ? (
+                                                <span style={{ color: '#fdba74', fontWeight: 'bold' }}>QARZ TO'LOVI: {order.customerName}</span>
+                                            ) : order.isSaboy ? (
                                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                                     <span style={{ fontWeight: 'bold', color: 'var(--accent-color)' }}>SABOY: {order.customerName}</span>
                                                     {order.phone && <span style={{ fontSize: '0.8rem', color: '#888' }}>{order.phone}</span>}
                                                 </div>
-                                            ) : (tables?.find(t => String(t.id) === String(order.tableId))?.name || `Stol ${order.tableId}`)}
+                                            ) : (
+                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                    <span>{tables?.find(t => String(t.id) === String(order.tableId))?.name || `Stol ${order.tableId}`}</span>
+                                                    {order.paymentMethod === 'Qarz' && <span style={{ fontSize: '0.8rem', color: '#fdba74' }}>Mijoz: {order.customerName}</span>}
+                                                </div>
+                                            )}
                                         </td>
                                         <td style={{ padding: '0.5rem' }}>{order.total.toLocaleString()}</td>
-                                        <td style={{ padding: '0.5rem', color: '#aaa', fontSize: '0.9rem' }}>{order.paymentMethod}</td>
+                                        <td style={{ padding: '0.5rem', color: order.paymentMethod === 'Qarz' ? '#fdba74' : '#aaa', fontSize: '0.9rem' }}>{order.paymentMethod}</td>
                                         <td style={{ padding: '0.5rem', color: '#888', fontSize: '0.8rem', fontStyle: 'italic' }}>{order.note || ''}</td>
                                     </tr>
                                 ))}
@@ -2311,7 +2339,7 @@ const AdminApp = () => {
 
     // 5. STATISTICS VIEW (Enhanced)
     const StatsView = () => {
-        const { completedOrders, archives, expenses } = useData();
+        const { completedOrders, archives, expenses, debts } = useData();
         const [filterType, setFilterType] = useState('today'); // today, month, year, custom
         const [startDate, setStartDate] = useState('');
         const [endDate, setEndDate] = useState('');
@@ -2379,6 +2407,9 @@ const AdminApp = () => {
 
         const totalExpenseAmount = filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0);
         const netProfit = totalRevenue - totalExpenseAmount;
+        
+        // Total Outstanding Debt (Current)
+        const totalOutstandingDebt = (debts || []).reduce((sum, d) => sum + (d.paid ? 0 : d.amount), 0);
 
         // Employee Performance
         const employeeStats = {};
@@ -2432,6 +2463,10 @@ const AdminApp = () => {
                     <div style={{ background: 'linear-gradient(135deg, #064e3b, #022c22)', padding: '1.5rem', borderRadius: '16px', border: '1px solid #065f46' }}>
                         <div style={{ color: '#6ee7b7', fontSize: '0.9rem', marginBottom: '0.5rem' }}>Sof Foyda</div>
                         <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#fff' }}>{netProfit.toLocaleString()} <span style={{ fontSize: '0.9rem' }}>UZS</span></div>
+                    </div>
+                    <div style={{ background: 'linear-gradient(135deg, #7c2d12, #451a03)', padding: '1.5rem', borderRadius: '16px', border: '1px solid #9a3412' }}>
+                        <div style={{ color: '#fdba74', fontSize: '0.9rem', marginBottom: '0.5rem' }}>Umumiy Qarzlar</div>
+                        <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#fff' }}>{totalOutstandingDebt.toLocaleString()} <span style={{ fontSize: '0.9rem' }}>UZS</span></div>
                     </div>
                 </div>
 
@@ -2501,6 +2536,132 @@ const AdminApp = () => {
                         {topItems.length === 0 && <p style={{ color: '#666' }}>Ma'lumot yo'q</p>}
                     </div>
                 </div>
+            </div>
+        );
+    };
+
+    // 5.1 DEBTS VIEW (NEW)
+    const DebtsView = () => {
+        const { debts, payDebt, deleteDebt } = useData();
+        const [showPayModal, setShowPayModal] = useState(false);
+        const [selectedDebt, setSelectedDebt] = useState(null);
+        const [payAmount, setPayAmount] = useState('');
+        const [payMethod, setPayMethod] = useState('Naqd');
+
+        const openPayModal = (debt) => {
+            setSelectedDebt(debt);
+            setPayAmount(String(debt.amount));
+            setShowPayModal(true);
+        };
+
+        const handlePay = () => {
+            if (!payAmount || Number(payAmount) <= 0) return;
+            payDebt(selectedDebt.id, Number(payAmount), payMethod);
+            setShowPayModal(false);
+            setSelectedDebt(null);
+        };
+
+        const totalDebt = (debts || []).reduce((sum, d) => sum + (d.paid ? 0 : d.amount), 0);
+
+        return (
+            <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                    <h2>Qarzdorlar Ro'yxati</h2>
+                    <div style={{ background: '#252525', padding: '1rem', borderRadius: '12px', border: '1px solid #7c2d12' }}>
+                        <span style={{ color: '#fdba74', marginRight: '1rem' }}>Jami Qolgan Qarz:</span>
+                        <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#fff' }}>{totalDebt.toLocaleString()} UZS</span>
+                    </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                    {(debts || []).filter(d => !d.paid).map(debt => (
+                        <div key={debt.id} style={{ background: '#1e1e1e', padding: '1.5rem', borderRadius: '16px', border: '1px solid #333', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                                <div>
+                                    <h3 style={{ margin: 0, color: 'var(--accent-color)' }}>{debt.customerName}</h3>
+                                    <span style={{ fontSize: '0.8rem', color: '#666' }}>{new Date(debt.timestamp).toLocaleString()}</span>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fff' }}>{debt.amount.toLocaleString()} UZS</div>
+                                    <div style={{ fontSize: '0.7rem', color: '#888' }}>Asl qarz: {debt.originalAmount?.toLocaleString()}</div>
+                                </div>
+                            </div>
+                            
+                            <div style={{ fontSize: '0.9rem', color: '#aaa', background: '#252525', padding: '0.5rem', borderRadius: '6px' }}>
+                                <FaChair size={12} style={{ marginRight: '5px' }} /> {debt.tableName || 'Saboy'}
+                            </div>
+
+                            {debt.payments?.length > 0 && (
+                                <div style={{ fontSize: '0.8rem', borderTop: '1px solid #333', paddingTop: '0.5rem' }}>
+                                    <div style={{ color: '#666', marginBottom: '0.3rem' }}>To'lovlar tarixi:</div>
+                                    {debt.payments.map(p => (
+                                        <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', color: '#4caf50' }}>
+                                            <span>{new Date(p.timestamp).toLocaleDateString()} ({p.paymentMethod})</span>
+                                            <span>+{p.amount.toLocaleString()}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                                <button
+                                    onClick={() => openPayModal(debt)}
+                                    style={{ flex: 2, padding: '0.8rem', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+                                >
+                                    TO'LASH
+                                </button>
+                                <button
+                                    onClick={() => deleteDebt(debt.id)}
+                                    style={{ flex: 1, padding: '0.8rem', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', cursor: 'pointer' }}
+                                >
+                                    O'CHIRISH
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                    {(debts || []).filter(d => !d.paid).length === 0 && <p style={{ color: '#666' }}>Hozirda qarzdorlar yo'q.</p>}
+                </div>
+
+                {showPayModal && (
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 11000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(5px)' }}>
+                        <div style={{ background: '#1a1a1a', padding: '2rem', borderRadius: '20px', width: '400px', border: '1px solid #333' }}>
+                            <h3 style={{ marginBottom: '1.5rem', color: 'var(--accent-color)' }}>Qarzni So'ndirish: {selectedDebt?.customerName}</h3>
+                            
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                                <div>
+                                    <label style={{ display: 'block', color: '#888', marginBottom: '0.5rem', fontSize: '0.9rem' }}>To'lov Summasi:</label>
+                                    <input
+                                        type="number"
+                                        value={payAmount}
+                                        onChange={e => setPayAmount(e.target.value)}
+                                        style={{ width: '100%', padding: '1rem', background: '#222', border: '1px solid #444', color: '#fff', borderRadius: '10px', fontSize: '1.2rem' }}
+                                    />
+                                    <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#666' }}>Qolgan qarz: {selectedDebt?.amount.toLocaleString()} UZS</div>
+                                </div>
+
+                                <div>
+                                    <label style={{ display: 'block', color: '#888', marginBottom: '0.5rem', fontSize: '0.9rem' }}>To'lov Turi:</label>
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        {['Naqd', 'Karta'].map(m => (
+                                            <button
+                                                key={m}
+                                                onClick={() => setPayMethod(m)}
+                                                style={{ flex: 1, padding: '0.8rem', borderRadius: '8px', border: 'none', background: payMethod === m ? 'var(--accent-color)' : '#333', color: payMethod === m ? '#000' : '#fff', fontWeight: 'bold', cursor: 'pointer' }}
+                                            >
+                                                {m}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+                                <button onClick={() => setShowPayModal(false)} style={{ flex: 1, padding: '1rem', background: 'transparent', color: '#888', border: '1px solid #333', borderRadius: '10px' }}>BEKOR</button>
+                                <button onClick={handlePay} style={{ flex: 1, padding: '1rem', background: 'var(--success)', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold' }}>TASDIQLASH</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         );
     };
@@ -3516,7 +3677,7 @@ const AdminApp = () => {
                                 </div>
                                 <hr />
                                 <div style={{ textAlign: 'left', fontSize: '13px', fontWeight: 'bold' }}>
-                                    TO'LOV TURI: {receiptOrder.paymentMethod}
+                                    TO'LOV TURI: {receiptOrder.paymentMethod === 'Qarz' ? `QARZ (${receiptOrder.customerName || ''})` : receiptOrder.paymentMethod}
                                 </div>
                             </div>
                             <p style={{ textAlign: 'center', marginTop: '10px', fontSize: '12px' }}>Qayta chop etildi</p>
@@ -3813,7 +3974,7 @@ const AdminApp = () => {
                                 </div>
                                 <hr />
                                 <div style={{ textAlign: 'left', fontSize: '13px', fontWeight: 'bold' }}>
-                                    TO'LOV TURI: {pendingSaboyCheckout?.method || 'Naqd'}
+                                    TO'LOV TURI: {pendingSaboyCheckout?.method === 'Qarz' ? `QARZ (${pendingSaboyCheckout?.extras?.customerName || selectedOrder.customerName})` : (pendingSaboyCheckout?.method || 'Naqd')}
                                 </div>
                             </div>
                             <p style={{ textAlign: 'center', marginTop: '10px' }}>Xaridingiz uchun rahmat!</p>
@@ -4133,6 +4294,15 @@ const AdminApp = () => {
                             >
                                 <FaWallet /> Oylik Hisob-Kitob
                             </button>
+                            <button
+                                onClick={() => setActiveTab('debts')}
+                                style={{
+                                    padding: '1rem', textAlign: 'left', borderRadius: '8px', display: 'flex', gap: '10px', alignItems: 'center',
+                                    background: activeTab === 'debts' ? '#333' : 'transparent', color: '#fff'
+                                }}
+                            >
+                                <FaWallet /> Qarzlar
+                            </button>
                         </>
                     )}
                     {userRole === 'admin' && ( // Admin Only
@@ -4228,6 +4398,7 @@ const AdminApp = () => {
                 {activeTab === 'settlements' && <SettlementView />}
                 {activeTab === 'messages' && <MessagesView />}
                 {activeTab === 'waiter_apps' && <WaiterApplicationsView />}
+                {activeTab === 'debts' && <DebtsView />}
                 {activeTab === 'settings' && <SettingsView settings={settings} updateSettings={updateSettings} clearAllStatistics={clearAllStatistics} openSuccess={openSuccess} />}
             </div>
 

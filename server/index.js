@@ -352,7 +352,7 @@ io.on('connection', (socket) => {
     });
 
     // 4. Checkout Table
-    socket.on('checkout_table', ({ tableId, paymentMethod, discount = 0, serviceOff = false, customerName = '' }) => {
+    socket.on('checkout_table', ({ tableId, paymentMethod, discount = 0, serviceOff = false, customerName = '', debtAmount: inputDebtAmount = 0 }) => {
         // if (socket.user?.role !== 'admin') return;
         const tableIndex = db.tables.findIndex(t => String(t.id) === String(tableId));
         if (tableIndex === -1) return;
@@ -432,8 +432,8 @@ io.on('connection', (socket) => {
         db.history.push(transaction);
 
         // If it's a debt or mixed with debt, add to debts collection
-        if (paymentMethod === 'Qarz' || (extras && extras.debtAmount > 0)) {
-            const debtAmount = paymentMethod === 'Qarz' ? transaction.total : Number(extras.debtAmount);
+        if (paymentMethod === 'Qarz' || (inputDebtAmount > 0)) {
+            const debtAmount = paymentMethod === 'Qarz' ? transaction.total : Number(inputDebtAmount);
             db.debts.push({
                 id: 'debt_' + Date.now(),
                 transactionId: transaction.id,
@@ -1067,7 +1067,7 @@ io.on('connection', (socket) => {
         io.emit('data_update', db);
     });
 
-    socket.on('checkout_saboy_order', ({ orderId, paymentMethod, discount = 0, serviceOff = true, customerName = '' }) => {
+    socket.on('checkout_saboy_order', ({ orderId, paymentMethod, discount = 0, serviceOff = true, customerName = '', debtAmount: inputDebtAmount = 0 }) => {
         // Relaxing role check for now as cashier login might not have tokens yet
         // if (socket.user?.role !== 'admin') return;
 
@@ -1096,8 +1096,8 @@ io.on('connection', (socket) => {
         db.history.push(closedOrder);
 
         // If it's a debt or mixed with debt, add to debts collection
-        if (paymentMethod === 'Qarz' || (extras && extras.debtAmount > 0)) {
-            const debtAmount = paymentMethod === 'Qarz' ? closedOrder.total : Number(extras.debtAmount);
+        if (paymentMethod === 'Qarz' || (inputDebtAmount > 0)) {
+            const debtAmount = paymentMethod === 'Qarz' ? closedOrder.total : Number(inputDebtAmount);
             db.debts.push({
                 id: 'debt_' + Date.now(),
                 transactionId: closedOrder.id,

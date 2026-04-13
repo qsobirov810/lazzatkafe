@@ -22,7 +22,17 @@ const Landing = () => {
             setScrolled(window.scrollY > 50);
         };
         window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
+        
+        // Enable scrolling for Landing page
+        document.body.style.overflow = 'auto';
+        document.body.style.height = 'auto';
+
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            // Restore global hidden state
+            document.body.style.overflow = 'hidden';
+            document.body.style.height = '100vh';
+        };
     }, []);
 
     // Get the first 6 items or items marked as highlights (if we added such a flag later)

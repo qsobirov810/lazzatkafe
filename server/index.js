@@ -431,13 +431,14 @@ io.on('connection', (socket) => {
 
         db.history.push(transaction);
 
-        // If it's a debt, add to debts collection
-        if (paymentMethod === 'Qarz') {
+        // If it's a debt or mixed with debt, add to debts collection
+        if (paymentMethod === 'Qarz' || (extras && extras.debtAmount > 0)) {
+            const debtAmount = paymentMethod === 'Qarz' ? transaction.total : Number(extras.debtAmount);
             db.debts.push({
                 id: 'debt_' + Date.now(),
                 transactionId: transaction.id,
                 customerName: customerName || 'Noma\'lum',
-                amount: transaction.total,
+                amount: debtAmount,
                 originalAmount: transaction.total,
                 timestamp: transaction.timestamp,
                 tableId: tableId,
@@ -1094,13 +1095,14 @@ io.on('connection', (socket) => {
 
         db.history.push(closedOrder);
 
-        // If it's a debt, add to debts collection
-        if (paymentMethod === 'Qarz') {
+        // If it's a debt or mixed with debt, add to debts collection
+        if (paymentMethod === 'Qarz' || (extras && extras.debtAmount > 0)) {
+            const debtAmount = paymentMethod === 'Qarz' ? closedOrder.total : Number(extras.debtAmount);
             db.debts.push({
                 id: 'debt_' + Date.now(),
                 transactionId: closedOrder.id,
                 customerName: customerName || order.customerName || 'Noma\'lum',
-                amount: closedOrder.total,
+                amount: debtAmount,
                 originalAmount: closedOrder.total,
                 timestamp: closedOrder.closedAt,
                 isSaboy: true,

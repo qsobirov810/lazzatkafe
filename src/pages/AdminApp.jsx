@@ -273,7 +273,7 @@ const aggregateItems = (items) => {
 const PaymentModalContent = ({ selectedTable, onClose, onCheckout, settings, onError, initialServiceOff = false }) => {
     const [paymentMethod, setPaymentMethod] = useState('Naqd');
     const [customerName, setCustomerName] = useState('');
-    const [splitValues, setSplitValues] = useState({ cash: 0, card: 0, click: 0 });
+    const [splitValues, setSplitValues] = useState({ cash: 0, card: 0, click: 0, qarz: 0 });
     const [serviceOff, setServiceOff] = useState(initialServiceOff);
     const [discount, setDiscount] = useState(0);
 
@@ -313,8 +313,8 @@ const PaymentModalContent = ({ selectedTable, onClose, onCheckout, settings, onE
         let finalMethod = paymentMethod;
 
         if (paymentMethod === 'Aralash') {
-            const { cash, card, click } = splitValues;
-            const sum = Number(cash) + Number(card) + Number(click);
+            const { cash, card, click, qarz } = splitValues;
+            const sum = Number(cash) + Number(card) + Number(click) + Number(qarz);
             const diff = finalTotal - sum;
 
             if (sum !== finalTotal) {
@@ -324,7 +324,19 @@ const PaymentModalContent = ({ selectedTable, onClose, onCheckout, settings, onE
                 onError(`Summa to'g'ri kelmadi! Jami: ${finalTotal.toLocaleString()} so'm, Kiritildi: ${sum.toLocaleString()} so'm. ${diffMsg}`);
                 return;
             }
-            finalMethod = `Aralash (Naqd: ${cash.toLocaleString()}, Karta: ${card.toLocaleString()}, Click: ${click.toLocaleString()})`;
+
+            if (qarz > 0 && !customerName.trim()) {
+                onError("Aralash to'lovda qarz qismi bor, mijoz ismini kiritish shart!");
+                return;
+            }
+
+            let methodParts = [];
+            if (cash > 0) methodParts.push(`Naqd: ${cash.toLocaleString()}`);
+            if (card > 0) methodParts.push(`Karta: ${card.toLocaleString()}`);
+            if (click > 0) methodParts.push(`Click: ${click.toLocaleString()}`);
+            if (qarz > 0) methodParts.push(`Qarz: ${qarz.toLocaleString()}`);
+
+            finalMethod = `Aralash (${methodParts.join(', ')})`;
         }
 
         if (paymentMethod === 'Qarz' && !customerName.trim()) {
@@ -332,7 +344,12 @@ const PaymentModalContent = ({ selectedTable, onClose, onCheckout, settings, onE
             return;
         }
 
-        onCheckout(finalMethod, { discount, serviceOff, customerName });
+        onCheckout(finalMethod, { 
+            discount, 
+            serviceOff, 
+            customerName, 
+            debtAmount: paymentMethod === 'Aralash' ? splitValues.qarz : (paymentMethod === 'Qarz' ? finalTotal : 0) 
+        });
     };
 
     return (
@@ -448,18 +465,41 @@ const PaymentModalContent = ({ selectedTable, onClose, onCheckout, settings, onE
                                 style={{ width: '150px', padding: '0.5rem', borderRadius: '4px', background: '#222', border: '1px solid #555', color: '#fff', textAlign: 'right', fontWeight: 'bold' }}
                             />
                         </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <label style={{ color: 'var(--accent-color)', fontWeight: 'bold' }}>Qarz:</label>
+                            <input
+                                type="text"
+                                inputMode="numeric"
+                                value={formatInput(splitValues.qarz) || ''}
+                                onChange={e => setSplitValues({ ...splitValues, qarz: parseInput(e.target.value) })}
+                                onFocus={(e) => e.target.select()}
+                                style={{ width: '150px', padding: '0.5rem', borderRadius: '4px', background: '#222', border: '1px solid var(--accent-color)', color: '#fff', textAlign: 'right', fontWeight: 'bold' }}
+                            />
+                        </div>
+                        {splitValues.qarz > 0 && (
+                            <div style={{ marginTop: '0.5rem' }}>
+                                <label style={{ display: 'block', marginBottom: '0.3rem', color: 'var(--accent-color)', fontSize: '0.8rem' }}>QARZDOR ISMI:</label>
+                                <input
+                                    type="text"
+                                    value={customerName}
+                                    onChange={e => setCustomerName(e.target.value)}
+                                    placeholder="Ismini yozing..."
+                                    style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', background: '#222', border: '1px solid #555', color: '#fff' }}
+                                />
+                            </div>
+                        )}
                     </div>
                     <div style={{ marginTop: '0.8rem', padding: '0.8rem', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid #444' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
                             <span>Kiritildi:</span>
-                            <span style={{ color: (splitValues.cash + splitValues.card + splitValues.click) === finalTotal ? 'var(--success)' : '#fff' }}>
-                                {(splitValues.cash + splitValues.card + splitValues.click).toLocaleString()} so'm
+                            <span style={{ color: (splitValues.cash + splitValues.card + splitValues.click + splitValues.qarz) === finalTotal ? 'var(--success)' : '#fff' }}>
+                                {(splitValues.cash + splitValues.card + splitValues.click + splitValues.qarz).toLocaleString()} so'm
                             </span>
                         </div>
-                        {(splitValues.cash + splitValues.card + splitValues.click) !== finalTotal && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.4rem', color: (finalTotal - (splitValues.cash + splitValues.card + splitValues.click)) > 0 ? '#ff4444' : '#ffaa00' }}>
-                                <span>{(finalTotal - (splitValues.cash + splitValues.card + splitValues.click)) > 0 ? 'Qoldiq:' : 'Ortiqcha:'}</span>
-                                <span style={{ fontWeight: '900' }}>{Math.abs(finalTotal - (splitValues.cash + splitValues.card + splitValues.click)).toLocaleString()} so'm</span>
+                        {(splitValues.cash + splitValues.card + splitValues.click + splitValues.qarz) !== finalTotal && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.4rem', color: (finalTotal - (splitValues.cash + splitValues.card + splitValues.click + splitValues.qarz)) > 0 ? '#ff4444' : '#ffaa00' }}>
+                                <span>{(finalTotal - (splitValues.cash + splitValues.card + splitValues.click + splitValues.qarz)) > 0 ? 'Qoldiq:' : 'Ortiqcha:'}</span>
+                                <span style={{ fontWeight: '900' }}>{Math.abs(finalTotal - (splitValues.cash + splitValues.card + splitValues.click + splitValues.qarz)).toLocaleString()} so'm</span>
                             </div>
                         )}
                     </div>
@@ -675,7 +715,8 @@ const AdminApp = () => {
     // CASHIER VIEW STATES (Moved up to prevent re-mount loss)
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState('Naqd');
-    const [splitValues, setSplitValues] = useState({ cash: 0, card: 0, click: 0 });
+    const [extras, setExtras] = useState({});
+    const [splitValues, setSplitValues] = useState({ cash: 0, card: 0, click: 0, qarz: 0 });
     const [showReservations, setShowReservations] = useState(false);
     const [showAddResModal, setShowAddResModal] = useState(false);
     const [editingReservation, setEditingReservation] = useState(null);
@@ -697,17 +738,22 @@ const AdminApp = () => {
             else if (method === 'Karta') card += total;
             else if (method === 'Click') click += total;
             else if (method.startsWith('Aralash')) {
-                // Parse "Aralash (Naqd: 10,000, Karta: 5,000, Click: 0)"
+                // Parse "Aralash (Naqd: 10,000, Karta: 5,000, Click: 0, Qarz: 5,000)"
                 const clean = method.replace(/[\s,]/g, '');
-                // Improved regex to be more case-insensitive and flexible
-                const match = clean.match(/Naqd:(\d+).*Karta:(\d+).*Click:(\d+)/i);
-                if (match) {
-                    cash += Number(match[1]) || 0;
-                    card += Number(match[2]) || 0;
-                    click += Number(match[3]) || 0;
-                } else {
-                    cash += total;
-                }
+                
+                // Naqd
+                const cashMatch = clean.match(/Naqd:(\d+)/i);
+                if (cashMatch) cash += Number(cashMatch[1]) || 0;
+                
+                // Karta
+                const cardMatch = clean.match(/Karta:(\d+)/i);
+                if (cardMatch) card += Number(cardMatch[1]) || 0;
+                
+                // Click
+                const clickMatch = clean.match(/Click:(\d+)/i);
+                if (clickMatch) click += Number(clickMatch[1]) || 0;
+                
+                // Qarz is ignored in daily tushum
             }
         });
         return { total: cash + card + click, cash, card, click };
@@ -1355,14 +1401,20 @@ const AdminApp = () => {
                                             setShowErrorModal(true);
                                         }}
                                         onCheckout={(method, extras) => {
-                                            // 1. Print
-                                            window.print();
+                                            // 1. Update state for receipt
+                                            setPaymentMethod(method);
+                                            setExtras(extras);
 
-                                            // 2. Open Custom Confirm Modal
+                                            // 2. Print with delay for re-render
                                             setTimeout(() => {
-                                                setPendingCheckout({ method, extras });
-                                                setShowConfirmModal(true);
-                                                setShowPaymentModal(false);
+                                                window.print();
+                                                
+                                                // 3. Open Confirmation
+                                                setTimeout(() => {
+                                                    setPendingCheckout({ method, extras });
+                                                    setShowConfirmModal(true);
+                                                    setShowPaymentModal(false);
+                                                }, 100);
                                             }, 100);
                                         }}
                                         settings={settings}
@@ -1547,7 +1599,10 @@ const AdminApp = () => {
                                             </div>
                                             <hr />
                                             <div style={{ textAlign: 'left', fontSize: '13px', fontWeight: 'bold' }}>
-                                                TO'LOV TURI: {paymentMethod === 'Qarz' ? `QARZ (${extras?.customerName || ''})` : paymentMethod}
+                                                TO'LOV TURI: {paymentMethod}
+                                                {(paymentMethod === 'Qarz' || paymentMethod.includes('Qarz:')) && extras?.customerName && (
+                                                    <span style={{ display: 'block', fontSize: '11px', marginTop: '2px' }}>MIJOZ: {extras.customerName}</span>
+                                                )}
                                             </div>
                                         </div>
                                         <p style={{ textAlign: 'center', marginTop: '10px', fontSize: '14px' }}>Xaridingiz uchun rahmat!</p>
@@ -2582,13 +2637,20 @@ const AdminApp = () => {
                                     <span style={{ fontSize: '0.8rem', color: '#666' }}>{new Date(debt.timestamp).toLocaleString()}</span>
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
-                                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fff' }}>{debt.amount.toLocaleString()} UZS</div>
-                                    <div style={{ fontSize: '0.7rem', color: '#888' }}>Asl qarz: {debt.originalAmount?.toLocaleString()}</div>
+                                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#ff4444' }}>{debt.amount.toLocaleString()} so'm</div>
+                                    <div style={{ fontSize: '0.8rem', color: '#888', marginTop: '4px' }}>Qolgan qarz</div>
                                 </div>
                             </div>
                             
-                            <div style={{ fontSize: '0.9rem', color: '#aaa', background: '#252525', padding: '0.5rem', borderRadius: '6px' }}>
-                                <FaChair size={12} style={{ marginRight: '5px' }} /> {debt.tableName || 'Saboy'}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.85rem' }}>
+                                <div style={{ background: '#252525', padding: '0.8rem', borderRadius: '8px', border: '1px solid #333' }}>
+                                    <div style={{ color: '#666', marginBottom: '2px' }}>Stol Jami:</div>
+                                    <div style={{ fontWeight: 'bold' }}>{debt.originalAmount?.toLocaleString()} so'm</div>
+                                </div>
+                                <div style={{ background: '#252525', padding: '0.8rem', borderRadius: '8px', border: '1px solid #333' }}>
+                                    <div style={{ color: '#666', marginBottom: '2px' }}>Joy/Tur:</div>
+                                    <div style={{ fontWeight: 'bold' }}><FaChair size={12} style={{ marginRight: '5px' }} /> {debt.tableName || 'Saboy'}</div>
+                                </div>
                             </div>
 
                             {debt.payments?.length > 0 && (
@@ -3972,9 +4034,11 @@ const AdminApp = () => {
                                     <span>JAMI TO'LOV:</span>
                                     <span>{selectedOrder.total.toLocaleString()}</span>
                                 </div>
-                                <hr />
                                 <div style={{ textAlign: 'left', fontSize: '13px', fontWeight: 'bold' }}>
-                                    TO'LOV TURI: {pendingSaboyCheckout?.method === 'Qarz' ? `QARZ (${pendingSaboyCheckout?.extras?.customerName || selectedOrder.customerName})` : (pendingSaboyCheckout?.method || 'Naqd')}
+                                    TO'LOV TURI: {pendingSaboyCheckout?.method || 'Naqd'}
+                                    {(pendingSaboyCheckout?.method === 'Qarz' || (pendingSaboyCheckout?.method || '').includes('Qarz:')) && (pendingSaboyCheckout?.extras?.customerName || selectedOrder?.customerName) && (
+                                        <span style={{ display: 'block', fontSize: '11px', marginTop: '2px' }}>MIJOZ: {pendingSaboyCheckout?.extras?.customerName || selectedOrder?.customerName}</span>
+                                    )}
                                 </div>
                             </div>
                             <p style={{ textAlign: 'center', marginTop: '10px' }}>Xaridingiz uchun rahmat!</p>

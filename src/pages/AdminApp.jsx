@@ -1330,10 +1330,9 @@ const AdminApp = () => {
                                                 <thead>
                                                     <tr style={{ background: '#f2f2f2' }}>
                                                         <th style={{ border: '1px solid #000', width: '10%', padding: '2px', textAlign: 'center' }}>No</th>
-                                                        <th style={{ border: '1px solid #000', width: '35%', padding: '2px' }}>Nomi</th>
-                                                        <th style={{ border: '1px solid #000', width: '12%', textAlign: 'center', padding: '2px' }}>Soni</th>
-                                                        <th style={{ border: '1px solid #000', width: '18%', textAlign: 'right', padding: '2px' }}>Narxi</th>
-                                                        <th style={{ border: '1px solid #000', width: '25%', textAlign: 'right', padding: '2px' }}>Summa</th>
+                                                        <th style={{ border: '1px solid #000', width: '40%', padding: '2px' }}>Nomi</th>
+                                                        <th style={{ border: '1px solid #000', width: '15%', textAlign: 'center', padding: '2px' }}>Soni</th>
+                                                        <th style={{ border: '1px solid #000', width: '35%', textAlign: 'right', padding: '2px' }}>Summa</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -1342,7 +1341,6 @@ const AdminApp = () => {
                                                             <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center' }}>{i + 1}</td>
                                                             <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', wordBreak: 'break-word' }}>{item.name}</td>
                                                             <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center', fontWeight: 'bold' }}>{item.quantity}</td>
-                                                            <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'right' }}>{Number(item.price).toLocaleString()}</td>
                                                             <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'right', fontWeight: 'bold' }}>{(item.price * item.quantity).toLocaleString()}</td>
                                                         </tr>
                                                     ))}
@@ -1568,10 +1566,9 @@ const AdminApp = () => {
                                                 <thead>
                                                     <tr style={{ background: '#f2f2f2' }}>
                                                         <th style={{ border: '1px solid #000', width: '10%', padding: '2px', textAlign: 'center' }}>No</th>
-                                                        <th style={{ border: '1px solid #000', width: '35%', padding: '2px' }}>Nomi</th>
-                                                        <th style={{ border: '1px solid #000', width: '12%', textAlign: 'center', padding: '2px' }}>Soni</th>
-                                                        <th style={{ border: '1px solid #000', width: '18%', textAlign: 'right', padding: '2px' }}>Narxi</th>
-                                                        <th style={{ border: '1px solid #000', width: '25%', textAlign: 'right', padding: '2px' }}>Summa</th>
+                                                        <th style={{ border: '1px solid #000', width: '40%', padding: '2px' }}>Nomi</th>
+                                                        <th style={{ border: '1px solid #000', width: '15%', textAlign: 'center', padding: '2px' }}>Soni</th>
+                                                        <th style={{ border: '1px solid #000', width: '35%', textAlign: 'right', padding: '2px' }}>Summa</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -1580,7 +1577,6 @@ const AdminApp = () => {
                                                             <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center' }}>{i + 1}</td>
                                                             <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', wordBreak: 'break-word' }}>{item.name}</td>
                                                             <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center', fontWeight: 'bold' }}>{item.quantity}</td>
-                                                            <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'right' }}>{Number(item.price).toLocaleString()}</td>
                                                             <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'right', fontWeight: 'bold' }}>{(item.price * item.quantity).toLocaleString()}</td>
                                                         </tr>
                                                     ))}
@@ -1725,10 +1721,9 @@ const AdminApp = () => {
                                         <thead>
                                             <tr style={{ background: '#f2f2f2' }}>
                                                 <th style={{ border: '1px solid #000', width: '10%', padding: '2px', textAlign: 'center' }}>No</th>
-                                                <th style={{ border: '1px solid #000', width: '35%', padding: '2px' }}>Nomi</th>
-                                                <th style={{ border: '1px solid #000', width: '12%', textAlign: 'center', padding: '2px' }}>Soni</th>
-                                                <th style={{ border: '1px solid #000', width: '18%', textAlign: 'right', padding: '2px' }}>Narxi</th>
-                                                <th style={{ border: '1px solid #000', width: '25%', textAlign: 'right', padding: '2px' }}>Summa</th>
+                                                <th style={{ border: '1px solid #000', width: '40%', padding: '2px' }}>Nomi</th>
+                                                <th style={{ border: '1px solid #000', width: '15%', textAlign: 'center', padding: '2px' }}>Soni</th>
+                                                <th style={{ border: '1px solid #000', width: '35%', textAlign: 'right', padding: '2px' }}>Summa</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -1737,7 +1732,6 @@ const AdminApp = () => {
                                                     <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center' }}>{i + 1}</td>
                                                     <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', wordBreak: 'break-word' }}>{item.name}</td>
                                                     <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center', fontWeight: 'bold' }}>{item.quantity}</td>
-                                                    <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'right' }}>{Number(item.price).toLocaleString()}</td>
                                                     <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'right', fontWeight: 'bold' }}>{(item.price * item.quantity).toLocaleString()}</td>
                                                 </tr>
                                             ))}
@@ -3708,10 +3702,9 @@ const AdminApp = () => {
                                     <thead>
                                         <tr style={{ background: '#f2f2f2' }}>
                                             <th style={{ border: '1px solid #000', width: '10%', padding: '2px', textAlign: 'center' }}>No</th>
-                                            <th style={{ border: '1px solid #000', width: '35%', padding: '2px' }}>Nomi</th>
-                                            <th style={{ border: '1px solid #000', width: '12%', textAlign: 'center', padding: '2px' }}>Soni</th>
-                                            <th style={{ border: '1px solid #000', width: '18%', textAlign: 'right', padding: '2px' }}>Narxi</th>
-                                            <th style={{ border: '1px solid #000', width: '25%', textAlign: 'right', padding: '2px' }}>Summa</th>
+                                            <th style={{ border: '1px solid #000', width: '40%', padding: '2px' }}>Nomi</th>
+                                            <th style={{ border: '1px solid #000', width: '15%', textAlign: 'center', padding: '2px' }}>Soni</th>
+                                            <th style={{ border: '1px solid #000', width: '35%', textAlign: 'right', padding: '2px' }}>Summa</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -3720,7 +3713,6 @@ const AdminApp = () => {
                                                 <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center' }}>{i + 1}</td>
                                                 <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', wordBreak: 'break-word' }}>{item.name}</td>
                                                 <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center', fontWeight: 'bold' }}>{item.quantity}</td>
-                                                <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'right' }}>{Number(item.price).toLocaleString()}</td>
                                                 <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'right', fontWeight: 'bold' }}>{(item.price * item.quantity).toLocaleString()}</td>
                                             </tr>
                                         ))}
@@ -4009,10 +4001,9 @@ const AdminApp = () => {
                                     <thead>
                                         <tr style={{ background: '#f2f2f2' }}>
                                             <th style={{ border: '1px solid #000', width: '10%', padding: '2px', textAlign: 'center' }}>No</th>
-                                            <th style={{ border: '1px solid #000', width: '35%', padding: '2px' }}>Nomi</th>
-                                            <th style={{ border: '1px solid #000', width: '12%', textAlign: 'center', padding: '2px' }}>Soni</th>
-                                            <th style={{ border: '1px solid #000', width: '18%', textAlign: 'right', padding: '2px' }}>Narxi</th>
-                                            <th style={{ border: '1px solid #000', width: '25%', textAlign: 'right', padding: '2px' }}>Summa</th>
+                                            <th style={{ border: '1px solid #000', width: '40%', padding: '2px' }}>Nomi</th>
+                                            <th style={{ border: '1px solid #000', width: '15%', textAlign: 'center', padding: '2px' }}>Soni</th>
+                                            <th style={{ border: '1px solid #000', width: '35%', textAlign: 'right', padding: '2px' }}>Summa</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -4021,7 +4012,6 @@ const AdminApp = () => {
                                                 <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center' }}>{i + 1}</td>
                                                 <td style={{ border: '1px solid #000', padding: '2px', verticalAlign: 'top', wordBreak: 'break-word' }}>{item.name}</td>
                                                 <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'center', fontWeight: 'bold' }}>{item.quantity}</td>
-                                                <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'right' }}>{Number(item.price).toLocaleString()}</td>
                                                 <td style={{ border: '1px solid #000', padding: '2px', textAlign: 'right', fontWeight: 'bold' }}>{(item.price * item.quantity).toLocaleString()}</td>
                                             </tr>
                                         ))}
